@@ -22,6 +22,7 @@ State Sync:
 Each of these calls are handled below
 """
 
+
 from tendermint.abci.types_pb2 import (
     RequestInfo,
     ResponseInfo,
@@ -55,16 +56,21 @@ OkCode = 0
 ErrorCode = 1
 
 
+
 class BaseApplication:
     """
     Base ABCI Application. Extend this and override what's needed for your app
     """
+        
 
     def init_chain(self, req: RequestInitChain) -> ResponseInitChain:
         """
-        Called once, after ``info()`` during startup.  This is where you
-        can load initial ``genesis`` data, etc....
+        Called once, after ``info()`` during startup, when block height is 0  
+        This is where you can load initial ``genesis`` data, etc....
         See ``info()``
+        - Load genesis
+        - Bootstrap Contracts
+        - Initial delegate set.
         """
         return ResponseInitChain()
 
@@ -91,6 +97,7 @@ class BaseApplication:
         A non-zero response code implies an error. However, the transaction
         will still be included in the block, but marked as invalid via the ``code``
         """
+
         return ResponseDeliverTx(code=OkCode)
 
     def check_tx(self, tx: bytes) -> ResponseCheckTx:
