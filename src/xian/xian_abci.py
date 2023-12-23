@@ -1,30 +1,15 @@
 """
-Simple counting app.  It only accepts values sent to it in correct order.  The
-state maintains the current count. For example, if starting at state 0, sending:
--> 0x01 = OK!
--> 0x03 = Will fail! (expects 2)
-
-To run it:
-- make a clean new directory for tendermint
-- start this server: python counter.py
-- start tendermint: tendermint --home "YOUR DIR HERE" node
-- The send transactions to the app:
-
-
-curl http://localhost:26657/broadcast_tx_commit?tx=0x01
-curl http://localhost:26657/broadcast_tx_commit?tx=0x02
-...
-
 To see the latest count:
 curl http://localhost:26657/abci_query
 
 The way the app state is structured, you can also see the current state value
 in the tendermint console output (see app_hash).
 """
+
 import asyncio
 import json
-import os
 import struct
+from contracting.db.driver import Driver
 
 from lamden.crypto.wallet import Wallet
 from tendermint.abci.types_pb2 import (
@@ -54,11 +39,29 @@ def encode_number(value):
 
 
 def decode_number(raw):
-    return int.from_bytes(raw, byteorder="big")
+    return str.from_bytes(raw, byteorder="big")
+
+
+
+def decode_str(raw):
+    return str.from_bytes(raw, byteorder="big")
 
 
 def decode_json(raw):
     return json.loads(raw.decode('utf-8'))
+
+
+def decode_transaction_bytes(raw):
+    tx_bytes = raw
+    # Decode the bytes into a string
+    tx_hex = tx_bytes.decode('utf-8')
+    # Convert the hexadecimal string back into bytes
+    tx_decoded_bytes = bytes.fromhex(tx_hex)
+    # Decode the bytes into a string
+    tx_str = tx_decoded_bytes.decode('utf-8')
+    # Parse the string into a JSON object
+    tx_json = json.loads(tx_str)
+    return tx_json
 
 
 class Xian(BaseApplication):
@@ -66,6 +69,7 @@ class Xian(BaseApplication):
 
     def __init__(self):
         sk = "de6bc6d5ffa7e6fc0c9d618ccad474752256b9936aebddcd70d84fc793255afe"
+        self.tx_count = 0
         self.wallet = Wallet(seed=sk)
         self.executor = Executor()
         self.lamden = Lamden(self.wallet)
@@ -109,29 +113,43 @@ class Xian(BaseApplication):
         If not an order, a non-zero code is returned and the tx
         will be dropped.
         """
-        tx_json = decode_json(tx)
-        if verify(tx_json):
+        try:
+            # print(tx)
+
+            tx_json = decode_transaction_bytes(tx)
+            print(tx_json)
+            # print(tx_json)  # Outputs: {'foo': 'bar'}
+            return ResponseCheckTx(code=OkCode)
+        except Exception as e:
+            print(e)
             return ResponseCheckTx(code=ErrorCode)
-        return ResponseCheckTx(code=OkCode)
+        # tx_json = decode_json(tx)
+        # if verify(tx_json):
 
 
     def deliver_tx(self, tx) -> ResponseDeliverTx:
+        tx_decoded = decode_transaction_bytes(tx)
         """
         We have a valid tx, increment the state.
         """
         try:
             self.executor.execute(
-                    sender=tx['payload']['sender'],
-                    contract_name=tx['payload']['contract'],
-                    function_name=tx['payload']['function'],
-                    stamps=tx['payload']['stamps_supplied'],
-                    stamp_cost=1, 
-                    kwargs=convert_dict(tx['payload']['kwargs']),
+                    sender=tx_decoded['payload']['sender'],
+                    contract_name=tx_decoded['payload']['contract'],
+                    function_name=tx_decoded['payload']['function'],
+                    stamps=tx_decoded['payload']['stamps_supplied'],
+                    stamp_cost=1,
+                    kwargs=convert_dict(tx_decoded['payload']['kwargs']),
                     # environment=environment,
                     auto_commit=False
                 )
+            self.tx_count += 1
+            print("DELIVERY TX SUCCESS")
+            print(self.tx_count)
             return ResponseDeliverTx(code=OkCode)
-        except:
+        except Exception as e:
+            print("DELIVER TX ERROR")
+
             ResponseDeliverTx(code=ErrorCode)
 
 
