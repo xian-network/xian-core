@@ -16,7 +16,7 @@
 		},
 		{ "key": "currency.__developer__", "value": "sys" },
 		{ "key": "currency.__submitted__", "value": { "__time__": [2023, 9, 2, 13, 7, 0, 0] } },
-		{ "key": "currency.balances:ea2cee33f9478d767d67afe345592ef36446ee04f8d588fa76942e6569a53298", "value": 300000000 },
+		{ "key": "currency.balances:c93dee52d7dc6cc43af44007c3b1dae5b730ccf18a9e6fb43521f8e4064561e6", "value": 300000000 },
 		{ "key": "dao.S:motion_delay", "value": { "__delta__": [1, 0] } },
 		{ "key": "dao.S:motion_period", "value": { "__delta__": [1, 0] } },
 		{ "key": "dao.S:nays", "value": 0 },
