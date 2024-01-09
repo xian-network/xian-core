@@ -11,9 +11,11 @@ import json
 import struct
 import time
 import binascii
+import gc
 
 
 from lamden.crypto.wallet import Wallet
+from lamden.crypto.transaction import transaction_is_valid
 from tendermint.abci.types_pb2 import (
     ResponseInfo,
     ResponseInitChain,
@@ -32,7 +34,7 @@ from abci.server import ABCIServer
 from abci.application import BaseApplication, OkCode, ErrorCode
 
 from lamden.crypto.wallet import verify
-from lamden.crypto.transaction import check_tx_formatting
+from lamden.crypto.transaction import check_tx_formatting, transaction_is_valid
 from contracting.execution.executor import Executor
 from contracting.db.encoder import encode, safe_repr, convert_dict
 from contracting.client import ContractingClient
@@ -52,7 +54,7 @@ from lamden.nodes.base import Lamden
 
 LATEST_BLOCK_HASH_KEY = "__latest_block.hash"
 LATEST_BLOCK_HEIGHT_KEY = "__latest_block.height"
-
+TX_PROCESSOR = "xian_node"
 # Tx encoding/decoding
 
 
@@ -111,7 +113,7 @@ def convert_binary_to_hex(binary_data):
 def get_latest_block_hash(driver: ContractDriver):
     latest_hash = driver.get(LATEST_BLOCK_HASH_KEY)
     if latest_hash is None:
-        return b''
+        return b""
     return latest_hash
 
 
@@ -136,13 +138,9 @@ def set_latest_block_height(h, driver: ContractDriver):
 
 class Xian(BaseApplication):
     def __init__(self):
-        sk = "de6bc6d5ffa7e6fc0c9d618ccad474752256b9936aebddcd70d84fc793255afe"
-        self.wallet = Wallet(seed=sk)
         self.client = ContractingClient()
         self.driver = ContractDriver()
-        self.lamden = Lamden(
-            self.wallet, client=self.client, driver=self.driver
-        )
+        self.lamden = Lamden(client=self.client, driver=self.driver)
         self.current_block_meta: dict = None
 
         # current_block_meta :
@@ -160,13 +158,11 @@ class Xian(BaseApplication):
         self.tx_count = 0
         self.start_time = time.time()
 
-
     def info(self, req) -> ResponseInfo:
-        # sk = bytes.fromhex(os.environ['LAMDEN_SK'])
-        # wallet = Wallet(seed=sk)
         """
         Called every time the application starts
         """
+
         r = ResponseInfo()
         r.version = req.version
         r.last_block_height = get_latest_block_height(self.driver)
@@ -176,19 +172,17 @@ class Xian(BaseApplication):
         print(f"LAST_BLOCK_HHASH = {r.last_block_app_hash}")
         return r
 
-
     def init_chain(self, req) -> ResponseInitChain:
         """Called the first time the application starts; when block_height is 0"""
 
-        self.txCount = 0
-        self.last_block_height = 0
+        # self.txCount = 0  # remove
+        # self.last_block_height = 0  # remove
 
         with open("genesis_block.json", "r") as f:
             genesis_block = json.load(f)
 
         asyncio.ensure_future(self.lamden.store_genesis_block(genesis_block))
-        contracts = self.client.get_contracts()
-        print(contracts)
+        # contracts = self.client.get_contracts()
         return ResponseInitChain()
 
     def check_tx(self, raw_tx) -> ResponseCheckTx:
@@ -198,11 +192,13 @@ class Xian(BaseApplication):
         If not an order, a non-zero code is returned and the tx
         will be dropped.
         """
+
         try:
             tx = decode_transaction_bytes(raw_tx)
-            sender, signature, encoded_payload = unpack_transaction(tx)
-
-            if verify(vk=sender, msg=encoded_payload, signature=signature):
+            # print(tx)
+            # sender, signature, encoded_payload = unpack_transaction(tx)
+            # if verify(vk=sender, msg=encoded_payload, signature=signature):
+            if self.lamden.validate_transaction(tx):
                 # print("VERIFIED")
                 return ResponseCheckTx(code=OkCode)
             else:
@@ -212,22 +208,28 @@ class Xian(BaseApplication):
             print(e)
             return ResponseCheckTx(code=ErrorCode)
 
+
     def deliver_tx(self, tx_raw) -> ResponseDeliverTx:
         """
-        We have a valid tx, increment the state.
+        We have a valid tx, increment the cached state.
         """
+
         try:
             tx = decode_transaction_bytes(tx_raw)
             sender, signature, encoded_payload = unpack_transaction(tx)
 
+            # Verify the contents of the txn before processing.
             if verify(vk=sender, msg=encoded_payload, signature=signature):
                 print("DELIVER TX, VERIFIED")
             else:
                 print("DELIVER TX, SIGNATURE VERIFICATION FAILED")
                 return ResponseDeliverTx(code=ErrorCode)
+
             tx["b_meta"] = self.current_block_meta
-            result = self.lamden.tx_processor.process_tx(tx)
-            # print(f"result: {result}")
+            result = self.lamden.tx_processor.process_tx(
+                tx
+            )  # TODO - review how we can pass this back to a client caller.
+            # self.lamden.set_nonce(tx)
             self.tx_count += 1
 
             time_passed = time.time() - self.start_time
@@ -241,20 +243,6 @@ class Xian(BaseApplication):
             ResponseDeliverTx(code=ErrorCode)
 
     def begin_block(self, req: RequestBeginBlock) -> ResponseBeginBlock:
-        print("BEGIN BLOCK")
-        nanos = get_nanotime_from_block_time(req.header.time)
-        hash = convert_binary_to_hex(req.hash)
-        height = req.header.height
-
-        self.current_block_meta = {
-            "nanos": nanos,
-            "height": height,
-            "hash": hash,
-        }
-
-        print(self.current_block_meta)
-
-        # print("BEGIN BLOCK")
         """
         Called during the consensus process.
 
@@ -266,10 +254,24 @@ class Xian(BaseApplication):
         end_block()
         commit()
         """
+
+        print("_____BEGIN BLOCK_____")
+
+        nanos = get_nanotime_from_block_time(req.header.time)
+        hash = convert_binary_to_hex(req.hash)
+        height = req.header.height
+
+        self.current_block_meta = {
+            "nanos": nanos,
+            "height": height,
+            "hash": hash,
+        }
+
+
         return ResponseBeginBlock()
 
     def end_block(self, req: RequestEndBlock) -> ResponseEndBlock:
-        print("END BLOCK")
+        print("_____END BLOCK_____")
         """
         Called at the end of processing the current block. If this is a stateful application
         you can use the height from the request to record the last_block_height
@@ -278,14 +280,20 @@ class Xian(BaseApplication):
         return ResponseEndBlock()
 
     def commit(self) -> ResponseCommit:
-        print("COMMIT")
         """
         Called after ``end_block``.  This should return a compact ``fingerprint``
         of the current state of the application. This is usually the root hash
         of a merkletree.  The returned data is used as part of the consensus process.
+
+        Save all cached state from the block to filesystem DB
         """
-        """Return the current encode state value to tendermint"""
-        hash = struct.pack(">Q", self.current_block_meta["nanos"]) # TODO : review this
+
+        print("_____COMMIT_____")
+
+        hash = struct.pack(
+            ">Q", self.current_block_meta["nanos"]
+        )  # TODO : review this
+
         # commit block to filesystem db
         set_latest_block_hash(hash, self.driver)
         set_latest_block_height(self.current_block_meta["height"], self.driver)
@@ -293,9 +301,10 @@ class Xian(BaseApplication):
         self.driver.soft_apply(str(self.current_block_meta["nanos"]))
         self.driver.hard_apply(str(self.current_block_meta["nanos"]))
 
-        # unset current_block_meta
+        # unset current_block_meta & cleanup
         self.current_block_meta = None
-        print(f"COMMIT HASH {hash}")
+        gc.collect()
+
         return ResponseCommit(data=hash)
 
     def query(self, req) -> ResponseQuery:
