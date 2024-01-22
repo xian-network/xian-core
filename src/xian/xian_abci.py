@@ -14,8 +14,6 @@ import binascii
 import gc
 
 
-from lamden.crypto.wallet import Wallet
-from lamden.crypto.transaction import transaction_is_valid
 from tendermint.abci.types_pb2 import (
     ResponseInfo,
     ResponseInitChain,
@@ -34,28 +32,18 @@ from abci.server import ABCIServer
 from abci.application import BaseApplication, OkCode, ErrorCode
 
 from lamden.crypto.wallet import verify
-from lamden.crypto.transaction import check_tx_formatting, transaction_is_valid
-from contracting.execution.executor import Executor
-from contracting.db.encoder import encode, safe_repr, convert_dict
+from contracting.db.encoder import encode
 from contracting.client import ContractingClient
 from contracting.db.driver import (
     ContractDriver,
-    FSDriver,
-    Driver,
-    AsyncDriver,
-    InMemDriver,
-    CacheDriver,
 )
 from contracting.stdlib.bridge.decimal import ContractingDecimal
-from contracting.db.encoder import encode, decode
-from lamden.crypto.canonical import format_dictionary
+from lamden.crypto.canonical import hash_list
 from lamden.nodes.base import Lamden
 
 
 LATEST_BLOCK_HASH_KEY = "__latest_block.hash"
 LATEST_BLOCK_HEIGHT_KEY = "__latest_block.height"
-TX_PROCESSOR = "xian_node"
-# Tx encoding/decoding
 
 
 def encode_number(value):
@@ -76,13 +64,9 @@ def decode_json(raw):
 
 def decode_transaction_bytes(raw):
     tx_bytes = raw
-    # Decode the bytes into a string
     tx_hex = tx_bytes.decode("utf-8")
-    # Convert the hexadecimal string back into bytes
     tx_decoded_bytes = bytes.fromhex(tx_hex)
-    # Decode the bytes into a string
     tx_str = tx_decoded_bytes.decode("utf-8")
-    # Parse the string into a JSON object
     tx_json = json.loads(tx_str)
     return tx_json
 
@@ -142,6 +126,7 @@ class Xian(BaseApplication):
         self.driver = ContractDriver()
         self.lamden = Lamden(client=self.client, driver=self.driver)
         self.current_block_meta: dict = None
+        self.fingerprint_hashes = []
 
         # current_block_meta :
         # schema :
@@ -175,14 +160,10 @@ class Xian(BaseApplication):
     def init_chain(self, req) -> ResponseInitChain:
         """Called the first time the application starts; when block_height is 0"""
 
-        # self.txCount = 0  # remove
-        # self.last_block_height = 0  # remove
-
         with open("genesis_block.json", "r") as f:
             genesis_block = json.load(f)
 
         asyncio.ensure_future(self.lamden.store_genesis_block(genesis_block))
-        # contracts = self.client.get_contracts()
         return ResponseInitChain()
 
     def check_tx(self, raw_tx) -> ResponseCheckTx:
@@ -192,55 +173,15 @@ class Xian(BaseApplication):
         If not an order, a non-zero code is returned and the tx
         will be dropped.
         """
-
         try:
             tx = decode_transaction_bytes(raw_tx)
-            # print(tx)
-            # sender, signature, encoded_payload = unpack_transaction(tx)
-            # if verify(vk=sender, msg=encoded_payload, signature=signature):
             if self.lamden.validate_transaction(tx):
-                # print("VERIFIED")
                 return ResponseCheckTx(code=OkCode)
             else:
-                print("SIGNATURE VERIFICATION FAILED")
                 return ResponseCheckTx(code=ErrorCode)
         except Exception as e:
             print(e)
             return ResponseCheckTx(code=ErrorCode)
-
-
-    def deliver_tx(self, tx_raw) -> ResponseDeliverTx:
-        """
-        We have a valid tx, increment the cached state.
-        """
-
-        try:
-            tx = decode_transaction_bytes(tx_raw)
-            sender, signature, encoded_payload = unpack_transaction(tx)
-
-            # Verify the contents of the txn before processing.
-            if verify(vk=sender, msg=encoded_payload, signature=signature):
-                print("DELIVER TX, VERIFIED")
-            else:
-                print("DELIVER TX, SIGNATURE VERIFICATION FAILED")
-                return ResponseDeliverTx(code=ErrorCode)
-
-            tx["b_meta"] = self.current_block_meta
-            result = self.lamden.tx_processor.process_tx(
-                tx
-            )  # TODO - review how we can pass this back to a client caller.
-            # self.lamden.set_nonce(tx)
-            self.tx_count += 1
-
-            time_passed = time.time() - self.start_time
-            print(
-                f"{self.tx_count} processed in {time_passed} at an average of {self.tx_count / time_passed} TPS"
-            )
-            return ResponseDeliverTx(code=OkCode)
-        except Exception as e:
-            print(e)
-            print("DELIVER TX ERROR")
-            ResponseDeliverTx(code=ErrorCode)
 
     def begin_block(self, req: RequestBeginBlock) -> ResponseBeginBlock:
         """
@@ -266,9 +207,39 @@ class Xian(BaseApplication):
             "height": height,
             "hash": hash,
         }
-
-
+        self.fingerprint_hashes.append(hash)
         return ResponseBeginBlock()
+
+    def deliver_tx(self, tx_raw) -> ResponseDeliverTx:
+        """
+        Process each tx from the block & add to cached state.
+        """
+        try:
+            tx = decode_transaction_bytes(tx_raw)
+            sender, signature, encoded_payload = unpack_transaction(tx)
+
+            # Verify the contents of the txn before processing.
+            if verify(vk=sender, msg=encoded_payload, signature=signature):
+                print("DELIVER TX, VERIFIED")
+            else:
+                print("DELIVER TX, SIGNATURE VERIFICATION FAILED")
+                return ResponseDeliverTx(code=ErrorCode)
+
+            # Attach metadata to the transaction
+            tx["b_meta"] = self.current_block_meta
+            result = self.lamden.tx_processor.process_tx(
+                tx
+            )  # TODO - review how we can pass the result back to a client caller.
+
+            self.lamden.set_nonce(tx)
+
+            tx_hash = result["tx_result"]["hash"]
+            self.fingerprint_hashes.append(tx_hash)
+
+            return ResponseDeliverTx(code=OkCode)
+        except Exception as e:
+            print("DELIVER TX ERROR")
+            ResponseDeliverTx(code=ErrorCode)
 
     def end_block(self, req: RequestEndBlock) -> ResponseEndBlock:
         print("_____END BLOCK_____")
@@ -290,12 +261,11 @@ class Xian(BaseApplication):
 
         print("_____COMMIT_____")
 
-        hash = struct.pack(
-            ">Q", self.current_block_meta["nanos"]
-        )  # TODO : review this
+        # a hash of the previous block's app_hash + each of the tx hashes from this block.
+        fingerprint_hash = hash_list(self.fingerprint_hashes)
 
         # commit block to filesystem db
-        set_latest_block_hash(hash, self.driver)
+        set_latest_block_hash(fingerprint_hash, self.driver)
         set_latest_block_height(self.current_block_meta["height"], self.driver)
 
         self.driver.soft_apply(str(self.current_block_meta["nanos"]))
@@ -303,9 +273,11 @@ class Xian(BaseApplication):
 
         # unset current_block_meta & cleanup
         self.current_block_meta = None
+        self.fingerprint_hashes = []
+
         gc.collect()
 
-        return ResponseCommit(data=hash)
+        return ResponseCommit(data=fingerprint_hash)
 
     def query(self, req) -> ResponseQuery:
         """Return the last tx count"""
