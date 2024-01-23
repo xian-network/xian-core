@@ -12,7 +12,7 @@ import struct
 import time
 import binascii
 import gc
-
+import logging
 
 from tendermint.abci.types_pb2 import (
     ResponseInfo,
@@ -40,7 +40,13 @@ from contracting.db.driver import (
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 from lamden.crypto.canonical import hash_list
 from lamden.nodes.base import Lamden
+import logging
 
+# Logging
+logging.basicConfig(
+    format="%(asctime)s - %(levelname)s - %(message)s", level=logging.DEBUG
+)
+logger = logging.getLogger(__name__)
 
 LATEST_BLOCK_HASH_KEY = "__latest_block.hash"
 LATEST_BLOCK_HEIGHT_KEY = "__latest_block.height"
@@ -88,7 +94,9 @@ def convert_binary_to_hex(binary_data):
     try:
         return binascii.hexlify(binary_data).decode()
     except UnicodeDecodeError:
-        print("The binary data could not be decoded with UTF-8 encoding.")
+        logger.error(
+            "The binary data could not be decoded with UTF-8 encoding."
+        )
         raise UnicodeDecodeError(
             "The binary data could not be decoded with UTF-8 encoding."
         )
@@ -152,9 +160,8 @@ class Xian(BaseApplication):
         r.version = req.version
         r.last_block_height = get_latest_block_height(self.driver)
         r.last_block_app_hash = get_latest_block_hash(self.driver)
-        print(f"INFO CALLED")
-        print(f"LAST_BLOCK_HEIGHT = {r.last_block_height}")
-        print(f"LAST_BLOCK_HHASH = {r.last_block_app_hash}")
+        logger.debug(f"LAST_BLOCK_HEIGHT = {r.last_block_height}")
+        logger.debug(f"LAST_BLOCK_HASH = {r.last_block_app_hash}")
         return r
 
     def init_chain(self, req) -> ResponseInitChain:
@@ -196,7 +203,7 @@ class Xian(BaseApplication):
         commit()
         """
 
-        print("_____BEGIN BLOCK_____")
+        logger.debug(f"BEGIN BLOCK {req.header.height}")
 
         nanos = get_nanotime_from_block_time(req.header.time)
         hash = convert_binary_to_hex(req.hash)
@@ -220,9 +227,9 @@ class Xian(BaseApplication):
 
             # Verify the contents of the txn before processing.
             if verify(vk=sender, msg=encoded_payload, signature=signature):
-                print("DELIVER TX, VERIFIED")
+                logger.debug("DELIVER TX, SIGNATURE VERIFICATION PASSED")
             else:
-                print("DELIVER TX, SIGNATURE VERIFICATION FAILED")
+                logger.debug("DELIVER TX, SIGNATURE VERIFICATION FAILED")
                 return ResponseDeliverTx(code=ErrorCode)
 
             # Attach metadata to the transaction
@@ -242,7 +249,7 @@ class Xian(BaseApplication):
             ResponseDeliverTx(code=ErrorCode)
 
     def end_block(self, req: RequestEndBlock) -> ResponseEndBlock:
-        print("_____END BLOCK_____")
+        logger.debug(f"END BLOCK {req.height}")
         """
         Called at the end of processing the current block. If this is a stateful application
         you can use the height from the request to record the last_block_height
@@ -259,7 +266,7 @@ class Xian(BaseApplication):
         Save all cached state from the block to filesystem DB
         """
 
-        print("_____COMMIT_____")
+        logger.debug("COMMIT")
 
         # a hash of the previous block's app_hash + each of the tx hashes from this block.
         fingerprint_hash = hash_list(self.fingerprint_hashes)
