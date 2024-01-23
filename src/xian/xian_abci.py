@@ -30,6 +30,22 @@ from tendermint.abci.types_pb2 import (
 
 from abci.server import ABCIServer
 from abci.application import BaseApplication, OkCode, ErrorCode
+from xian.driver_api import (
+    get_latest_block_hash,
+    set_latest_block_hash,
+    get_latest_block_height,
+    set_latest_block_height,
+)
+from xian.utils import (
+    encode_number,
+    decode_number,
+    decode_str,
+    decode_json,
+    decode_transaction_bytes,
+    unpack_transaction,
+    get_nanotime_from_block_time,
+    convert_binary_to_hex,
+)
 
 from lamden.crypto.wallet import verify
 from contracting.db.encoder import encode
@@ -37,7 +53,6 @@ from contracting.client import ContractingClient
 from contracting.db.driver import (
     ContractDriver,
 )
-from contracting.stdlib.bridge.decimal import ContractingDecimal
 from lamden.crypto.canonical import hash_list
 from lamden.nodes.base import Lamden
 import logging
@@ -47,86 +62,6 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s", level=logging.DEBUG
 )
 logger = logging.getLogger(__name__)
-
-LATEST_BLOCK_HASH_KEY = "__latest_block.hash"
-LATEST_BLOCK_HEIGHT_KEY = "__latest_block.height"
-
-
-def encode_number(value):
-    return struct.pack(">I", value)
-
-
-def decode_number(raw):
-    return str.from_bytes(raw, byteorder="big")
-
-
-def decode_str(raw):
-    return str.from_bytes(raw, byteorder="big")
-
-
-def decode_json(raw):
-    return json.loads(raw.decode("utf-8"))
-
-
-def decode_transaction_bytes(raw):
-    tx_bytes = raw
-    tx_hex = tx_bytes.decode("utf-8")
-    tx_decoded_bytes = bytes.fromhex(tx_hex)
-    tx_str = tx_decoded_bytes.decode("utf-8")
-    tx_json = json.loads(tx_str)
-    return tx_json
-
-
-def unpack_transaction(tx):
-    sender = tx["payload"]["sender"]
-    signature = tx["metadata"]["signature"]
-    encoded_payload = encode(tx["payload"])
-    return sender, signature, encoded_payload
-
-
-def get_nanotime_from_block_time(timeobj) -> int:
-    seconds = timeobj.seconds
-    nanos = timeobj.nanos
-    return int(str(seconds) + str(nanos))
-
-
-def convert_binary_to_hex(binary_data):
-    try:
-        return binascii.hexlify(binary_data).decode()
-    except UnicodeDecodeError:
-        logger.error(
-            "The binary data could not be decoded with UTF-8 encoding."
-        )
-        raise UnicodeDecodeError(
-            "The binary data could not be decoded with UTF-8 encoding."
-        )
-
-
-def get_latest_block_hash(driver: ContractDriver):
-    latest_hash = driver.get(LATEST_BLOCK_HASH_KEY)
-    if latest_hash is None:
-        return b""
-    return latest_hash
-
-
-def set_latest_block_hash(h, driver: ContractDriver):
-    driver.set(LATEST_BLOCK_HASH_KEY, h)
-
-
-def get_latest_block_height(driver: ContractDriver):
-    h = driver.get(LATEST_BLOCK_HEIGHT_KEY, save=False)
-    if h is None:
-        return 0
-
-    if type(h) == ContractingDecimal:
-        h = int(h._d)
-
-    return int(h)
-
-
-def set_latest_block_height(h, driver: ContractDriver):
-    driver.set(LATEST_BLOCK_HEIGHT_KEY, int(h))
-
 
 class Xian(BaseApplication):
     def __init__(self):
