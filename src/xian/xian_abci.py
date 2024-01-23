@@ -288,9 +288,9 @@ class Xian(BaseApplication):
 
     def query(self, req) -> ResponseQuery:
         """Return the last tx count"""
-        v = encode_number(self.txCount)
+        v = encode_number(self.tx_count)
         return ResponseQuery(
-            code=OkCode, value=v, height=self.last_block_height
+            code=OkCode, value=v, height=get_latest_block_height(self.driver)
         )
 
 
