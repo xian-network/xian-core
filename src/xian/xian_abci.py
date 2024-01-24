@@ -38,6 +38,7 @@ from xian.driver_api import (
 )
 from xian.utils import (
     encode_number,
+    encode_str,
     decode_number,
     decode_str,
     decode_json,
@@ -62,6 +63,7 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s", level=logging.DEBUG
 )
 logger = logging.getLogger(__name__)
+
 
 class Xian(BaseApplication):
     def __init__(self):
@@ -109,7 +111,7 @@ class Xian(BaseApplication):
                 genesis_block = json.load(f)
 
             asyncio.ensure_future(self.lamden.store_genesis_block(genesis_block))
-        
+
         return ResponseInitChain()
 
     def check_tx(self, raw_tx) -> ResponseCheckTx:
@@ -226,11 +228,22 @@ class Xian(BaseApplication):
         return ResponseCommit(data=fingerprint_hash)
 
     def query(self, req) -> ResponseQuery:
-        """Return the last tx count"""
-        v = encode_number(self.tx_count)
-        return ResponseQuery(
-            code=OkCode, value=v, height=get_latest_block_height(self.driver)
-        )
+        """
+        Query the application state
+        Request Ex. http://89.163.130.217:26657/abci_query?path=%22path%22
+        (Yes you need to quote the path)
+        """
+        result = None
+        match req.path:
+            case "health":  # http://89.163.130.217:26657/abci_query?path=%22health%22
+                result = "OK"
+
+        if result:
+            if isinstance(result, str):
+                v = encode_str(result)
+            elif isinstance(result, int) or isinstance(result, float):
+                v = encode_number(result)
+        return ResponseQuery(code=OkCode, value=v)
 
 
 def main():
