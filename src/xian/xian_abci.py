@@ -55,7 +55,7 @@ from contracting.db.driver import (
 )
 from lamden.crypto.canonical import hash_list
 from lamden.nodes.base import Lamden
-import logging
+from pathlib import Path
 
 # Logging
 logging.basicConfig(
@@ -102,10 +102,14 @@ class Xian(BaseApplication):
     def init_chain(self, req) -> ResponseInitChain:
         """Called the first time the application starts; when block_height is 0"""
 
-        with open("genesis_block.json", "r") as f:
-            genesis_block = json.load(f)
+        genesis_file = "genesis_block.json"
 
-        asyncio.ensure_future(self.lamden.store_genesis_block(genesis_block))
+        if Path(genesis_file).is_file():
+            with open(genesis_file, "r") as f:
+                genesis_block = json.load(f)
+
+            asyncio.ensure_future(self.lamden.store_genesis_block(genesis_block))
+        
         return ResponseInitChain()
 
     def check_tx(self, raw_tx) -> ResponseCheckTx:
