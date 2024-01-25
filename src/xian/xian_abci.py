@@ -35,6 +35,7 @@ from xian.driver_api import (
     set_latest_block_hash,
     get_latest_block_height,
     set_latest_block_height,
+    get_value_of_key,
 )
 from xian.utils import (
     encode_number,
@@ -54,6 +55,7 @@ from contracting.client import ContractingClient
 from contracting.db.driver import (
     ContractDriver,
 )
+from contracting.stdlib.bridge.decimal import ContractingDecimal
 from lamden.crypto.canonical import hash_list
 from lamden.nodes.base import Lamden
 from pathlib import Path
@@ -233,16 +235,33 @@ class Xian(BaseApplication):
         Request Ex. http://89.163.130.217:26657/abci_query?path=%22path%22
         (Yes you need to quote the path)
         """
-        result = None
-        match req.path:
-            case "health":  # http://89.163.130.217:26657/abci_query?path=%22health%22
-                result = "OK"
+        result = ""
+        try:
+            request_path = req.path
+            path_parts = [part for part in request_path.split("/") if part]
 
-        if result:
+            if path_parts and path_parts[0] == "get": # http://89.163.130.217:26657/abci_query?path="/get/depth0/depth1/depth2..."
+                # Construct the key from the path parts
+                key = ":".join(path_parts[1:])
+                # Fetch the value using the constructed key
+                result = get_value_of_key(key, self.driver)
+                
+            if path_parts[0] == "health":  # http://89.163.130.217:26657/abci_query?path="/health"
+                result = "OK"
+                
             if isinstance(result, str):
                 v = encode_str(result)
-            elif isinstance(result, int) or isinstance(result, float):
+            elif isinstance(result, int) or isinstance(result, float) or isinstance(result, ContractingDecimal):
                 v = encode_number(result)
+            elif isinstance(result, dict) or isinstance(result, list):
+                v = encode_str(json.dumps(result))
+            else:
+                v = encode_str(str(result))
+
+        except Exception as e:
+            logger.error(f"QUERY ERROR: {e}")
+            return ResponseQuery(code=ErrorCode, log=f"QUERY ERROR")
+
         return ResponseQuery(code=OkCode, value=v)
 
 

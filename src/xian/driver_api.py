@@ -31,3 +31,7 @@ def get_latest_block_height(driver: ContractDriver):
 
 def set_latest_block_height(h, driver: ContractDriver):
     driver.set(LATEST_BLOCK_HEIGHT_KEY, int(h))
+
+
+def get_value_of_key(item: str, driver: ContractDriver):
+    return driver.get(item)
