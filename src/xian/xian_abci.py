@@ -166,10 +166,10 @@ class Xian(BaseApplication):
         """
         try:
             tx = decode_transaction_bytes(tx_raw)
-            sender, signature, encoded_payload = unpack_transaction(tx)
+            sender, signature, payload = unpack_transaction(tx)
 
             # Verify the contents of the txn before processing.
-            if verify(vk=sender, msg=encoded_payload, signature=signature):
+            if verify(vk=sender, msg=payload, signature=signature):
                 logger.debug("DELIVER TX, SIGNATURE VERIFICATION PASSED")
             else:
                 logger.debug("DELIVER TX, SIGNATURE VERIFICATION FAILED")
