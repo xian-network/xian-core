@@ -8,9 +8,7 @@ in the tendermint console output (see app_hash).
 
 import asyncio
 import json
-import struct
 import time
-import binascii
 import gc
 import logging
 
@@ -40,13 +38,11 @@ from xian.driver_api import (
 from xian.utils import (
     encode_number,
     encode_str,
-    decode_number,
-    decode_str,
-    decode_json,
     decode_transaction_bytes,
     unpack_transaction,
     get_nanotime_from_block_time,
     convert_binary_to_hex,
+    load_tendermint_config,
 )
 
 from lamden.crypto.wallet import verify
@@ -89,6 +85,8 @@ class Xian(BaseApplication):
         # benchmark metrics
         self.tx_count = 0
         self.start_time = time.time()
+
+        load_tendermint_config()
 
     def info(self, req) -> ResponseInfo:
         """
@@ -165,6 +163,7 @@ class Xian(BaseApplication):
         Process each tx from the block & add to cached state.
         """
         try:
+            breakpoint()
             tx = decode_transaction_bytes(tx_raw)
             sender, signature, payload = unpack_transaction(tx)
 

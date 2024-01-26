@@ -2,6 +2,9 @@ import binascii
 import json
 import struct
 from contracting.db.encoder import encode, decode
+import os
+import shutil
+import logging
 
 # Z85CHARS is the base 85 symbol table
 Z85CHARS = b"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#"
@@ -9,6 +12,12 @@ Z85CHARS = b"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=
 Z85MAP = {c: idx for idx, c in enumerate(Z85CHARS)}
 
 _85s = [85**i for i in range(5)][::-1]
+
+# Logging
+logging.basicConfig(
+    format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO
+)
+logger = logging.getLogger(__name__)
 
 
 def z85_encode(rawbytes):
@@ -107,3 +116,13 @@ def convert_binary_to_hex(binary_data):
         raise UnicodeDecodeError(
             "The binary data could not be decoded with UTF-8 encoding."
         )
+
+
+def load_tendermint_config():
+    path = os.path.dirname(os.path.abspath(__file__))
+    toml_path = os.path.join(path, "config.toml")
+    home = os.path.expanduser("~")
+    tendermint_config_path = os.path.join(home, ".tendermint/config/config.toml")
+
+    shutil.copyfile(toml_path, tendermint_config_path)
+    logger.info("Copied config.toml to ~/.tendermint/config/config.toml")
