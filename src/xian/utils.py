@@ -122,7 +122,9 @@ def load_tendermint_config():
     path = os.path.dirname(os.path.abspath(__file__))
     toml_path = os.path.join(path, "config.toml")
     home = os.path.expanduser("~")
-    tendermint_config_path = os.path.join(home, ".tendermint/config/config.toml")
+    if not os.path.exists(os.path.join(home, ".tendermint/")):
+        logging.error("You must initialize tendermint before running this command.")
 
+    tendermint_config_path = os.path.join(home, ".tendermint/config/config.toml")
     shutil.copyfile(toml_path, tendermint_config_path)
     logger.info("Copied config.toml to ~/.tendermint/config/config.toml")
