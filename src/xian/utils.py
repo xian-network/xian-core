@@ -53,12 +53,12 @@ def encode_str(value):
     return value.encode("utf-8")
 
 
-def decode_number(raw):
-    return str.from_bytes(raw, byteorder="big")
+def decode_number(string):
+    return struct.unpack(">I", string)[0]
 
 
-def decode_str(raw):
-    return str.from_bytes(raw, byteorder="big")
+def decode_str(string):
+    return string.decode("utf-8")
 
 
 def decode_json(raw):

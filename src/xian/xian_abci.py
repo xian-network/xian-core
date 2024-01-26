@@ -62,7 +62,7 @@ from pathlib import Path
 
 # Logging
 logging.basicConfig(
-    format="%(asctime)s - %(levelname)s - %(message)s", level=logging.DEBUG
+    format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO
 )
 logger = logging.getLogger(__name__)
 
@@ -240,18 +240,24 @@ class Xian(BaseApplication):
             request_path = req.path
             path_parts = [part for part in request_path.split("/") if part]
 
-            if path_parts and path_parts[0] == "get": # http://89.163.130.217:26657/abci_query?path="/get/depth0/depth1/depth2..."
-                # Construct the key from the path parts
-                key = ":".join(path_parts[1:])
-                # Fetch the value using the constructed key
+            if (
+                path_parts and path_parts[0] == "get"
+            ):  # http://89.163.130.217:26657/abci_query?path=%22/get/currency.balances:c93dee52d7dc6cc43af44007c3b1dae5b730ccf18a9e6fb43521f8e4064561e6%22
+                key = path_parts[1]
                 result = get_value_of_key(key, self.driver)
-                
-            if path_parts[0] == "health":  # http://89.163.130.217:26657/abci_query?path="/health"
+
+            if (
+                path_parts[0] == "health"
+            ):  # http://89.163.130.217:26657/abci_query?path="/health"
                 result = "OK"
-                
+
             if isinstance(result, str):
                 v = encode_str(result)
-            elif isinstance(result, int) or isinstance(result, float) or isinstance(result, ContractingDecimal):
+            elif (
+                isinstance(result, int)
+                or isinstance(result, float)
+                or isinstance(result, ContractingDecimal)
+            ):
                 v = encode_number(result)
             elif isinstance(result, dict) or isinstance(result, list):
                 v = encode_str(json.dumps(result))
