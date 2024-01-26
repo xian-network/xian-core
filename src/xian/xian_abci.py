@@ -163,7 +163,6 @@ class Xian(BaseApplication):
         Process each tx from the block & add to cached state.
         """
         try:
-            breakpoint()
             tx = decode_transaction_bytes(tx_raw)
             sender, signature, payload = unpack_transaction(tx)
 
