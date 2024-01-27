@@ -46,6 +46,7 @@ from xian.utils import (
 )
 
 from lamden.crypto.wallet import verify
+from lamden.storage import NonceStorage
 from contracting.db.encoder import encode
 from contracting.client import ContractingClient
 from contracting.db.driver import (
@@ -67,6 +68,7 @@ class Xian(BaseApplication):
     def __init__(self):
         self.client = ContractingClient()
         self.driver = ContractDriver()
+        self.nonce_storage = NonceStorage()
         self.lamden = Lamden(client=self.client, driver=self.driver)
         self.current_block_meta: dict = None
         self.fingerprint_hashes = []
@@ -248,6 +250,13 @@ class Xian(BaseApplication):
                 path_parts[0] == "health"
             ):  # http://89.163.130.217:26657/abci_query?path="/health"
                 result = "OK"
+
+            if (
+                path_parts[0] == "get_next_nonce"
+            ): # http://89.163.130.217:26657/abci_query?path="/get_next_nonce/ddd326fddb5d1677595311f298b744a4e9f415b577ac179a6afbf38483dc0791"
+                address = path_parts[1]
+                next_nonce = self.nonce_storage.get_next_nonce(sender=address)
+                result = next_nonce
 
             if isinstance(result, str):
                 v = encode_str(result)
