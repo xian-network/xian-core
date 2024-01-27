@@ -258,6 +258,14 @@ class Xian(BaseApplication):
                 next_nonce = self.nonce_storage.get_next_nonce(sender=address)
                 result = next_nonce
 
+            if (
+                path_parts[0] == "estimate_stamps"
+            ):
+                contract_name = path_parts[1]
+                function_name = path_parts[2]
+                kwargs = json.loads(path_parts[3])
+                result = self.client.estimate_stamps(contract_name=contract_name, function_name=function_name, kwargs=kwargs)
+
             if isinstance(result, str):
                 v = encode_str(result)
             elif (
