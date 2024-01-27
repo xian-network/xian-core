@@ -235,32 +235,26 @@ class Xian(BaseApplication):
         Request Ex. http://89.163.130.217:26657/abci_query?path=%22path%22
         (Yes you need to quote the path)
         """
+        
         result = ""
+        
         try:
             request_path = req.path
             path_parts = [part for part in request_path.split("/") if part]
 
-            if (
-                path_parts and path_parts[0] == "get"
-            ):  # http://89.163.130.217:26657/abci_query?path=%22/get/currency.balances:c93dee52d7dc6cc43af44007c3b1dae5b730ccf18a9e6fb43521f8e4064561e6%22
-                key = path_parts[1]
-                result = get_value_of_key(key, self.driver)
+            # http://89.163.130.217:26657/abci_query?path="/get/currency.balances:c93dee52d7dc6cc43af44007c3b1dae5b730ccf18a9e6fb43521f8e4064561e6"
+            if path_parts and path_parts[0] == "get":
+                result = get_value_of_key(path_parts[1], self.driver)
 
-            if (
-                path_parts[0] == "health"
-            ):  # http://89.163.130.217:26657/abci_query?path="/health"
+            # http://89.163.130.217:26657/abci_query?path="/health"
+            if path_parts[0] == "health":
                 result = "OK"
 
-            if (
-                path_parts[0] == "get_next_nonce"
-            ): # http://89.163.130.217:26657/abci_query?path="/get_next_nonce/ddd326fddb5d1677595311f298b744a4e9f415b577ac179a6afbf38483dc0791"
-                address = path_parts[1]
-                next_nonce = self.nonce_storage.get_next_nonce(sender=address)
-                result = next_nonce
+            # http://89.163.130.217:26657/abci_query?path="/get_next_nonce/ddd326fddb5d1677595311f298b744a4e9f415b577ac179a6afbf38483dc0791"
+            if path_parts[0] == "get_next_nonce":
+                result = self.nonce_storage.get_next_nonce(sender=path_parts[1])
 
-            if (
-                path_parts[0] == "estimate_stamps"
-            ):
+            if path_parts[0] == "estimate_stamps":
                 contract_name = path_parts[1]
                 function_name = path_parts[2]
                 kwargs = json.loads(path_parts[3])
@@ -268,11 +262,7 @@ class Xian(BaseApplication):
 
             if isinstance(result, str):
                 v = encode_str(result)
-            elif (
-                isinstance(result, int)
-                or isinstance(result, float)
-                or isinstance(result, ContractingDecimal)
-            ):
+            elif isinstance(result, int) or isinstance(result, float) or isinstance(result, ContractingDecimal):
                 v = encode_number(result)
             elif isinstance(result, dict) or isinstance(result, list):
                 v = encode_str(json.dumps(result))
