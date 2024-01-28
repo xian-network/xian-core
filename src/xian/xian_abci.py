@@ -37,6 +37,7 @@ from xian.driver_api import (
 )
 from xian.utils import (
     encode_number,
+    encode_int,
     encode_str,
     decode_transaction_bytes,
     unpack_transaction,
@@ -262,7 +263,9 @@ class Xian(BaseApplication):
 
             if isinstance(result, str):
                 v = encode_str(result)
-            elif isinstance(result, int) or isinstance(result, float) or isinstance(result, ContractingDecimal):
+            elif isinstance(result, int):
+                v = encode_int(result)
+            elif isinstance(result, float) or isinstance(result, ContractingDecimal):
                 v = encode_number(result)
             elif isinstance(result, dict) or isinstance(result, list):
                 v = encode_str(json.dumps(result))

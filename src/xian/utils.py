@@ -57,10 +57,11 @@ def z85_decode(z85bytes):
         values.append(value)
     return struct.pack(">%dI" % nvalues, *values)
 
-
-def encode_number(value):
+def encode_int(value):
     return struct.pack(">I", value)
 
+def encode_number(value):
+    return struct.pack(">d", value)
 
 def encode_str(value):
     return value.encode("utf-8")
