@@ -51,6 +51,7 @@ from xian.utils import (
 
 from lamden.crypto.wallet import verify
 from lamden.storage import NonceStorage
+from lamden.rewards import RewardManager
 from contracting.db.encoder import encode
 from contracting.client import ContractingClient
 from contracting.db.driver import (
@@ -72,6 +73,7 @@ class Xian(BaseApplication):
     def __init__(self):
         self.client = ContractingClient()
         self.driver = ContractDriver()
+        self.reward_manager = RewardManager()
         self.nonce_storage = NonceStorage()
         self.lamden = Lamden(client=self.client, driver=self.driver)
         self.current_block_meta: dict = None
@@ -184,6 +186,24 @@ class Xian(BaseApplication):
             result = self.lamden.tx_processor.process_tx(
                 tx
             )  # TODO - review how we can pass the result back to a client caller.
+
+            stamp_rewards_amount = result["stamp_rewards_amount"]
+            stamp_rewards_contract = result["stamp_rewards_contract"]
+
+            if stamp_rewards_amount > 0:
+                (
+                    master_reward,
+                    foundation_reward,
+                    developer_mapping,
+                ) = self.reward_manager.calculate_tx_output_rewards(
+                    total_stamps_to_split=stamp_rewards_amount,
+                    contract=stamp_rewards_contract,
+                    client=self.client,
+                )
+
+                self.reward_manager.distribute_rewards(
+                    master_reward, foundation_reward, developer_mapping, self.client
+                )
 
             self.lamden.set_nonce(tx)
 
