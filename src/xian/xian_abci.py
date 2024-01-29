@@ -11,6 +11,9 @@ import json
 import time
 import gc
 import logging
+import os
+
+os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
 
 from tendermint.abci.types_pb2 import (
     ResponseInfo,
@@ -236,9 +239,9 @@ class Xian(BaseApplication):
         Request Ex. http://89.163.130.217:26657/abci_query?path=%22path%22
         (Yes you need to quote the path)
         """
-        
+
         result = ""
-        
+
         try:
             request_path = req.path
             path_parts = [part for part in request_path.split("/") if part]
@@ -259,7 +262,11 @@ class Xian(BaseApplication):
                 contract_name = path_parts[1]
                 function_name = path_parts[2]
                 kwargs = json.loads(path_parts[3])
-                result = self.client.estimate_stamps(contract_name=contract_name, function_name=function_name, kwargs=kwargs)
+                result = self.client.estimate_stamps(
+                    contract_name=contract_name,
+                    function_name=function_name,
+                    kwargs=kwargs,
+                )
 
             if isinstance(result, str):
                 v = encode_str(result)
