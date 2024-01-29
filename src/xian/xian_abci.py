@@ -107,6 +107,7 @@ class Xian(BaseApplication):
         r.last_block_app_hash = get_latest_block_hash(self.driver)
         logger.debug(f"LAST_BLOCK_HEIGHT = {r.last_block_height}")
         logger.debug(f"LAST_BLOCK_HASH = {r.last_block_app_hash}")
+        logger.debug(f"BOOTED")
         return r
 
     def init_chain(self, req) -> ResponseInitChain:
@@ -152,7 +153,6 @@ class Xian(BaseApplication):
         commit()
         """
 
-        logger.debug(f"BEGIN BLOCK {req.header.height}")
 
         nanos = get_nanotime_from_block_time(req.header.time)
         hash = convert_binary_to_hex(req.hash)
@@ -216,7 +216,6 @@ class Xian(BaseApplication):
             ResponseDeliverTx(code=ErrorCode)
 
     def end_block(self, req: RequestEndBlock) -> ResponseEndBlock:
-        logger.debug(f"END BLOCK {req.height}")
         """
         Called at the end of processing the current block. If this is a stateful application
         you can use the height from the request to record the last_block_height
@@ -232,8 +231,6 @@ class Xian(BaseApplication):
 
         Save all cached state from the block to filesystem DB
         """
-
-        logger.debug("COMMIT")
 
         # a hash of the previous block's app_hash + each of the tx hashes from this block.
         fingerprint_hash = hash_list(self.fingerprint_hashes)
