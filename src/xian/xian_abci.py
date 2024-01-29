@@ -191,8 +191,8 @@ class Xian(BaseApplication):
             self.fingerprint_hashes.append(tx_hash)
 
             return ResponseDeliverTx(code=OkCode)
-        except Exception as e:
-            print("DELIVER TX ERROR")
+        except Exception as err:
+            logger.error(f"DELIVER TX ERROR: {err}")
             ResponseDeliverTx(code=ErrorCode)
 
     def end_block(self, req: RequestEndBlock) -> ResponseEndBlock:
@@ -222,7 +222,6 @@ class Xian(BaseApplication):
         set_latest_block_hash(fingerprint_hash, self.driver)
         set_latest_block_height(self.current_block_meta["height"], self.driver)
 
-        self.driver.soft_apply(str(self.current_block_meta["nanos"]))
         self.driver.hard_apply(str(self.current_block_meta["nanos"]))
 
         # unset current_block_meta & cleanup
