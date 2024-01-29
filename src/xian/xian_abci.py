@@ -209,7 +209,7 @@ class Xian(BaseApplication):
             return ResponseDeliverTx(
                 code=OkCode,
                 data=encode_str(json.dumps(result["tx_result"]["result"])),
-                gas_used=result["tx_result"]["stamps_used"],
+                gas_used=result["stamp_rewards_amount"],
             )
         except Exception as err:
             logger.error(f"DELIVER TX ERROR: {err}")
