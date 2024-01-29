@@ -183,9 +183,7 @@ class Xian(BaseApplication):
 
             # Attach metadata to the transaction
             tx["b_meta"] = self.current_block_meta
-            result = self.lamden.tx_processor.process_tx(
-                tx
-            )  # TODO - review how we can pass the result back to a client caller.
+            result = self.lamden.tx_processor.process_tx(tx)
 
             stamp_rewards_amount = result["stamp_rewards_amount"]
             stamp_rewards_contract = result["stamp_rewards_contract"]
@@ -206,11 +204,13 @@ class Xian(BaseApplication):
                 )
 
             self.lamden.set_nonce(tx)
-
             tx_hash = result["tx_result"]["hash"]
             self.fingerprint_hashes.append(tx_hash)
-
-            return ResponseDeliverTx(code=OkCode)
+            return ResponseDeliverTx(
+                code=OkCode,
+                data=encode_str(json.dumps(result["tx_result"]["result"])),
+                gas_used=result["tx_result"]["stamps_used"],
+            )
         except Exception as err:
             logger.error(f"DELIVER TX ERROR: {err}")
             ResponseDeliverTx(code=ErrorCode)
