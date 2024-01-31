@@ -3,7 +3,7 @@ FROM ubuntu:22.04
 
 # Install necessary packages
 RUN apt-get update \
-    && apt-get install -y pkg-config python3.11 python3.11-dev python3.11-venv libhdf5-dev build-essential git \
+    && apt-get install -y pkg-config python3.11 python3.11-dev python3.11-venv libhdf5-dev build-essential git wget \
     && rm -rf /var/lib/apt/lists/*
 
 # Clone Xian and related repositories
