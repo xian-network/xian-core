@@ -53,8 +53,8 @@ Alternatively, you can use Docker to set up and run the application. This method
 
 #### Prerequisites
 
-Docker
-Docker Compose
+Docker and Docker Compose must be installed on your system. See [Docker documentation](https://docs.docker.com/get-docker/) for instructions.
+
 #### Steps
 
 Clone the Xian repository:
