@@ -1,7 +1,8 @@
 version: '3'
-
 services:
   xian:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "26657:26657"
