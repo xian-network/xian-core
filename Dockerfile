@@ -17,17 +17,24 @@ RUN python3.11 -m venv /xian_venv \
     && . /xian_venv/bin/activate \
     && pip install -e /xian/contracting/ -e /xian/lamden/ -e /xian/
 
+# Set the working directory
+WORKDIR /xian
+
 # Download, unpack, and initialize Tendermint
-RUN wget https://github.com/tendermint/tendermint/releases/download/v0.34.24/tendermint_0.34.24_linux_amd64.tar.gz \
-    && tar -xf tendermint_0.34.24_linux_amd64.tar.gz \
-    && rm tendermint_0.34.24_linux_amd64.tar.gz \
-    && ./tendermint init
+RUN wget https://github.com/tendermint/tendermint/releases/download/v0.34.24/tendermint_0.34.24_linux_amd64.tar.gz && \
+    tar -xf tendermint_0.34.24_linux_amd64.tar.gz && \
+    rm tendermint_0.34.24_linux_amd64.tar.gz && \
+    mv tendermint /usr/local/bin && \
+    tendermint init
 
 # Expose the Tendermint RPC port
 EXPOSE 26657
 
-# Set the working directory
-WORKDIR /xian
+# Copy the script to the container
+COPY start_services.sh /start_services.sh
 
-# Command to run Tendermint and Xian
-CMD ./tendermint node --rpc.laddr tcp://0.0.0.0:26657 & python3.11 src/xian/xian_abci.py
+# Make the script executable
+RUN chmod +x /start_services.sh
+
+# Run the script when the container starts
+CMD ["/start_services.sh"]
