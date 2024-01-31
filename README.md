@@ -46,3 +46,33 @@ Set up the environment on Ubuntu 22.04 with the following steps:
     ```
     python3.11 src/xian/xian_abci.py
     ```
+
+### Docker
+
+Alternatively, you can use Docker to set up and run the application. This method is simpler and doesn't require installing dependencies on your host system.
+
+#### Prerequisites
+
+Docker
+Docker Compose
+#### Steps
+
+Clone the Xian repository:
+
+```
+git clone https://github.com/XianChain/xian.git
+cd xian
+```
+
+Build and run the Docker container:
+
+```
+docker-compose up --build
+```
+
+This command builds the Docker image according to the Dockerfile in the repository and starts the container. The Tendermint node and Xian application will run inside this container.
+
+#### Accessing the Application
+
+Tendermint RPC is exposed on `localhost:26657`.
+Xian is running inside the container and can be accessed accordingly.

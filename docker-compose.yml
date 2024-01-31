@@ -1,0 +1,7 @@
+version: '3'
+
+services:
+  xian:
+    build: .
+    ports:
+      - "26657:26657"
