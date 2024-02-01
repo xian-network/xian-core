@@ -56,7 +56,7 @@ wipe:
 
 up-pm2:
 	cd ./src/xian && pm2 start xian_abci.py
-	pm2 start "./tendermint node"
+	pm2 start "./tendermint node --rpc.laddr tcp://0.0.0.0:26657" --name tendermint
 	pm2 logs --lines 1000
 
 down-pm2:
