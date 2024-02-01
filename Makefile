@@ -57,6 +57,7 @@ wipe:
 up-pm2:
 	cd ./src/xian && pm2 start xian_abci.py
 	pm2 start "./tendermint node"
+	pm2 logs
 
 down-pm2:
 	pm2 delete all
