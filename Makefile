@@ -49,3 +49,7 @@ publish-test:
 
 publish:
 	twine upload dist/* --repository pypi
+
+wipe:
+	rm -rf ~/.tendermint/xian
+	./tendermint unsafe-reset-all
