@@ -53,3 +53,10 @@ publish:
 wipe:
 	rm -rf ~/.tendermint/xian
 	./tendermint unsafe-reset-all
+
+up-pm2:
+	cd ./src/xian && pm2 start xian_abci.py
+	pm2 start "./tendermint node"
+
+down-pm2:
+	pm2 delete all
