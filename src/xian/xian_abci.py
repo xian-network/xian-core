@@ -114,8 +114,8 @@ class Xian(BaseApplication):
 
     def init_chain(self, req) -> ResponseInitChain:
         """Called the first time the application starts; when block_height is 0"""
-
-        genesis_file = "genesis_block.json"
+        
+        genesis_file = os.path.join(os.path.dirname(__file__), "genesis_block.json")
 
         if Path(genesis_file).is_file():
             with open(genesis_file, "r") as f:
