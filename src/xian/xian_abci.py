@@ -52,7 +52,6 @@ from xian.utils import (
 from lamden.crypto.wallet import verify
 from lamden.storage import NonceStorage
 from lamden.rewards import RewardManager
-from contracting.db.encoder import encode
 from contracting.client import ContractingClient
 from contracting.db.driver import (
     ContractDriver,
