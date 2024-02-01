@@ -1,0 +1,12 @@
+protobuf==4.23.4
+colorlog>=3.1.4
+certifi>=2022.12.7
+abci
+tendermint
+
+[dev]
+pytest
+pytest-cov
+twine
+black
+build

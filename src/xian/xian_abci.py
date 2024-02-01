@@ -94,6 +94,8 @@ class Xian(BaseApplication):
         self.tx_count = 0
         self.start_time = time.time()
 
+        self.enable_tx_fee = True
+
         load_tendermint_config()
 
     def info(self, req) -> ResponseInfo:
@@ -183,7 +185,7 @@ class Xian(BaseApplication):
 
             # Attach metadata to the transaction
             tx["b_meta"] = self.current_block_meta
-            result = self.lamden.tx_processor.process_tx(tx)
+            result = self.lamden.tx_processor.process_tx(tx, enabled_fees=self.enable_tx_fee)
 
             stamp_rewards_amount = result["stamp_rewards_amount"]
             stamp_rewards_contract = result["stamp_rewards_contract"]
