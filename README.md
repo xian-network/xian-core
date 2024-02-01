@@ -93,7 +93,7 @@ This section documents the available API endpoints for querying the application 
 
    To query a specific path within the application, you must include the path parameter in the query string. Note that the path value should be URL-encoded and wrapped in quotes.
 
-   - **Request Example**: `/abci_query?path="%22path%22"`
+   - **Request Example**: `/abci_query?path="path"`
 
      Replace `"path"` with the actual path you want to query. 
 
