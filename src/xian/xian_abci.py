@@ -94,6 +94,8 @@ class Xian(BaseApplication):
         self.start_time = time.time()
 
         self.enable_tx_fee = True
+        self.static_rewards = True
+        self.static_rewards_amount = 1
 
         load_tendermint_config()
 
@@ -221,6 +223,11 @@ class Xian(BaseApplication):
         Called at the end of processing the current block. If this is a stateful application
         you can use the height from the request to record the last_block_height
         """
+
+        if self.static_rewards:
+            self.reward_manager.distribute_static_rewards(self.client,
+                master_reward=self.static_rewards_amount, foundation_reward=self.static_rewards_amount
+            )
 
         return ResponseEndBlock()
 
