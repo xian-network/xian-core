@@ -1,0 +1,6 @@
+[submodule "contracting"]
+	path = contracting
+	url = https://github.com/XianChain/contracting.git
+[submodule "lamden"]
+	path = lamden
+	url = https://github.com/XianChain/lamden.git
