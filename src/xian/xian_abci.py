@@ -95,7 +95,8 @@ class Xian(BaseApplication):
 
         self.enable_tx_fee = True
         self.static_rewards = True
-        self.static_rewards_amount = 1
+        self.static_rewards_amount_foundation = 1
+        self.static_rewards_amount_validators = 1
 
         load_tendermint_config()
 
@@ -226,7 +227,7 @@ class Xian(BaseApplication):
 
         if self.static_rewards:
             self.reward_manager.distribute_static_rewards(self.client,
-                master_reward=self.static_rewards_amount, foundation_reward=self.static_rewards_amount
+                master_reward=self.static_rewards_amount_validators, foundation_reward=self.static_rewards_amount_foundation
             )
 
         return ResponseEndBlock()
