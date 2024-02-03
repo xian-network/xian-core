@@ -265,7 +265,7 @@ class Xian(BaseApplication):
         (Yes you need to quote the path)
         """
 
-        result = ""
+        result = None
 
         try:
             request_path = req.path
@@ -293,16 +293,20 @@ class Xian(BaseApplication):
                     kwargs=kwargs,
                 )
 
-            if isinstance(result, str):
-                v = encode_str(result)
-            elif isinstance(result, int):
-                v = encode_int(result)
-            elif isinstance(result, float) or isinstance(result, ContractingDecimal):
-                v = encode_number(result)
-            elif isinstance(result, dict) or isinstance(result, list):
-                v = encode_str(json.dumps(result))
+            if result:
+                if isinstance(result, str):
+                    v = encode_str(result)
+                elif isinstance(result, int):
+                    v = encode_int(result)
+                elif isinstance(result, float) or isinstance(result, ContractingDecimal):
+                    v = encode_number(result)
+                elif isinstance(result, dict) or isinstance(result, list):
+                    v = encode_str(json.dumps(result))
+                else:
+                    v = encode_str(str(result))
             else:
-                v = encode_str(str(result))
+                # If no result, return a byte string representing None
+                v = b"\x00"
 
         except Exception as e:
             logger.error(f"QUERY ERROR: {e}")
