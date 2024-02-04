@@ -44,8 +44,26 @@ Set up the environment on Ubuntu 22.04 with the following steps:
 
 6. Run Xian:
     ```
+   (If in a separate terminal session, don't forget to use: "source xian_venv/bin/activate" again)
     python3.11 src/xian/xian_abci.py
     ```
+
+Either run step 5 and 6 in separate sessions and let the applications run in the background with the help of the `screen` command or install PM2 with:
+```
+sudo apt-get install npm
+npm install pm2 -g
+```
+
+
+Then start tendermint node and xian_acbi with:
+```
+make up-pm2
+```
+
+And stop tendermint node and xian_acbi with:
+```
+make down-pm2
+```
 
 ### Docker
 
