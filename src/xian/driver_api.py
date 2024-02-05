@@ -35,3 +35,19 @@ def set_latest_block_height(h, driver: ContractDriver):
 
 def get_value_of_key(item: str, driver: ContractDriver):
     return driver.get(item)
+
+def distribute_rewards(stamp_rewards_amount, stamp_rewards_contract, reward_manager, client):
+    if stamp_rewards_amount > 0:
+        (
+            master_reward,
+            foundation_reward,
+            developer_mapping,
+        ) = reward_manager.calculate_tx_output_rewards(
+            total_stamps_to_split=stamp_rewards_amount,
+            contract=stamp_rewards_contract,
+            client=client,
+        )
+
+        reward_manager.distribute_rewards(
+            master_reward, foundation_reward, developer_mapping, client
+        )
