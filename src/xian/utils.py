@@ -92,6 +92,7 @@ def unpack_transaction(tx):
     sender = tx["payload"]["sender"]
     signature = tx["metadata"]["signature"]
     tx_for_verification = {
+        "chain_id": tx["payload"]["chain_id"],
         "contract": tx["payload"]["contract"],
         "function": tx["payload"]["function"],
         "kwargs": tx["payload"]["kwargs"],
