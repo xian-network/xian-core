@@ -37,6 +37,7 @@ from xian.driver_api import (
     get_latest_block_height,
     set_latest_block_height,
     get_value_of_key,
+    distribute_rewards,
 )
 from xian.utils import (
     encode_number,
@@ -47,7 +48,6 @@ from xian.utils import (
     get_nanotime_from_block_time,
     convert_binary_to_hex,
     load_tendermint_config,
-    distribute_rewards,
 )
 
 from lamden.crypto.wallet import verify
