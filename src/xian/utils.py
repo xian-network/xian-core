@@ -5,6 +5,7 @@ from contracting.db.encoder import encode, decode
 import os
 import shutil
 import logging
+from contracting.stdlib.bridge.decimal import ContractingDecimal
 
 # Z85CHARS is the base 85 symbol table
 Z85CHARS = b"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#"
@@ -129,3 +130,15 @@ def load_tendermint_config():
     tendermint_config_path = os.path.join(home, ".tendermint/config/config.toml")
     shutil.copyfile(toml_path, tendermint_config_path)
     logger.info("Copied config.toml to ~/.tendermint/config/config.toml")
+
+
+def stringify_decimals(obj):
+    target_class = ContractingDecimal
+    if isinstance(obj, target_class):
+        return str(obj)
+    elif isinstance(obj, dict):
+        return {key: stringify_decimals(val) for key, val in obj.items()}
+    elif isinstance(obj, list):
+        return [stringify_decimals(elem) for elem in obj]
+    else:
+        return obj

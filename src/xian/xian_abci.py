@@ -47,6 +47,7 @@ from xian.utils import (
     get_nanotime_from_block_time,
     convert_binary_to_hex,
     load_tendermint_config,
+    stringify_decimals
 )
 
 from lamden.crypto.wallet import verify
@@ -94,7 +95,7 @@ class Xian(BaseApplication):
         self.start_time = time.time()
 
         self.enable_tx_fee = True
-        self.static_rewards = True
+        self.static_rewards = False
         self.static_rewards_amount_foundation = 1
         self.static_rewards_amount_validators = 1
 
@@ -187,11 +188,12 @@ class Xian(BaseApplication):
 
             # Attach metadata to the transaction
             tx["b_meta"] = self.current_block_meta
-            result = self.lamden.tx_processor.process_tx(tx, enabled_fees=self.enable_tx_fee)
+            result = self.lamden.tx_processor.process_tx(tx)
 
             stamp_rewards_amount = result["stamp_rewards_amount"]
             stamp_rewards_contract = result["stamp_rewards_contract"]
 
+            # TODO: move reward distribution to end_block handler, heavy to call this every tx
             if stamp_rewards_amount > 0:
                 (
                     master_reward,
@@ -210,9 +212,11 @@ class Xian(BaseApplication):
             self.lamden.set_nonce(tx)
             tx_hash = result["tx_result"]["hash"]
             self.fingerprint_hashes.append(tx_hash)
+            parsed_tx_result = json.dumps(stringify_decimals(result["tx_result"]))
+            print(parsed_tx_result)
             return ResponseDeliverTx(
                 code=OkCode,
-                data=encode_str(json.dumps(result["tx_result"]["result"])),
+                data=encode_str(parsed_tx_result),
                 gas_used=result["stamp_rewards_amount"],
             )
         except Exception as err:
