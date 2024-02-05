@@ -50,14 +50,22 @@ publish-test:
 publish:
 	twine upload dist/* --repository pypi
 
+rc:
+	cp ~/.tendermint/xian ~/.tendermint/xian_last -r
+	rm -rf ~/.tendermint/xian
+
 wipe:
 	rm -rf ~/.tendermint/xian
 	./tendermint unsafe-reset-all
 
-up-pm2:
+up:
 	cd ./src/xian && pm2 start xian_abci.py
-	pm2 start './tendermint node --p2p.seeds "ED2CF3F822BCA4603CF33F5D4AD54903072A3E8D@89.58.55.192:26656, 4A8690BA70752E84D9289088E0A7661F6FE65304@65.21.179.142:26656"' --name tendermint
+	pm2 start "./tendermint node" --name tendermint
 	pm2 logs --lines 1000
 
-down-pm2:
+down:
 	pm2 delete all
+
+r:
+	make down
+	make up
