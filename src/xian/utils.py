@@ -90,16 +90,24 @@ def decode_transaction_bytes(raw):
 
 
 def unpack_transaction(tx):
+    timestamp = tx["metadata"].get("timestamp", None)
+    if timestamp:
+        print("Please remove timestamp from metadata")
+
+    chain_id = tx["payload"].get("chain_id", None)
+    if chain_id:
+        print("Please add chain_id to payload")
+
     sender = tx["payload"]["sender"]
     signature = tx["metadata"]["signature"]
     tx_for_verification = {
-        "chain_id": tx["payload"]["chain_id"],
         "contract": tx["payload"]["contract"],
         "function": tx["payload"]["function"],
         "kwargs": tx["payload"]["kwargs"],
         "nonce": tx["payload"]["nonce"],
         "sender": tx["payload"]["sender"],
         "stamps_supplied": tx["payload"]["stamps_supplied"],
+        "chain_id": chain_id,
     }
     tx_for_verification = encode(decode(encode(tx_for_verification)))
     return sender, signature, tx_for_verification
