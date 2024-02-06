@@ -187,6 +187,9 @@ class Xian(BaseApplication):
 
             # Verify the contents of the txn before processing.
             if verify(vk=sender, msg=payload, signature=signature):
+                if payload["chain_id"] != self.chain_id:
+                    logger.debug("DELIVER TX, CHAIN ID MISMATCH")
+                    return ResponseDeliverTx(code=ErrorCode)
                 logger.debug("DELIVER TX, SIGNATURE VERIFICATION PASSED")
             else:
                 logger.debug("DELIVER TX, SIGNATURE VERIFICATION FAILED")
