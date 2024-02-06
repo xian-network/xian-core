@@ -178,7 +178,15 @@ class Xian(BaseApplication):
             "height": height,
             "hash": hash,
         }
+
         self.fingerprint_hashes.append(hash)
+
+        if self.static_rewards:
+            self.reward_manager.distribute_static_rewards(self.client,
+                master_reward=self.static_rewards_amount_validators, foundation_reward=self.static_rewards_amount_foundation
+            )
+
+
         return ResponseBeginBlock()
 
     def deliver_tx(self, tx_raw) -> ResponseDeliverTx:
@@ -227,11 +235,6 @@ class Xian(BaseApplication):
         Called at the end of processing the current block. If this is a stateful application
         you can use the height from the request to record the last_block_height
         """
-
-        if self.static_rewards:
-            self.reward_manager.distribute_static_rewards(self.client,
-                master_reward=self.static_rewards_amount_validators, foundation_reward=self.static_rewards_amount_foundation
-            )
 
         return ResponseEndBlock()
 
