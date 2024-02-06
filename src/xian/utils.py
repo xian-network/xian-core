@@ -142,3 +142,10 @@ def load_tendermint_config():
     with open(tendermint_config_path, "r") as f:
         config = toml.load(tendermint_config_path)
     return config
+
+def get_genesis_json():
+    home = os.path.expanduser("~")
+    path = os.path.join(home, ".tendermint/config/genesis.json")
+    with open(path, "r") as f:
+        genesis = json.load(f)
+    return genesis

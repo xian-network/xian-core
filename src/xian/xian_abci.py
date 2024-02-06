@@ -47,7 +47,7 @@ from xian.utils import (
     unpack_transaction,
     get_nanotime_from_block_time,
     convert_binary_to_hex,
-    load_tendermint_config,
+    load_tendermint_config, get_genesis_json
 )
 
 from lamden.crypto.wallet import verify
@@ -72,6 +72,7 @@ logger = logging.getLogger(__name__)
 class Xian(BaseApplication):
     def __init__(self):
         config = load_tendermint_config()
+        tendermint_genesis = get_genesis_json() 
 
         self.client = ContractingClient()
         self.driver = ContractDriver()
@@ -84,6 +85,9 @@ class Xian(BaseApplication):
 
         if self.chain_id is None:
             raise ValueError("chain_id is not set in the tendermint config")
+        
+        if tendermint_genesis.get("chain_id") != self.chain_id:
+            raise ValueError("chain_id in config.toml does not match the chain_id in the tendermint genesis.json")
 
         # current_block_meta :
         # schema :
