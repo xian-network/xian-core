@@ -101,13 +101,13 @@ def unpack_transaction(tx):
     sender = tx["payload"]["sender"]
     signature = tx["metadata"]["signature"]
     tx_for_verification = {
+        "chain_id": chain_id,
         "contract": tx["payload"]["contract"],
         "function": tx["payload"]["function"],
         "kwargs": tx["payload"]["kwargs"],
         "nonce": tx["payload"]["nonce"],
         "sender": tx["payload"]["sender"],
         "stamps_supplied": tx["payload"]["stamps_supplied"],
-        "chain_id": chain_id,
     }
     tx_for_verification = encode(decode(encode(tx_for_verification)))
     return sender, signature, tx_for_verification
