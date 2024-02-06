@@ -71,6 +71,8 @@ logger = logging.getLogger(__name__)
 
 class Xian(BaseApplication):
     def __init__(self):
+        config = load_tendermint_config()
+
         self.client = ContractingClient()
         self.driver = ContractDriver()
         self.reward_manager = RewardManager()
@@ -78,6 +80,10 @@ class Xian(BaseApplication):
         self.lamden = Lamden(client=self.client, driver=self.driver)
         self.current_block_meta: dict = None
         self.fingerprint_hashes = []
+        self.chain_id = config.get("chain_id", None)
+
+        if self.chain_id is None:
+            raise ValueError("chain_id is not set in the tendermint config")
 
         # current_block_meta :
         # schema :
@@ -99,7 +105,6 @@ class Xian(BaseApplication):
         self.static_rewards_amount_foundation = 1
         self.static_rewards_amount_validators = 1
 
-        load_tendermint_config()
 
     def info(self, req) -> ResponseInfo:
         """
@@ -112,6 +117,7 @@ class Xian(BaseApplication):
         r.last_block_app_hash = get_latest_block_hash(self.driver)
         logger.debug(f"LAST_BLOCK_HEIGHT = {r.last_block_height}")
         logger.debug(f"LAST_BLOCK_HASH = {r.last_block_app_hash}")
+        logger.debug(f"CHAIN_ID = {self.chain_id}")
         logger.debug(f"BOOTED")
         return r
 
