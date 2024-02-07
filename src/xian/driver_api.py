@@ -57,14 +57,14 @@ def distribute_rewards(stamp_rewards_amount, stamp_rewards_contract, reward_mana
 
         for m in driver.get("masternodes.S:members"):
             m_balance = driver.get(f"currency.balances:{m}")
-            m_balance_after = m_balance + master_reward
+            m_balance_after = round((m_balance + master_reward), DUST_EXPONENT)
             rewards.append(
                 driver.set(f"currency.balances:{m}", m_balance_after)
             )
 
         foundation_wallet = driver.get("foundation.owner")
         foundation_balance = driver.get(f"currency.balances:{foundation_wallet}")
-        foundation_balance_after = foundation_balance + foundation_reward
+        foundation_balance_after = round((foundation_balance + foundation_reward), DUST_EXPONENT)
         rewards.append(
             driver.set(f"currency.balances:{foundation_wallet}", foundation_balance_after)
         )
@@ -75,7 +75,7 @@ def distribute_rewards(stamp_rewards_amount, stamp_rewards_contract, reward_mana
                 recipient = driver.get("foundation.owner")
             dev_reward = round((amount / stamp_cost), DUST_EXPONENT)
             recipient_balance = driver.get(f"currency.balances:{recipient}")
-            recipient_balance_after = recipient_balance + dev_reward
+            recipient_balance_after = round((recipient_balance + dev_reward), DUST_EXPONENT)
             rewards.append(
                 driver.set(f"currency.balances:{recipient}", recipient_balance_after)
             )
@@ -85,14 +85,14 @@ def distribute_static_rewards(driver, master_reward=None, foundation_reward=None
     rewards = []
     for m in driver.get("masternodes.S:members"):
         m_balance = driver.get(f"currency.balances:{m}")
-        m_balance_after = m_balance + master_reward
+        m_balance_after = round((m_balance + master_reward), DUST_EXPONENT)
         rewards.append(
             driver.set(f"currency.balances:{m}", m_balance_after)
         )
 
     foundation_wallet = driver.get("foundation.owner")
     foundation_balance = driver.get(f"currency.balances:{foundation_wallet}")
-    foundation_balance_after = foundation_balance + foundation_reward
+    foundation_balance_after = round((foundation_balance + foundation_reward), DUST_EXPONENT)
     rewards.append(
         driver.set(f"currency.balances:{foundation_wallet}", foundation_balance_after)
     )
