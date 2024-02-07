@@ -38,6 +38,7 @@ from xian.driver_api import (
     set_latest_block_height,
     get_value_of_key,
     distribute_rewards,
+    distribute_static_rewards,
 )
 from xian.utils import (
     encode_number,
@@ -108,6 +109,8 @@ class Xian(BaseApplication):
         self.static_rewards = True
         self.static_rewards_amount_foundation = 1
         self.static_rewards_amount_validators = 1
+
+        self.current_block_rewards = {}
 
 
     def info(self, req) -> ResponseInfo:
@@ -181,11 +184,6 @@ class Xian(BaseApplication):
 
         self.fingerprint_hashes.append(hash)
 
-        if self.static_rewards:
-            self.reward_manager.distribute_static_rewards(self.client,
-                master_reward=self.static_rewards_amount_validators, foundation_reward=self.static_rewards_amount_foundation
-            )
-
 
         return ResponseBeginBlock()
 
@@ -211,12 +209,9 @@ class Xian(BaseApplication):
             tx["b_meta"] = self.current_block_meta
             result = self.lamden.tx_processor.process_tx(tx, enabled_fees=self.enable_tx_fee)
 
-            distribute_rewards(
-                stamp_rewards_amount=result["stamp_rewards_amount"],
-                stamp_rewards_contract=result["stamp_rewards_contract"],
-                reward_manager=self.reward_manager,
-                client=self.client,
-            )
+            if self.enable_tx_fee:
+                self.current_block_rewards[tx["hash"]] = {"amount": result["stamp_rewards_amount"], "contract": result["stamp_rewards_contract"]}
+
 
             self.lamden.set_nonce(tx)
             tx_hash = result["tx_result"]["hash"]
@@ -250,6 +245,24 @@ class Xian(BaseApplication):
         # a hash of the previous block's app_hash + each of the tx hashes from this block.
         fingerprint_hash = hash_list(self.fingerprint_hashes)
 
+        if self.static_rewards:
+            distribute_static_rewards(
+                driver=self.driver,
+                foundation_reward=self.static_rewards_amount_foundation,
+                master_reward=self.static_rewards_amount_validators,
+            )
+
+        if self.current_block_rewards:
+            for tx_hash, rewards in self.current_block_rewards.items():
+                for reward in rewards:
+                    distribute_rewards(
+                        stamp_rewards_amount=reward["amount"],
+                        stamp_rewards_contract=reward["contract"],
+                        reward_manager=self.reward_manager,
+                        driver=self.driver,
+                        client=self.client,
+                    )
+
         # commit block to filesystem db
         set_latest_block_hash(fingerprint_hash, self.driver)
         set_latest_block_height(self.current_block_meta["height"], self.driver)
@@ -259,6 +272,8 @@ class Xian(BaseApplication):
         # unset current_block_meta & cleanup
         self.current_block_meta = None
         self.fingerprint_hashes = []
+
+        self.current_block_rewards = {}
 
         gc.collect()
 
