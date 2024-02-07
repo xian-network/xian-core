@@ -197,6 +197,7 @@ class Xian(BaseApplication):
 
             # Verify the contents of the txn before processing.
             if verify(vk=sender, msg=payload, signature=signature):
+                payload = json.loads(payload)
                 if payload["chain_id"] != self.chain_id:
                     logger.debug("DELIVER TX, CHAIN ID MISMATCH")
                     return ResponseDeliverTx(code=ErrorCode)
@@ -210,7 +211,7 @@ class Xian(BaseApplication):
             result = self.lamden.tx_processor.process_tx(tx, enabled_fees=self.enable_tx_fee)
 
             if self.enable_tx_fee:
-                self.current_block_rewards[tx["hash"]] = {"amount": result["stamp_rewards_amount"], "contract": result["stamp_rewards_contract"]}
+                self.current_block_rewards[tx['b_meta']['hash']] = {"amount": result["stamp_rewards_amount"], "contract": result["stamp_rewards_contract"]}
 
 
             self.lamden.set_nonce(tx)
@@ -253,15 +254,14 @@ class Xian(BaseApplication):
             )
 
         if self.current_block_rewards:
-            for tx_hash, rewards in self.current_block_rewards.items():
-                for reward in rewards:
-                    distribute_rewards(
-                        stamp_rewards_amount=reward["amount"],
-                        stamp_rewards_contract=reward["contract"],
-                        reward_manager=self.reward_manager,
-                        driver=self.driver,
-                        client=self.client,
-                    )
+            for tx_hash, reward in self.current_block_rewards.items():
+                distribute_rewards(
+                    stamp_rewards_amount=reward["amount"],
+                    stamp_rewards_contract=reward["contract"],
+                    reward_manager=self.reward_manager,
+                    driver=self.driver,
+                    client=self.client,
+                )
 
         # commit block to filesystem db
         set_latest_block_hash(fingerprint_hash, self.driver)

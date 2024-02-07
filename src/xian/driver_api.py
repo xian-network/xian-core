@@ -71,21 +71,15 @@ def distribute_rewards(stamp_rewards_amount, stamp_rewards_contract, reward_mana
 
         # Send rewards to each developer calculated from the block
         for recipient, amount in developer_mapping.items():
+            if recipient == "sys":
+                recipient = driver.get("foundation.owner")
             dev_reward = round((amount / stamp_cost), DUST_EXPONENT)
             recipient_balance = driver.get(f"currency.balances:{recipient}")
             recipient_balance_after = recipient_balance + dev_reward
             rewards.append(
                 driver.set(f"currency.balances:{recipient}", recipient_balance_after)
             )
-
-        # Remainder is BURNED
-
-        try:
-            rewards.sort(key=lambda x: x["key"])
-        except Exception as err:
-            print("Unable to sort rewards by 'key'.")
-            print(err)
-    return None
+    return rewards
 
 def distribute_static_rewards(driver, master_reward=None, foundation_reward=None):
     rewards = []

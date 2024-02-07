@@ -93,8 +93,7 @@ def unpack_transaction(tx):
     timestamp = tx["metadata"].get("timestamp", None)
     if timestamp:
         print("Please remove timestamp from metadata")
-
-    chain_id = tx["payload"].get("chain_id", None)
+    chain_id = tx["payload"].get("chain_id", "")
     if chain_id:
         print("Please add chain_id to payload")
 
