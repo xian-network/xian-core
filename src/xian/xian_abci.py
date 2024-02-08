@@ -49,7 +49,7 @@ from xian.utils import (
     get_nanotime_from_block_time,
     convert_binary_to_hex,
     load_tendermint_config,
-    stringify_decimals
+    stringify_decimals,
     get_genesis_json
 )
 
