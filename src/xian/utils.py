@@ -6,6 +6,7 @@ import os
 import shutil
 import logging
 from contracting.stdlib.bridge.decimal import ContractingDecimal
+import toml
 
 # Z85CHARS is the base 85 symbol table
 Z85CHARS = b"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#"
@@ -90,9 +91,17 @@ def decode_transaction_bytes(raw):
 
 
 def unpack_transaction(tx):
+    timestamp = tx["metadata"].get("timestamp", None)
+    if timestamp:
+        print("Please remove timestamp from metadata")
+    chain_id = tx["payload"].get("chain_id", "")
+    if not chain_id:
+        print("Please add chain_id to payload")
+
     sender = tx["payload"]["sender"]
     signature = tx["metadata"]["signature"]
     tx_for_verification = {
+        "chain_id": chain_id,
         "contract": tx["payload"]["contract"],
         "function": tx["payload"]["function"],
         "kwargs": tx["payload"]["kwargs"],
@@ -142,3 +151,14 @@ def stringify_decimals(obj):
         return [stringify_decimals(elem) for elem in obj]
     else:
         return obj
+    with open(tendermint_config_path, "r") as f:
+        config = toml.load(tendermint_config_path)
+    return config
+    
+
+def get_genesis_json():
+    home = os.path.expanduser("~")
+    path = os.path.join(home, ".tendermint/config/genesis.json")
+    with open(path, "r") as f:
+        genesis = json.load(f)
+    return genesis

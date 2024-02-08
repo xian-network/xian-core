@@ -37,6 +37,8 @@ from xian.driver_api import (
     get_latest_block_height,
     set_latest_block_height,
     get_value_of_key,
+    distribute_rewards,
+    distribute_static_rewards,
 )
 from xian.utils import (
     encode_number,
@@ -48,6 +50,7 @@ from xian.utils import (
     convert_binary_to_hex,
     load_tendermint_config,
     stringify_decimals
+    get_genesis_json
 )
 
 from lamden.crypto.wallet import verify
@@ -71,6 +74,9 @@ logger = logging.getLogger(__name__)
 
 class Xian(BaseApplication):
     def __init__(self):
+        config = load_tendermint_config()
+        tendermint_genesis = get_genesis_json() 
+
         self.client = ContractingClient()
         self.driver = ContractDriver()
         self.reward_manager = RewardManager()
@@ -78,6 +84,13 @@ class Xian(BaseApplication):
         self.lamden = Lamden(client=self.client, driver=self.driver)
         self.current_block_meta: dict = None
         self.fingerprint_hashes = []
+        self.chain_id = config.get("chain_id", None)
+
+        if self.chain_id is None:
+            raise ValueError("chain_id is not set in the tendermint config")
+        
+        if tendermint_genesis.get("chain_id") != self.chain_id:
+            raise ValueError("chain_id in config.toml does not match the chain_id in the tendermint genesis.json")
 
         # current_block_meta :
         # schema :
@@ -99,7 +112,8 @@ class Xian(BaseApplication):
         self.static_rewards_amount_foundation = 1
         self.static_rewards_amount_validators = 1
 
-        load_tendermint_config()
+        self.current_block_rewards = {}
+
 
     def info(self, req) -> ResponseInfo:
         """
@@ -112,6 +126,7 @@ class Xian(BaseApplication):
         r.last_block_app_hash = get_latest_block_hash(self.driver)
         logger.debug(f"LAST_BLOCK_HEIGHT = {r.last_block_height}")
         logger.debug(f"LAST_BLOCK_HASH = {r.last_block_app_hash}")
+        logger.debug(f"CHAIN_ID = {self.chain_id}")
         logger.debug(f"BOOTED")
         return r
 
@@ -168,7 +183,10 @@ class Xian(BaseApplication):
             "height": height,
             "hash": hash,
         }
+
         self.fingerprint_hashes.append(hash)
+
+
         return ResponseBeginBlock()
 
     def deliver_tx(self, tx_raw) -> ResponseDeliverTx:
@@ -181,6 +199,10 @@ class Xian(BaseApplication):
 
             # Verify the contents of the txn before processing.
             if verify(vk=sender, msg=payload, signature=signature):
+                payload = json.loads(payload)
+                if payload["chain_id"] != self.chain_id:
+                    logger.debug("DELIVER TX, CHAIN ID MISMATCH")
+                    return ResponseDeliverTx(code=ErrorCode)
                 logger.debug("DELIVER TX, SIGNATURE VERIFICATION PASSED")
             else:
                 logger.debug("DELIVER TX, SIGNATURE VERIFICATION FAILED")
@@ -190,24 +212,9 @@ class Xian(BaseApplication):
             tx["b_meta"] = self.current_block_meta
             result = self.lamden.tx_processor.process_tx(tx)
 
-            stamp_rewards_amount = result["stamp_rewards_amount"]
-            stamp_rewards_contract = result["stamp_rewards_contract"]
+            if self.enable_tx_fee:
+                self.current_block_rewards[tx['b_meta']['hash']] = {"amount": result["stamp_rewards_amount"], "contract": result["stamp_rewards_contract"]}
 
-            # TODO: move reward distribution to end_block handler, heavy to call this every tx
-            if stamp_rewards_amount > 0:
-                (
-                    master_reward,
-                    foundation_reward,
-                    developer_mapping,
-                ) = self.reward_manager.calculate_tx_output_rewards(
-                    total_stamps_to_split=stamp_rewards_amount,
-                    contract=stamp_rewards_contract,
-                    client=self.client,
-                )
-
-                self.reward_manager.distribute_rewards(
-                    master_reward, foundation_reward, developer_mapping, self.client
-                )
 
             self.lamden.set_nonce(tx)
             tx_hash = result["tx_result"]["hash"]
@@ -229,11 +236,6 @@ class Xian(BaseApplication):
         you can use the height from the request to record the last_block_height
         """
 
-        if self.static_rewards:
-            self.reward_manager.distribute_static_rewards(self.client,
-                master_reward=self.static_rewards_amount_validators, foundation_reward=self.static_rewards_amount_foundation
-            )
-
         return ResponseEndBlock()
 
     def commit(self) -> ResponseCommit:
@@ -248,6 +250,23 @@ class Xian(BaseApplication):
         # a hash of the previous block's app_hash + each of the tx hashes from this block.
         fingerprint_hash = hash_list(self.fingerprint_hashes)
 
+        if self.static_rewards:
+            distribute_static_rewards(
+                driver=self.driver,
+                foundation_reward=self.static_rewards_amount_foundation,
+                master_reward=self.static_rewards_amount_validators,
+            )
+
+        if self.current_block_rewards:
+            for tx_hash, reward in self.current_block_rewards.items():
+                distribute_rewards(
+                    stamp_rewards_amount=reward["amount"],
+                    stamp_rewards_contract=reward["contract"],
+                    reward_manager=self.reward_manager,
+                    driver=self.driver,
+                    client=self.client,
+                )
+
         # commit block to filesystem db
         set_latest_block_hash(fingerprint_hash, self.driver)
         set_latest_block_height(self.current_block_meta["height"], self.driver)
@@ -257,6 +276,8 @@ class Xian(BaseApplication):
         # unset current_block_meta & cleanup
         self.current_block_meta = None
         self.fingerprint_hashes = []
+
+        self.current_block_rewards = {}
 
         gc.collect()
 
@@ -286,16 +307,6 @@ class Xian(BaseApplication):
             # http://89.163.130.217:26657/abci_query?path="/get_next_nonce/ddd326fddb5d1677595311f298b744a4e9f415b577ac179a6afbf38483dc0791"
             if path_parts[0] == "get_next_nonce":
                 result = self.nonce_storage.get_next_nonce(sender=path_parts[1])
-
-            if path_parts[0] == "estimate_stamps":
-                contract_name = path_parts[1]
-                function_name = path_parts[2]
-                kwargs = json.loads(path_parts[3])
-                result = self.client.estimate_stamps(
-                    contract_name=contract_name,
-                    function_name=function_name,
-                    kwargs=kwargs,
-                )
 
             if result:
                 if isinstance(result, str):
