@@ -58,15 +58,15 @@ wipe:
 	rm -rf ~/.tendermint/xian
 	./tendermint unsafe-reset-all
 
-up:
-	cd ./src/xian && pm2 start xian_abci.py
+tn-up:
+	cd ./src/xian && IS_TESTNET=1 pm2 start xian_abci.py
 	pm2 start "./tendermint node" --name tendermint
 	pm2 logs --lines 1000
 
-down:
+tn-down:
 	pm2 delete all
 
-r:
+tn-r:
 	make down
 	make up
 
@@ -77,6 +77,6 @@ tm-node-id:
 	./tendermint show-node-id
 
 dwu:
-	make down
+	make tn-down
 	make wipe
-	make up
+	make tn-up
