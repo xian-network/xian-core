@@ -69,3 +69,9 @@ down:
 r:
 	make down
 	make up
+
+tm-init:
+	./tendermint init
+
+tm-node-id:
+	./tendermint show-node-id
