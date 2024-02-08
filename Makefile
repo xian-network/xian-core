@@ -59,7 +59,7 @@ wipe:
 	./tendermint unsafe-reset-all
 
 tn-up:
-	cd ./src/xian && IS_TESTNET=1 pm2 start xian_abci.py
+	cd ./src/xian && CONFIG_PATH=config/config-testnet.toml pm2 start xian_abci.py
 	pm2 start "./tendermint node" --name tendermint
 	pm2 logs --lines 1000
 

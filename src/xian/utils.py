@@ -130,9 +130,9 @@ def convert_binary_to_hex(binary_data):
 
 
 def load_tendermint_config():
-    is_testnet = os.getenv("IS_TESTNET")
+    config_path = os.getenv("CONFIG_PATH")
     path = os.path.dirname(os.path.abspath(__file__))
-    toml_path = os.path.join(path, "config.toml" if not is_testnet else "config-testnet.toml")
+    toml_path = os.path.join(path, "config/config.toml" if not config_path else config_path)
     home = os.path.expanduser("~")
     if not os.path.exists(os.path.join(home, ".tendermint/")):
         logging.error("You must initialize tendermint before running this command.")

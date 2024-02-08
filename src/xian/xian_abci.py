@@ -75,7 +75,7 @@ logger = logging.getLogger(__name__)
 class Xian(BaseApplication):
     def __init__(self):
         config = load_tendermint_config()
-        tendermint_genesis = get_genesis_json() 
+        self.genesis = get_genesis_json() 
 
         self.client = ContractingClient()
         self.driver = ContractDriver()
@@ -89,7 +89,7 @@ class Xian(BaseApplication):
         if self.chain_id is None:
             raise ValueError("chain_id is not set in the tendermint config")
         
-        if tendermint_genesis.get("chain_id") != self.chain_id:
+        if self.genesis.get("chain_id") != self.chain_id:
             raise ValueError("chain_id in config.toml does not match the chain_id in the tendermint genesis.json")
 
         # current_block_meta :
@@ -132,14 +132,9 @@ class Xian(BaseApplication):
 
     def init_chain(self, req) -> ResponseInitChain:
         """Called the first time the application starts; when block_height is 0"""
-        
-        genesis_file = os.path.join(os.path.dirname(__file__), "genesis_block.json")
 
-        if Path(genesis_file).is_file():
-            with open(genesis_file, "r") as f:
-                genesis_block = json.load(f)
-
-            asyncio.ensure_future(self.lamden.store_genesis_block(genesis_block))
+        abci_genesis_state = self.genesis["abci_genesis"]
+        asyncio.ensure_future(self.lamden.store_genesis_block(abci_genesis_state))
 
         return ResponseInitChain()
 
