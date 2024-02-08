@@ -75,3 +75,8 @@ tm-init:
 
 tm-node-id:
 	./tendermint show-node-id
+
+dwu:
+	make down
+	make wipe
+	make up
