@@ -80,3 +80,14 @@ dwu:
 	make tn-down
 	make wipe
 	make tn-up
+
+install-abci:
+	pip install -e ./lamden 
+	pip install -e ./contracting
+	pip install -e .
+
+make pull-and-install:
+	cd ./lamden && git pull && cd ..
+	cd ./contracting && git pull && cd ..
+	git pull
+	make install-abci
