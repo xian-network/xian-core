@@ -71,7 +71,7 @@ def distribute_rewards(stamp_rewards_amount, stamp_rewards_contract, reward_mana
 
         # Send rewards to each developer calculated from the block
         for recipient, amount in developer_mapping.items():
-            if recipient == "sys":
+            if recipient == "sys" or recipient == None: # That is genesis contracts or the submission contract
                 recipient = driver.get("foundation.owner")
             dev_reward = round((amount / stamp_cost), DUST_EXPONENT)
             recipient_balance = driver.get(f"currency.balances:{recipient}")
