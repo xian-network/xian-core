@@ -140,6 +140,9 @@ def load_tendermint_config():
     tendermint_config_path = os.path.join(home, ".tendermint/config/config.toml")
     shutil.copyfile(toml_path, tendermint_config_path)
     logger.info("Copied config.toml to ~/.tendermint/config/config.toml")
+    with open(tendermint_config_path, "r") as f:
+        config = toml.load(tendermint_config_path)
+    return config
 
 
 def stringify_decimals(obj):
