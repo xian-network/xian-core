@@ -56,7 +56,7 @@ def distribute_rewards(stamp_rewards_amount, stamp_rewards_contract, reward_mana
         rewards = []
 
         for m in driver.get("masternodes.S:members"):
-            m_balance = driver.get(f"currency.balances:{m}")
+            m_balance = driver.get(f"currency.balances:{m}", 0)
             m_balance_after = round((m_balance + master_reward), DUST_EXPONENT)
             rewards.append(
                 driver.set(f"currency.balances:{m}", m_balance_after)

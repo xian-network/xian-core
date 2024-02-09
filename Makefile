@@ -91,3 +91,7 @@ make pull-and-install:
 	cd ./contracting && git pull && cd ..
 	git pull
 	make install-abci
+
+make du:
+	make tn-down
+	make tn-up
