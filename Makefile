@@ -64,7 +64,7 @@ tn-up:
 	pm2 logs --lines 1000
 
 tn-down:
-	pm2 delete all
+	pm2 delete tendermint xian_abci
 
 tn-r:
 	make down
