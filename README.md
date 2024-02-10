@@ -57,12 +57,12 @@ npm install pm2 -g
 
 Then start tendermint node and xian_acbi with:
 ```
-make up-pm2
+make tn-up
 ```
 
 And stop tendermint node and xian_acbi with:
 ```
-make down-pm2
+make tn-down
 ```
 
 ### Docker
