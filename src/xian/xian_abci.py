@@ -205,7 +205,7 @@ class Xian(BaseApplication):
 
             # Attach metadata to the transaction
             tx["b_meta"] = self.current_block_meta
-            result = self.lamden.tx_processor.process_tx(tx)
+            result = self.lamden.tx_processor.process_tx(tx, enabled_fees=self.enable_tx_fee)
 
             if self.enable_tx_fee:
                 self.current_block_rewards[tx['b_meta']['hash']] = {"amount": result["stamp_rewards_amount"], "contract": result["stamp_rewards_contract"]}

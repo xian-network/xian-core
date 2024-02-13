@@ -58,40 +58,43 @@ wipe:
 	rm -rf ~/.tendermint/xian
 	./tendermint unsafe-reset-all
 
-tn-up:
+up:
 	cd ./src/xian && CONFIG_PATH=config/config-testnet.toml pm2 start xian_abci.py
 	pm2 start "./tendermint node" --name tendermint
 	pm2 logs --lines 1000
 
-tn-down:
-	pm2 delete all
+down:
+	pm2 delete tendermint xian_abci
 
-tn-r:
+restart:
 	make down
 	make up
 
-tm-init:
+init:
 	./tendermint init
 
-tm-node-id:
+node-id:
 	./tendermint show-node-id
 
 dwu:
-	make tn-down
+	make down
 	make wipe
-	make tn-up
+	make up
 
-install-abci:
+pull:
+	cd ./lamden && git pull && cd ..
+	cd ./contracting && git pull && cd ..
+	git pull
+
+install:
 	pip install -e ./lamden 
 	pip install -e ./contracting
 	pip install -e .
 
-make pull-and-install:
-	cd ./lamden && git pull && cd ..
-	cd ./contracting && git pull && cd ..
-	git pull
-	make install-abci
-
 make du:
-	make tn-down
-	make tn-up
+	make down
+	make up
+
+pull-and-install:
+	make pull
+	make install
