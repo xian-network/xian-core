@@ -318,7 +318,7 @@ class Xian(BaseApplication):
                     type_of_data = "decimal"
                 elif isinstance(result, dict) or isinstance(result, list):
                     v = encode_str(json.dumps(result))
-                    type_of_data = "json"
+                    type_of_data = "str"
                 else:
                     v = encode_str(str(result))
                     type_of_data = "str"
