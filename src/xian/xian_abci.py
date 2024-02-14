@@ -217,7 +217,7 @@ class Xian(BaseApplication):
             parsed_tx_result = json.dumps(stringify_decimals(result["tx_result"]))
             print(parsed_tx_result)
             return ResponseDeliverTx(
-                code=OkCode,
+                code=result["tx_result"]["status"],
                 data=encode_str(parsed_tx_result),
                 gas_used=result["stamp_rewards_amount"],
             )
