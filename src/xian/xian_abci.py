@@ -94,6 +94,9 @@ class Xian(BaseApplication):
         
         if self.genesis.get("chain_id") != self.chain_id:
             raise ValueError("chain_id in config.toml does not match the chain_id in the tendermint genesis.json")
+        
+        if self.genesis.get("abci_genesis") is None:
+            raise ValueError("abci_genesis is not set in the tendermint genesis.json. Overwrite the genesis.json with one provided in the xian repo/genesis folder")
 
         # current_block_meta :
         # schema :
