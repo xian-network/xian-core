@@ -88,7 +88,7 @@ pull:
 	git pull
 
 install:
-        pip install -e ./contracting
+	pip install -e ./contracting
 	pip install -e ./lamden
 	pip install -e .
 
