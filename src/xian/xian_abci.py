@@ -215,7 +215,7 @@ class Xian(BaseApplication):
             tx_hash = result["tx_result"]["hash"]
             self.fingerprint_hashes.append(tx_hash)
             parsed_tx_result = json.dumps(stringify_decimals(result["tx_result"]))
-            print(parsed_tx_result)
+            logger.debug(f"parsed tx result : {parsed_tx_result}")
             return ResponseDeliverTx(
                 code=result["tx_result"]["status"],
                 data=encode_str(parsed_tx_result),
@@ -311,10 +311,10 @@ class Xian(BaseApplication):
                     v = encode_str(result)
                     type_of_data = "str"
                 elif isinstance(result, int):
-                    v = encode_int(result)
+                    v = encode_str(str(result))
                     type_of_data = "int"
                 elif isinstance(result, float) or isinstance(result, ContractingDecimal):
-                    v = encode_number(result)
+                    v = encode_str(str(result))
                     type_of_data = "decimal"
                 elif isinstance(result, dict) or isinstance(result, list):
                     v = encode_str(json.dumps(result))
