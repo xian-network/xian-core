@@ -60,7 +60,7 @@ wipe:
 
 up:
 	cd ./src/xian && CONFIG_PATH=config/config-testnet.toml pm2 start xian_abci.py
-	pm2 start "./tendermint node" --name tendermint
+	pm2 start "./tendermint node --rpc.laddr tcp://0.0.0.0:26657" --name tendermint
 	pm2 logs --lines 1000
 
 down:
@@ -79,6 +79,7 @@ node-id:
 dwu:
 	make down
 	make wipe
+	make init
 	make up
 
 pull:
@@ -87,8 +88,8 @@ pull:
 	git pull
 
 install:
-	pip install -e ./lamden 
-	pip install -e ./contracting
+        pip install -e ./contracting
+	pip install -e ./lamden
 	pip install -e .
 
 pull-and-install:
