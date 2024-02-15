@@ -217,7 +217,7 @@ class Xian(BaseApplication):
             parsed_tx_result = json.dumps(stringify_decimals(result["tx_result"]))
             print(parsed_tx_result)
             return ResponseDeliverTx(
-                code=OkCode,
+                code=result["tx_result"]["status"],
                 data=encode_str(parsed_tx_result),
                 gas_used=result["stamp_rewards_amount"],
             )
@@ -286,6 +286,8 @@ class Xian(BaseApplication):
         """
 
         result = None
+        type_of_data = "None"
+        key = ""
 
         try:
             request_path = req.path
@@ -294,6 +296,7 @@ class Xian(BaseApplication):
             # http://89.163.130.217:26657/abci_query?path="/get/currency.balances:c93dee52d7dc6cc43af44007c3b1dae5b730ccf18a9e6fb43521f8e4064561e6"
             if path_parts and path_parts[0] == "get":
                 result = get_value_of_key(path_parts[1], self.driver)
+                key = path_parts[1]
 
             # http://89.163.130.217:26657/abci_query?path="/health"
             if path_parts[0] == "health":
@@ -306,23 +309,29 @@ class Xian(BaseApplication):
             if result:
                 if isinstance(result, str):
                     v = encode_str(result)
+                    type_of_data = "str"
                 elif isinstance(result, int):
                     v = encode_int(result)
+                    type_of_data = "int"
                 elif isinstance(result, float) or isinstance(result, ContractingDecimal):
                     v = encode_number(result)
+                    type_of_data = "decimal"
                 elif isinstance(result, dict) or isinstance(result, list):
                     v = encode_str(json.dumps(result))
+                    type_of_data = "str"
                 else:
                     v = encode_str(str(result))
+                    type_of_data = "str"
             else:
                 # If no result, return a byte string representing None
                 v = b"\x00"
+                type_of_data = "None"
 
         except Exception as e:
             logger.error(f"QUERY ERROR: {e}")
             return ResponseQuery(code=ErrorCode, log=f"QUERY ERROR")
 
-        return ResponseQuery(code=OkCode, value=v)
+        return ResponseQuery(code=OkCode, value=v, info=type_of_data, key=encode_str(key))
 
 
 def main():
