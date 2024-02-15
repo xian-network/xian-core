@@ -97,3 +97,9 @@ def distribute_static_rewards(driver, master_reward=None, foundation_reward=None
         driver.set(f"currency.balances:{foundation_wallet}", foundation_balance_after)
     )
     return rewards
+
+def get_keys(driver, key):
+    return driver.keys(key)
+
+def get_contract(driver, contract):
+    return driver.get_contract(contract)

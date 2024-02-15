@@ -39,6 +39,8 @@ from xian.driver_api import (
     get_value_of_key,
     distribute_rewards,
     distribute_static_rewards,
+    get_keys,
+    get_contract,
 )
 from xian.utils import (
     encode_number,
@@ -85,6 +87,7 @@ class Xian(BaseApplication):
         self.current_block_meta: dict = None
         self.fingerprint_hashes = []
         self.chain_id = config.get("chain_id", None)
+        self.block_service_mode = config.get("block_service_mode", False)
 
         if self.chain_id is None:
             raise ValueError("chain_id is not set in the tendermint config")
@@ -127,6 +130,7 @@ class Xian(BaseApplication):
         logger.debug(f"LAST_BLOCK_HEIGHT = {r.last_block_height}")
         logger.debug(f"LAST_BLOCK_HASH = {r.last_block_app_hash}")
         logger.debug(f"CHAIN_ID = {self.chain_id}")
+        logger.debug(f"Blockservice Mode = {self.block_service_mode}")
         logger.debug(f"BOOTED")
         return r
 
@@ -209,7 +213,6 @@ class Xian(BaseApplication):
 
             if self.enable_tx_fee:
                 self.current_block_rewards[tx['b_meta']['hash']] = {"amount": result["stamp_rewards_amount"], "contract": result["stamp_rewards_contract"]}
-
 
             self.lamden.set_nonce(tx)
             tx_hash = result["tx_result"]["hash"]
@@ -297,6 +300,17 @@ class Xian(BaseApplication):
             if path_parts and path_parts[0] == "get":
                 result = get_value_of_key(path_parts[1], self.driver)
                 key = path_parts[1]
+
+            if self.block_service_mode:
+                # http://89.163.130.217:26657/abci_query?path="/keys/currency.balances" BLOCK SERVICE MODE ONLY
+                if path_parts[0] == "keys":
+                    result = get_keys(self.driver, path_parts[1])
+                    type_of_data = "str"
+
+                # http://89.163.130.217:26657/abci_query?path="/contract/currency" BLOCK SERVICE MODE ONLY
+                if path_parts[0] == "contract":
+                    result = get_contract(self.driver, path_parts[1])
+                    type_of_data = "str"
 
             # http://89.163.130.217:26657/abci_query?path="/health"
             if path_parts[0] == "health":
