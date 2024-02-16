@@ -8,6 +8,8 @@ import logging
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 import toml
 
+from contracting.stdlib.bridge.time import Datetime
+
 # Z85CHARS is the base 85 symbol table
 Z85CHARS = b"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#"
 # Z85MAP maps integers in [0,84] to the appropriate character in Z85CHARS
@@ -147,17 +149,24 @@ def load_tendermint_config():
 
 def stringify_decimals(obj):
     target_class = ContractingDecimal
-    if isinstance(obj, target_class):
-        return str(obj)
-    elif isinstance(obj, dict):
-        return {key: stringify_decimals(val) for key, val in obj.items()}
-    elif isinstance(obj, list):
-        return [stringify_decimals(elem) for elem in obj]
-    else:
-        return obj
-    with open(tendermint_config_path, "r") as f:
-        config = toml.load(tendermint_config_path)
-    return config
+    try:
+        if isinstance(obj, target_class):
+            return str(obj)
+        elif isinstance(obj, dict):
+            return {key: stringify_decimals(val) for key, val in obj.items()}
+        elif isinstance(obj, list):
+            return [stringify_decimals(elem) for elem in obj]
+        elif isinstance(obj, Datetime):
+            return str(obj)
+        elif isinstance(obj, bytes):
+            try:
+                return obj.decode("utf-8")
+            except UnicodeDecodeError:
+                return str(obj)
+        else:
+            return obj
+    except Exception as e:
+        return ""
     
 
 def get_genesis_json():
