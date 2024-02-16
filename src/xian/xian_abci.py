@@ -63,6 +63,7 @@ from contracting.db.driver import (
     ContractDriver,
 )
 from contracting.stdlib.bridge.decimal import ContractingDecimal
+from contracting.compilation import parser
 from lamden.crypto.canonical import hash_list
 from lamden.nodes.base import Lamden
 from pathlib import Path
@@ -221,7 +222,7 @@ class Xian(BaseApplication):
             tx_hash = result["tx_result"]["hash"]
             self.fingerprint_hashes.append(tx_hash)
             parsed_tx_result = json.dumps(stringify_decimals(result["tx_result"]))
-            print(parsed_tx_result)
+            logger.debug(f"parsed tx result : {parsed_tx_result}")
             return ResponseDeliverTx(
                 code=result["tx_result"]["status"],
                 data=encode_str(parsed_tx_result),
@@ -323,15 +324,47 @@ class Xian(BaseApplication):
             if path_parts[0] == "get_next_nonce":
                 result = self.nonce_storage.get_next_nonce(sender=path_parts[1])
 
+            # http://89.163.130.217:26657/abci_query?path="/contract/con_some_contract"
+            if path_parts[0] == "contract":
+                self.client.raw_driver.clear_pending_state()
+                result = self.client.raw_driver.get_contract(path_parts[1])
+
+            # http://89.163.130.217:26657/abci_query?path="/contract_methods/con_some_contract"
+            if path_parts[0] == "contract_methods":
+                self.client.raw_driver.clear_pending_state()
+                contract_code = self.client.raw_driver.get_contract(path_parts[1])
+                funcs = parser.methods_for_contract(contract_code)
+                result = {"methods": funcs}
+
+            # http://89.163.130.217:26657/abci_query?path="/contract_methods/con_some_contract"
+            if path_parts[0] == "contract_methods":
+                self.client.raw_driver.clear_pending_state()
+                contract_code = self.client.raw_driver.get_contract(path_parts[1])
+                if contract_code is not None:
+                    funcs = parser.methods_for_contract(contract_code)
+                    result = {"methods": funcs}
+
+            # http://89.163.130.217:26657/abci_query?path="/contract_vars/con_some_contract"
+            if path_parts[0] == "contract_vars":
+                self.client.raw_driver.clear_pending_state()
+
+                contract_code = self.client.raw_driver.get_contract(path_parts[1])
+                if contract_code is not None:
+                    result = parser.variables_for_contract(contract_code)
+
+            # http://89.163.130.217:26657/abci_query?path="/ping"
+            if path_parts[0] == "ping":
+                result = {'status': 'online'}
+
             if result:
                 if isinstance(result, str):
                     v = encode_str(result)
                     type_of_data = "str"
                 elif isinstance(result, int):
-                    v = encode_int(result)
+                    v = encode_str(str(result))
                     type_of_data = "int"
                 elif isinstance(result, float) or isinstance(result, ContractingDecimal):
-                    v = encode_number(result)
+                    v = encode_str(str(result))
                     type_of_data = "decimal"
                 elif isinstance(result, dict) or isinstance(result, list):
                     v = encode_str(json.dumps(result))
