@@ -92,10 +92,6 @@ install:
 	pip install -e ./lamden
 	pip install -e .
 
-make du:
-	make down
-	make up
-
 pull-and-install:
 	make pull
 	make install
