@@ -406,7 +406,7 @@ skip_timeout_commit = false
 
 # EmptyBlocks mode and possible interval between empty blocks
 create_empty_blocks = false
-create_empty_blocks_interval = "60s"
+create_empty_blocks_interval = "30s"
 
 # Reactor sleep duration parameters
 peer_gossip_sleep_duration = "100ms"
