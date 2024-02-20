@@ -29,7 +29,7 @@ Set up the environment on Ubuntu 22.04 with the following steps:
     ```
     python3.11 -m venv xian_venv
     source xian_venv/bin/activate
-    pip install -e contracting/ -e
+    pip install -e contracting/ -e .
     ```
 
 5. Download, unpack, and initialize Tendermint:
