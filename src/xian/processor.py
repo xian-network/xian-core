@@ -9,18 +9,12 @@ import hashlib
 from datetime import datetime
 
 class TxProcessor(ProcessingQueue):
-    def __init__(self, client, driver, metering=False, testing=False, debug=False):
+    def __init__(self, client, driver, metering=False, testing=False):
         super().__init__()
 
         self.client = client
         self.driver = driver
-
         self.executor = Executor(driver=self.driver, metering=metering)
-
-        self.debug_writes_log = []
-
-        self.debug = debug
-        self.append_history = []
 
 
     def process_tx(self, tx, enabled_fees=False):
@@ -168,19 +162,6 @@ class TxProcessor(ProcessingQueue):
             print(err)
 
         return writes
-
-    def distribute_rewards(self, total_stamps_to_split, contract_name: str) -> dict:
-
-        master_reward, foundation_reward, developer_mapping = \
-            self.reward_manager.calculate_tx_output_rewards(
-                total_stamps_to_split=total_stamps_to_split,
-                contract=contract_name,
-                client=self.client
-            )
-
-        return self.reward_manager.distribute_rewards(
-            master_reward, foundation_reward, developer_mapping, self.client
-        )
 
     def get_environment(self, tx):
         # print(tx)
