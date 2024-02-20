@@ -8,6 +8,8 @@ import logging
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 import toml
 import nacl
+import nacl.encoding
+import nacl.signing
 import hashlib
 
 from contracting.stdlib.bridge.time import Datetime

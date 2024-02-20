@@ -135,7 +135,7 @@ class Node:
 
         # Check the Nonce is greater than the current nonce we have
         try:
-            self.check_nonce(tx=transaction, nonces=self.nonces)
+            self.check_nonce(tx=transaction)
         except Exception as e:
             print(f"Check Nonce Failed: {e}")
             return False
