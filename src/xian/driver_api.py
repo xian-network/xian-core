@@ -2,6 +2,8 @@ from contracting.db.driver import (
     ContractDriver,
 )
 from contracting.stdlib.bridge.decimal import ContractingDecimal
+import decimal
+from collections import defaultdict
 
 LATEST_BLOCK_HASH_KEY = "__latest_block.hash"
 LATEST_BLOCK_HEIGHT_KEY = "__latest_block.height"
@@ -35,68 +37,6 @@ def set_latest_block_height(h, driver: ContractDriver):
 
 def get_value_of_key(item: str, driver: ContractDriver):
     return driver.get(item)
-
-def distribute_rewards(stamp_rewards_amount, stamp_rewards_contract, reward_manager, driver, client):
-    if stamp_rewards_amount > 0:
-        (
-            master_reward,
-            foundation_reward,
-            developer_mapping,
-        ) = reward_manager.calculate_tx_output_rewards(
-            total_stamps_to_split=stamp_rewards_amount,
-            contract=stamp_rewards_contract,
-            client=client,
-        )
-
-        stamp_cost = driver.get("stamp_cost.S:value")
-
-        master_reward /= stamp_cost
-        foundation_reward /= stamp_cost
-
-        rewards = []
-
-        for m in driver.get("masternodes.S:members"):
-            m_balance = driver.get(f"currency.balances:{m}") or 0
-            m_balance_after = round((m_balance + master_reward), DUST_EXPONENT)
-            rewards.append(
-                driver.set(f"currency.balances:{m}", m_balance_after)
-            )
-
-        foundation_wallet = driver.get("foundation.owner")
-        foundation_balance = driver.get(f"currency.balances:{foundation_wallet}") or 0
-        foundation_balance_after = round((foundation_balance + foundation_reward), DUST_EXPONENT)
-        rewards.append(
-            driver.set(f"currency.balances:{foundation_wallet}", foundation_balance_after)
-        )
-
-        # Send rewards to each developer calculated from the block
-        for recipient, amount in developer_mapping.items():
-            if recipient == "sys" or recipient == None: # That is genesis contracts or the submission contract
-                recipient = driver.get("foundation.owner")
-            dev_reward = round((amount / stamp_cost), DUST_EXPONENT)
-            recipient_balance = driver.get(f"currency.balances:{recipient}") or 0
-            recipient_balance_after = round((recipient_balance + dev_reward), DUST_EXPONENT)
-            rewards.append(
-                driver.set(f"currency.balances:{recipient}", recipient_balance_after)
-            )
-    return rewards
-
-def distribute_static_rewards(driver, master_reward=None, foundation_reward=None):
-    rewards = []
-    for m in driver.get("masternodes.S:members"):
-        m_balance = driver.get(f"currency.balances:{m}") or 0
-        m_balance_after = round((m_balance + master_reward), DUST_EXPONENT)
-        rewards.append(
-            driver.set(f"currency.balances:{m}", m_balance_after)
-        )
-
-    foundation_wallet = driver.get("foundation.owner")
-    foundation_balance = driver.get(f"currency.balances:{foundation_wallet}") or 0
-    foundation_balance_after = round((foundation_balance + foundation_reward), DUST_EXPONENT)
-    rewards.append(
-        driver.set(f"currency.balances:{foundation_wallet}", foundation_balance_after)
-    )
-    return rewards
 
 def get_keys(driver, key):
     return driver.keys(key)

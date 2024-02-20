@@ -7,8 +7,13 @@ import shutil
 import logging
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 import toml
+import nacl
+import nacl.encoding
+import nacl.signing
+import hashlib
 
 from contracting.stdlib.bridge.time import Datetime
+from xian.exceptions import TransactionSenderTooFewStamps
 
 # Z85CHARS is the base 85 symbol table
 Z85CHARS = b"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#"
@@ -60,6 +65,25 @@ def z85_decode(z85bytes):
             value += Z85MAP[z85bytes[i + j]] * offset
         values.append(value)
     return struct.pack(">%dI" % nvalues, *values)
+
+def verify(vk: str, msg: str, signature: str):
+    vk = bytes.fromhex(vk)
+    msg = msg.encode()
+    signature = bytes.fromhex(signature)
+
+    vk = nacl.signing.VerifyKey(vk)
+    try:
+        vk.verify(msg, signature)
+    except nacl.exceptions.BadSignatureError:
+        return False
+    return True
+
+def hash_list(obj: list) -> bytes:
+    h = hashlib.sha3_256()
+    str = "".join(obj)
+    encoded_tx = encode(str).encode()
+    h.update(encoded_tx)
+    return h.hexdigest().encode("utf-8")
 
 def encode_int(value):
     return struct.pack(">I", value)
@@ -175,3 +199,34 @@ def get_genesis_json():
     with open(path, "r") as f:
         genesis = json.load(f)
     return genesis
+
+def format_dictionary(d: dict) -> dict:
+    for k, v in d.items():
+        assert type(k) == str, 'Non-string key types not allowed.'
+        if type(v) == list:
+            for i in range(len(v)):
+                if isinstance(v[i], dict):
+                    v[i] = format_dictionary(v[i])
+        elif isinstance(v, dict):
+            d[k] = format_dictionary(v)
+    return {k: v for k, v in sorted(d.items())}
+
+def tx_hash_from_tx(tx):
+    h = hashlib.sha3_256()
+    tx_dict = format_dictionary(tx)
+    encoded_tx = encode(tx_dict).encode()
+    h.update(encoded_tx)
+    return h.hexdigest()
+
+def has_enough_stamps(
+    balance, stamps_per_tau, stamps_supplied, contract=None, function=None, amount=0
+):
+    if balance * stamps_per_tau < stamps_supplied:
+        raise TransactionSenderTooFewStamps
+
+    # Prevent people from sending their entire balances for free by checking if that is what they are doing.
+    if contract == "currency" and function == "transfer":
+
+        # If you have less than 2 transactions worth of tau after trying to send your amount, fail.
+        if ((balance - amount) * stamps_per_tau) / 6 < 2:
+            raise TransactionSenderTooFewStamps

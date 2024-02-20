@@ -37,11 +37,12 @@ from xian.driver_api import (
     get_latest_block_height,
     set_latest_block_height,
     get_value_of_key,
-    distribute_rewards,
-    distribute_static_rewards,
     get_keys,
     get_contract,
 )
+from xian.rewards import (
+    distribute_rewards,
+    distribute_static_rewards,)
 from xian.utils import (
     encode_number,
     encode_int,
@@ -52,21 +53,19 @@ from xian.utils import (
     convert_binary_to_hex,
     load_tendermint_config,
     stringify_decimals,
-    get_genesis_json
+    get_genesis_json,
+    verify,
+    hash_list
 )
 
-from lamden.crypto.wallet import verify
-from lamden.storage import NonceStorage
-from lamden.rewards import RewardManager
+from xian.storage import NonceStorage
 from contracting.client import ContractingClient
 from contracting.db.driver import (
     ContractDriver,
 )
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 from contracting.compilation import parser
-from lamden.crypto.canonical import hash_list
-from lamden.nodes.base import Lamden
-from pathlib import Path
+from xian.node_base import Node
 
 # Logging
 logging.basicConfig(
@@ -82,9 +81,8 @@ class Xian(BaseApplication):
 
         self.client = ContractingClient()
         self.driver = ContractDriver()
-        self.reward_manager = RewardManager()
         self.nonce_storage = NonceStorage()
-        self.lamden = Lamden(client=self.client, driver=self.driver)
+        self.xian = Node(self.client, self.driver, self.nonce_storage)
         self.current_block_meta: dict = None
         self.fingerprint_hashes = []
         self.chain_id = config.get("chain_id", None)
@@ -142,7 +140,7 @@ class Xian(BaseApplication):
         """Called the first time the application starts; when block_height is 0"""
 
         abci_genesis_state = self.genesis["abci_genesis"]
-        asyncio.ensure_future(self.lamden.store_genesis_block(abci_genesis_state))
+        asyncio.ensure_future(self.xian.store_genesis_block(abci_genesis_state))
 
         return ResponseInitChain()
 
@@ -155,7 +153,7 @@ class Xian(BaseApplication):
         """
         try:
             tx = decode_transaction_bytes(raw_tx)
-            if self.lamden.validate_transaction(tx):
+            if self.xian.validate_transaction(tx):
                 return ResponseCheckTx(code=OkCode)
             else:
                 return ResponseCheckTx(code=ErrorCode)
@@ -213,12 +211,12 @@ class Xian(BaseApplication):
 
             # Attach metadata to the transaction
             tx["b_meta"] = self.current_block_meta
-            result = self.lamden.tx_processor.process_tx(tx, enabled_fees=self.enable_tx_fee)
+            result = self.xian.tx_processor.process_tx(tx, enabled_fees=self.enable_tx_fee)
 
             if self.enable_tx_fee:
                 self.current_block_rewards[tx['b_meta']['hash']] = {"amount": result["stamp_rewards_amount"], "contract": result["stamp_rewards_contract"]}
 
-            self.lamden.set_nonce(tx)
+            self.xian.set_nonce(tx)
             tx_hash = result["tx_result"]["hash"]
             self.fingerprint_hashes.append(tx_hash)
             parsed_tx_result = json.dumps(stringify_decimals(result["tx_result"]))
@@ -264,7 +262,6 @@ class Xian(BaseApplication):
                 distribute_rewards(
                     stamp_rewards_amount=reward["amount"],
                     stamp_rewards_contract=reward["contract"],
-                    reward_manager=self.reward_manager,
                     driver=self.driver,
                     client=self.client,
                 )
