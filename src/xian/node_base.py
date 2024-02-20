@@ -7,6 +7,12 @@ from xian.exceptions import (
     TransactionFormattingError,
 )
 from xian.formatting import TRANSACTION_PAYLOAD_RULES, TRANSACTION_RULES, contract_name_is_valid
+from contracting.db.encoder import convert_dict
+import gc
+import asyncio
+import json
+import marshal
+import binascii
 
 
 class Node:
@@ -210,6 +216,82 @@ class Node:
             print(f"Checking if Contract Name is valid failed: {e}")
             return False
         return True
+    
+    def recompile_contract_from_source(self, s: dict):
+        code = compile(s["value"], '', "exec")
+        serialized_code = marshal.dumps(code)
+        hexadecimal_string = binascii.hexlify(serialized_code).decode()
+        return hexadecimal_string
+
+
+    def apply_state_changes_from_block(self, block):
+        state_changes = block.get('genesis', [])
+        rewards = block.get('rewards', [])
+
+        hlc_timestamp = block.get('hlc_timestamp')
+
+        for i, s in enumerate(state_changes):
+            parts = s["key"].split(".")
+
+            if parts[1] == "__code__":
+                contract_key = f"{parts[0]}.__compiled__"
+                print(f"processing {contract_key}")
+                # the encoded contract data from genesis was invalid, so we recompile it.
+                state_changes[i+1]["value"]["__bytes__"] = self.recompile_contract_from_source(s)
+            if type(s['value']) is dict:
+                s['value'] = convert_dict(s['value'])
+
+            self.driver.set(s['key'], s['value'])
+
+        for s in rewards:
+            if type(s['value']) is dict:
+                s['value'] = convert_dict(s['value'])
+
+            self.driver.set(s['key'], s['value'])
+
+        self.soft_apply_current_state(hlc_timestamp=hlc_timestamp)
+
+        self.driver.hard_apply(hlc=hlc_timestamp)
+
+
+    async def hard_apply_block(self, processing_results: dict = None, block: dict = None, force=False):
+        if block is not None:
+            block_num = block.get("number")
+            hlc_timestamp = block.get('hlc_timestamp')
+
+            self.apply_state_changes_from_block(block)
+            self.hard_apply_store_block(block=block)
+            self.hard_apply_block_finish(block=block)
+
+            return block
+
+        else:
+            if processing_results is None:
+                raise AttributeError('Processing Results are NONE')
+
+            hlc_timestamp = processing_results.get('hlc_timestamp')
+            processor = processing_results['tx_result']['transaction']['payload']['processor']
+
+            if not self.is_known_masternode(processor):
+                self.log.error(f'Processor {processor[:8]} is not a known masternode. Dropping {hlc_timestamp}')
+                return
+
+            return block
+
+
+    def hard_apply_store_block(self, block: dict):
+        self.log.info(f'[HARD APPLY] {block.get("number")}')
+        encoded_block = encode(block)
+        encoded_block = json.loads(encoded_block)
+
+
+    def hard_apply_block_finish(self, block: dict):
+        gc.collect()
+
+        # # check to see if we need to process any missing blocks.
+        asyncio.ensure_future(self.stop())
+        # pass
+        
 
     async def store_genesis_block(self, genesis_block: dict) -> bool:
         self.log.info('Processing Genesis Block.')
