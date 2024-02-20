@@ -1,4 +1,3 @@
-from xian.queue_base import ProcessingQueue
 from xian.utils import format_dictionary, tx_hash_from_tx
 from contracting.execution.executor import Executor
 from contracting.db.encoder import convert_dict, safe_repr
@@ -8,7 +7,7 @@ import math
 import hashlib
 from datetime import datetime
 
-class TxProcessor(ProcessingQueue):
+class TxProcessor():
     def __init__(self, client, driver, metering=False, testing=False):
         super().__init__()
 
