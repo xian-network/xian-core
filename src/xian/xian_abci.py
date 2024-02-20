@@ -37,11 +37,12 @@ from xian.driver_api import (
     get_latest_block_height,
     set_latest_block_height,
     get_value_of_key,
-    distribute_rewards,
-    distribute_static_rewards,
     get_keys,
     get_contract,
 )
+from xian.rewards import (
+    distribute_rewards,
+    distribute_static_rewards,)
 from xian.utils import (
     encode_number,
     encode_int,
