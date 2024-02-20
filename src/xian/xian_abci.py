@@ -53,7 +53,8 @@ from xian.utils import (
     load_tendermint_config,
     stringify_decimals,
     get_genesis_json,
-    verify
+    verify,
+    hash_list
 )
 
 from lamden.storage import NonceStorage
@@ -63,7 +64,6 @@ from contracting.db.driver import (
 )
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 from contracting.compilation import parser
-from lamden.crypto.canonical import hash_list
 from lamden.nodes.base import Lamden
 from pathlib import Path
 

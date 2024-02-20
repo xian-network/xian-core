@@ -8,6 +8,7 @@ import logging
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 import toml
 import nacl
+import hashlib
 
 from contracting.stdlib.bridge.time import Datetime
 
@@ -73,6 +74,13 @@ def verify(vk: str, msg: str, signature: str):
     except nacl.exceptions.BadSignatureError:
         return False
     return True
+
+def hash_list(obj: list) -> bytes:
+    h = hashlib.sha3_256()
+    str = "".join(obj)
+    encoded_tx = encode(str).encode()
+    h.update(encoded_tx)
+    return h.hexdigest().encode("utf-8")
 
 def encode_int(value):
     return struct.pack(">I", value)
