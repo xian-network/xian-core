@@ -57,7 +57,7 @@ from xian.utils import (
     hash_list
 )
 
-from lamden.storage import NonceStorage
+from xian.storage import NonceStorage
 from contracting.client import ContractingClient
 from contracting.db.driver import (
     ContractDriver,
