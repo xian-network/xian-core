@@ -52,10 +52,10 @@ from xian.utils import (
     convert_binary_to_hex,
     load_tendermint_config,
     stringify_decimals,
-    get_genesis_json
+    get_genesis_json,
+    verify
 )
 
-from lamden.crypto.wallet import verify
 from lamden.storage import NonceStorage
 from contracting.client import ContractingClient
 from contracting.db.driver import (

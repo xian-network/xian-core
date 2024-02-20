@@ -7,6 +7,7 @@ import shutil
 import logging
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 import toml
+import nacl
 
 from contracting.stdlib.bridge.time import Datetime
 
@@ -60,6 +61,18 @@ def z85_decode(z85bytes):
             value += Z85MAP[z85bytes[i + j]] * offset
         values.append(value)
     return struct.pack(">%dI" % nvalues, *values)
+
+def verify(vk: str, msg: str, signature: str):
+    vk = bytes.fromhex(vk)
+    msg = msg.encode()
+    signature = bytes.fromhex(signature)
+
+    vk = nacl.signing.VerifyKey(vk)
+    try:
+        vk.verify(msg, signature)
+    except nacl.exceptions.BadSignatureError:
+        return False
+    return True
 
 def encode_int(value):
     return struct.pack(">I", value)
