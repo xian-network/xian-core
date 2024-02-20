@@ -64,9 +64,7 @@ from contracting.db.driver import (
 )
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 from contracting.compilation import parser
-from lamden.nodes.base import Lamden
-from xian.node_base import Xian
-from pathlib import Path
+from xian.node_base import Node
 
 # Logging
 logging.basicConfig(
@@ -83,7 +81,7 @@ class Xian(BaseApplication):
         self.client = ContractingClient()
         self.driver = ContractDriver()
         self.nonce_storage = NonceStorage()
-        self.xian = Xian(driver=self.driver, nonce_storage=self.nonce_storage)
+        self.xian = Node(self.client, self.driver, self.nonce_storage)
         self.current_block_meta: dict = None
         self.fingerprint_hashes = []
         self.chain_id = config.get("chain_id", None)

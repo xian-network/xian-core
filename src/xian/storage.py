@@ -1,9 +1,10 @@
+import pathlib
+from contracting import config
+from contracting.db.driver import ContractDriver, FSDriver
+
 NONCE_FILENAME = '__n'
 PENDING_NONCE_FILENAME = '__pn'
 STORAGE_HOME = pathlib.Path().home().joinpath('.tendermint/xian')
-from contracting import config
-from contracting.db.driver import ContractDriver, FSDriver
-import pathlib
 
 class NonceStorage:
     def __init__(self, root=None):

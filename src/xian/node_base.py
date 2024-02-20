@@ -1,4 +1,3 @@
-import re
 from contracting.db.encoder import encode
 from xian.utils import verify, has_enough_stamps
 from xian.processor import TxProcessor
@@ -10,11 +9,12 @@ from xian.exceptions import (
 from xian.formatting import TRANSACTION_PAYLOAD_RULES, TRANSACTION_RULES, contract_name_is_valid
 
 
-class Xian:
-    def __init__(self, driver, nonce_storage):
+class Node:
+    def __init__(self, client, driver, nonce_storage):
 
         self.driver = driver
         self.nonces = nonce_storage
+        self.client = client
         self.tx_processor = TxProcessor(client = self.client, driver = self.driver)
         
 
