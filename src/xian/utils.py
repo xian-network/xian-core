@@ -11,6 +11,7 @@ import nacl
 import hashlib
 
 from contracting.stdlib.bridge.time import Datetime
+from xian.exceptions import TransactionSenderTooFewStamps
 
 # Z85CHARS is the base 85 symbol table
 Z85CHARS = b"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#"
@@ -196,3 +197,34 @@ def get_genesis_json():
     with open(path, "r") as f:
         genesis = json.load(f)
     return genesis
+
+def format_dictionary(d: dict) -> dict:
+    for k, v in d.items():
+        assert type(k) == str, 'Non-string key types not allowed.'
+        if type(v) == list:
+            for i in range(len(v)):
+                if isinstance(v[i], dict):
+                    v[i] = format_dictionary(v[i])
+        elif isinstance(v, dict):
+            d[k] = format_dictionary(v)
+    return {k: v for k, v in sorted(d.items())}
+
+def tx_hash_from_tx(tx):
+    h = hashlib.sha3_256()
+    tx_dict = format_dictionary(tx)
+    encoded_tx = encode(tx_dict).encode()
+    h.update(encoded_tx)
+    return h.hexdigest()
+
+def has_enough_stamps(
+    balance, stamps_per_tau, stamps_supplied, contract=None, function=None, amount=0
+):
+    if balance * stamps_per_tau < stamps_supplied:
+        raise TransactionSenderTooFewStamps
+
+    # Prevent people from sending their entire balances for free by checking if that is what they are doing.
+    if contract == "currency" and function == "transfer":
+
+        # If you have less than 2 transactions worth of tau after trying to send your amount, fail.
+        if ((balance - amount) * stamps_per_tau) / 6 < 2:
+            raise TransactionSenderTooFewStamps

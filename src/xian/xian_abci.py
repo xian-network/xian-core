@@ -65,6 +65,7 @@ from contracting.db.driver import (
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 from contracting.compilation import parser
 from lamden.nodes.base import Lamden
+from xian.node_base import Xian
 from pathlib import Path
 
 # Logging
@@ -82,7 +83,7 @@ class Xian(BaseApplication):
         self.client = ContractingClient()
         self.driver = ContractDriver()
         self.nonce_storage = NonceStorage()
-        self.lamden = Lamden(client=self.client, driver=self.driver)
+        self.xian = Xian(driver=self.driver, nonce_storage=self.nonce_storage)
         self.current_block_meta: dict = None
         self.fingerprint_hashes = []
         self.chain_id = config.get("chain_id", None)
@@ -140,7 +141,7 @@ class Xian(BaseApplication):
         """Called the first time the application starts; when block_height is 0"""
 
         abci_genesis_state = self.genesis["abci_genesis"]
-        asyncio.ensure_future(self.lamden.store_genesis_block(abci_genesis_state))
+        asyncio.ensure_future(self.xian.store_genesis_block(abci_genesis_state))
 
         return ResponseInitChain()
 
@@ -153,7 +154,7 @@ class Xian(BaseApplication):
         """
         try:
             tx = decode_transaction_bytes(raw_tx)
-            if self.lamden.validate_transaction(tx):
+            if self.xian.validate_transaction(tx):
                 return ResponseCheckTx(code=OkCode)
             else:
                 return ResponseCheckTx(code=ErrorCode)
@@ -211,12 +212,12 @@ class Xian(BaseApplication):
 
             # Attach metadata to the transaction
             tx["b_meta"] = self.current_block_meta
-            result = self.lamden.tx_processor.process_tx(tx, enabled_fees=self.enable_tx_fee)
+            result = self.xian.tx_processor.process_tx(tx, enabled_fees=self.enable_tx_fee)
 
             if self.enable_tx_fee:
                 self.current_block_rewards[tx['b_meta']['hash']] = {"amount": result["stamp_rewards_amount"], "contract": result["stamp_rewards_contract"]}
 
-            self.lamden.set_nonce(tx)
+            self.xian.set_nonce(tx)
             tx_hash = result["tx_result"]["hash"]
             self.fingerprint_hashes.append(tx_hash)
             parsed_tx_result = json.dumps(stringify_decimals(result["tx_result"]))
