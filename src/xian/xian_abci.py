@@ -57,7 +57,6 @@ from xian.utils import (
 
 from lamden.crypto.wallet import verify
 from lamden.storage import NonceStorage
-from lamden.rewards import RewardManager
 from contracting.client import ContractingClient
 from contracting.db.driver import (
     ContractDriver,
@@ -82,7 +81,6 @@ class Xian(BaseApplication):
 
         self.client = ContractingClient()
         self.driver = ContractDriver()
-        self.reward_manager = RewardManager()
         self.nonce_storage = NonceStorage()
         self.lamden = Lamden(client=self.client, driver=self.driver)
         self.current_block_meta: dict = None
@@ -264,7 +262,6 @@ class Xian(BaseApplication):
                 distribute_rewards(
                     stamp_rewards_amount=reward["amount"],
                     stamp_rewards_contract=reward["contract"],
-                    reward_manager=self.reward_manager,
                     driver=self.driver,
                     client=self.client,
                 )

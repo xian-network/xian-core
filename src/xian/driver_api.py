@@ -2,6 +2,8 @@ from contracting.db.driver import (
     ContractDriver,
 )
 from contracting.stdlib.bridge.decimal import ContractingDecimal
+import decimal
+from collections import defaultdict
 
 LATEST_BLOCK_HASH_KEY = "__latest_block.hash"
 LATEST_BLOCK_HEIGHT_KEY = "__latest_block.height"
@@ -36,13 +38,79 @@ def set_latest_block_height(h, driver: ContractDriver):
 def get_value_of_key(item: str, driver: ContractDriver):
     return driver.get(item)
 
-def distribute_rewards(stamp_rewards_amount, stamp_rewards_contract, reward_manager, driver, client):
+def calculate_participant_reward(
+        participant_ratio, number_of_participants, total_stamps_to_split
+    ):
+        number_of_participants = (
+            number_of_participants if number_of_participants != 0 else 1
+        )
+        reward = (
+            decimal.Decimal(str(participant_ratio)) / number_of_participants
+        ) * decimal.Decimal(str(total_stamps_to_split))
+        rounded_reward = round(reward, DUST_EXPONENT)
+        return rounded_reward
+
+def find_developer_and_reward(
+        total_stamps_to_split, contract: str, developer_ratio, client
+    ):
+        # Find all transactions and the developer of the contract.
+        # Count all stamps used by people and multiply it by the developer ratio
+        send_map = defaultdict(lambda: 0)
+
+        recipient = client.get_var(contract=contract, variable="__developer__")
+
+        send_map[recipient] += total_stamps_to_split * developer_ratio
+        send_map[recipient] /= len(send_map)
+
+        return send_map
+
+def calculate_tx_output_rewards(
+        total_stamps_to_split, contract, client
+    ):
+        try:
+            (
+                master_ratio,
+                burn_ratio,
+                foundation_ratio,
+                developer_ratio,
+            ) = client.get_var(contract="rewards", variable="S", arguments=["value"])
+        except TypeError:
+            raise NotImplementedError(
+                "Driver could not get value for key rewards.S:value. Try setting up rewards."
+            )
+
+        master_reward = calculate_participant_reward(
+            participant_ratio=master_ratio,
+            number_of_participants=len(
+                client.get_var(
+                    contract="masternodes", variable="S", arguments=["members"]
+                )
+            ),
+            total_stamps_to_split=total_stamps_to_split,
+        )
+
+        foundation_reward = calculate_participant_reward(
+            participant_ratio=foundation_ratio,
+            number_of_participants=1,
+            total_stamps_to_split=total_stamps_to_split,
+        )
+
+        developer_mapping = find_developer_and_reward(
+            total_stamps_to_split=total_stamps_to_split,
+            contract=contract,
+            client=client,
+            developer_ratio=developer_ratio,
+        )
+
+        return master_reward, foundation_reward, developer_mapping
+
+def distribute_rewards(stamp_rewards_amount, stamp_rewards_contract, driver, client):
     if stamp_rewards_amount > 0:
         (
             master_reward,
             foundation_reward,
             developer_mapping,
-        ) = reward_manager.calculate_tx_output_rewards(
+        ) = calculate_tx_output_rewards(
             total_stamps_to_split=stamp_rewards_amount,
             contract=stamp_rewards_contract,
             client=client,
