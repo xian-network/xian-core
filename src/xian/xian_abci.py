@@ -306,12 +306,6 @@ class Xian(BaseApplication):
                 # http://89.163.130.217:26657/abci_query?path="/keys/currency.balances" BLOCK SERVICE MODE ONLY
                 if path_parts[0] == "keys":
                     result = get_keys(self.driver, path_parts[1])
-                    type_of_data = "str"
-
-                # http://89.163.130.217:26657/abci_query?path="/contract/currency" BLOCK SERVICE MODE ONLY
-                if path_parts[0] == "contract":
-                    result = get_contract(self.driver, path_parts[1])
-                    type_of_data = "str"
 
             # http://89.163.130.217:26657/abci_query?path="/health"
             if path_parts[0] == "health":
