@@ -13,7 +13,11 @@ import nacl.signing
 import hashlib
 
 from contracting.stdlib.bridge.time import Datetime
-from xian.exceptions import TransactionSenderTooFewStamps
+
+
+class TransactionException(Exception):
+    pass
+
 
 # Z85CHARS is the base 85 symbol table
 Z85CHARS = b"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#"
@@ -222,11 +226,11 @@ def has_enough_stamps(
     balance, stamps_per_tau, stamps_supplied, contract=None, function=None, amount=0
 ):
     if balance * stamps_per_tau < stamps_supplied:
-        raise TransactionSenderTooFewStamps
+        raise TransactionException('Transaction sender has too few stamps for this transaction')
 
     # Prevent people from sending their entire balances for free by checking if that is what they are doing.
     if contract == "currency" and function == "transfer":
 
         # If you have less than 2 transactions worth of tau after trying to send your amount, fail.
         if ((balance - amount) * stamps_per_tau) / 6 < 2:
-            raise TransactionSenderTooFewStamps
+            raise TransactionException('Transaction sender has too few stamps for this transaction')

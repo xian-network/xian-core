@@ -1,11 +1,6 @@
 from contracting.db.encoder import encode
-from xian.utils import verify, has_enough_stamps
+from xian.utils import verify, has_enough_stamps, TransactionException
 from xian.processor import TxProcessor
-from xian.exceptions import (
-    TransactionSignatureInvalid,
-    TransactionNonceInvalid,
-    TransactionFormattingError,
-)
 from xian.formatting import TRANSACTION_PAYLOAD_RULES, TRANSACTION_RULES, contract_name_is_valid
 from contracting.db.encoder import convert_dict
 import gc
@@ -90,16 +85,13 @@ class Node:
         
     def check_tx_formatting(self, tx: dict):
         if not self.check_tx_keys(tx):
-            print("Keys are not valid")
-            raise TransactionFormattingError
+            raise TransactionException('Transaction is not formatted properly - Keys are not valid')
         if not self.check_format(tx, TRANSACTION_RULES):
-            print("Format is not valid")
-            raise TransactionFormattingError
+            raise TransactionException('Transaction is not formatted properly - Format is not valid')
         if not verify(
             tx["payload"]["sender"], encode(tx["payload"]), tx["metadata"]["signature"]
         ):
-            print("Signature is not valid")
-            raise TransactionSignatureInvalid
+            raise TransactionException('Transaction is not signed by the sender')
 
         
     def check_nonce(self, tx: dict):
@@ -110,8 +102,7 @@ class Node:
         valid = current_nonce is None or tx_nonce > current_nonce
 
         if not valid:
-            print("Nonce is wrong")
-            raise TransactionNonceInvalid
+            raise TransactionException('Transaction nonce is invalid')
 
         return valid
         

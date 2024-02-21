@@ -1,7 +1,7 @@
 import re
-from xian.exceptions import (
-    TransactionContractNameInvalid
-)
+
+from xian.utils import TransactionException
+
     
 def vk_is_formatted(s: str):
     try:
@@ -67,7 +67,7 @@ def contract_name_is_valid(contract, function, name):
         and function == "submit_contract"
         and (len(name) > 255 or not contract_name_is_formatted(name))
     ):
-        raise TransactionContractNameInvalid
+        raise TransactionException('Transaction contract name is invalid')
 
 TRANSACTION_PAYLOAD_RULES = {
     'sender': vk_is_formatted,
