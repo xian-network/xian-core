@@ -249,8 +249,6 @@ class Node:
 
             self.driver.set(s['key'], s['value'])
 
-        self.soft_apply_current_state(hlc_timestamp=hlc_timestamp)
-
         self.driver.hard_apply(hlc=hlc_timestamp)
 
 
@@ -280,10 +278,11 @@ class Node:
 
 
     def hard_apply_store_block(self, block: dict):
-        self.log.info(f'[HARD APPLY] {block.get("number")}')
         encoded_block = encode(block)
         encoded_block = json.loads(encoded_block)
 
+    async def stop(self):
+        pass
 
     def hard_apply_block_finish(self, block: dict):
         gc.collect()
@@ -294,5 +293,4 @@ class Node:
         
 
     async def store_genesis_block(self, genesis_block: dict) -> bool:
-        self.log.info('Processing Genesis Block.')
         await self.hard_apply_block(block=genesis_block)
