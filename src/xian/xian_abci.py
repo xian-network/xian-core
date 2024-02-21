@@ -1,11 +1,3 @@
-"""
-To see the latest count:
-curl http://localhost:26657/abci_query
-
-The way the app state is structured, you can also see the current state value
-in the tendermint console output (see app_hash).
-"""
-
 import asyncio
 import json
 import time
@@ -38,14 +30,11 @@ from xian.driver_api import (
     set_latest_block_height,
     get_value_of_key,
     get_keys,
-    get_contract,
 )
 from xian.rewards import (
     distribute_rewards,
     distribute_static_rewards,)
 from xian.utils import (
-    encode_number,
-    encode_int,
     encode_str,
     decode_transaction_bytes,
     unpack_transaction,
