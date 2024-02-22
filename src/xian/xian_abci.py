@@ -75,7 +75,7 @@ class Xian(BaseApplication):
         self.current_block_meta: dict = None
         self.fingerprint_hashes = []
         self.chain_id = config.get("chain_id", None)
-        self.block_service_mode = config.get("block_service_mode", False)
+        self.block_service_mode = config.get("block_service_mode", True)
 
         if self.chain_id is None:
             raise ValueError("chain_id is not set in the tendermint config")
