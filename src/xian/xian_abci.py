@@ -1,11 +1,3 @@
-"""
-To see the latest count:
-curl http://localhost:26657/abci_query
-
-The way the app state is structured, you can also see the current state value
-in the tendermint console output (see app_hash).
-"""
-
 import asyncio
 import json
 import time
@@ -38,14 +30,11 @@ from xian.driver_api import (
     set_latest_block_height,
     get_value_of_key,
     get_keys,
-    get_contract,
 )
 from xian.rewards import (
     distribute_rewards,
     distribute_static_rewards,)
 from xian.utils import (
-    encode_number,
-    encode_int,
     encode_str,
     decode_transaction_bytes,
     unpack_transaction,
@@ -86,7 +75,7 @@ class Xian(BaseApplication):
         self.current_block_meta: dict = None
         self.fingerprint_hashes = []
         self.chain_id = config.get("chain_id", None)
-        self.block_service_mode = config.get("block_service_mode", False)
+        self.block_service_mode = config.get("block_service_mode", True)
 
         if self.chain_id is None:
             raise ValueError("chain_id is not set in the tendermint config")
@@ -223,7 +212,7 @@ class Xian(BaseApplication):
             )
         except Exception as err:
             logger.error(f"DELIVER TX ERROR: {err}")
-            ResponseDeliverTx(code=ErrorCode)
+            return ResponseDeliverTx(code=ErrorCode)
 
     def end_block(self, req: RequestEndBlock) -> ResponseEndBlock:
         """
@@ -296,16 +285,10 @@ class Xian(BaseApplication):
                 result = get_value_of_key(path_parts[1], self.driver)
                 key = path_parts[1]
 
+            # http://localhost:26657/abci_query?path="/keys/currency.balances" BLOCK SERVICE MODE ONLY
             if self.block_service_mode:
-                # http://localhost:26657/abci_query?path="/keys/currency.balances" BLOCK SERVICE MODE ONLY
                 if path_parts[0] == "keys":
                     result = get_keys(self.driver, path_parts[1])
-                    type_of_data = "str"
-
-                # http://localhost:26657/abci_query?path="/contract/currency" BLOCK SERVICE MODE ONLY
-                if path_parts[0] == "contract":
-                    result = get_contract(self.driver, path_parts[1])
-                    type_of_data = "str"
 
             # http://localhost:26657/abci_query?path="/health"
             if path_parts[0] == "health":
