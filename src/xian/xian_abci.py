@@ -108,7 +108,6 @@ class Xian(BaseApplication):
 
         self.current_block_rewards = {}
 
-
     def info(self, req) -> ResponseInfo:
         """
         Called every time the application starts
@@ -142,12 +141,10 @@ class Xian(BaseApplication):
         """
         try:
             tx = decode_transaction_bytes(raw_tx)
-            if self.xian.validate_transaction(tx):
-                return ResponseCheckTx(code=OkCode)
-            else:
-                return ResponseCheckTx(code=ErrorCode)
+            self.xian.validate_transaction(tx)
+            return ResponseCheckTx(code=OkCode)
         except Exception as e:
-            print(e)
+            logger.error(e)
             return ResponseCheckTx(code=ErrorCode)
 
     def begin_block(self, req: RequestBeginBlock) -> ResponseBeginBlock:
@@ -163,7 +160,6 @@ class Xian(BaseApplication):
         commit()
         """
 
-
         nanos = get_nanotime_from_block_time(req.header.time)
         hash = convert_binary_to_hex(req.hash)
         height = req.header.height
@@ -176,7 +172,6 @@ class Xian(BaseApplication):
 
         self.fingerprint_hashes.append(hash)
 
-
         return ResponseBeginBlock()
 
     def deliver_tx(self, tx_raw) -> ResponseDeliverTx:
@@ -187,7 +182,7 @@ class Xian(BaseApplication):
             tx = decode_transaction_bytes(tx_raw)
             sender, signature, payload = unpack_transaction(tx)
 
-            # Verify the contents of the txn before processing.
+            # Verify the contents of the txn before processing
             if verify(vk=sender, msg=payload, signature=signature):
                 payload = json.loads(payload)
                 if payload["chain_id"] != self.chain_id:
@@ -264,7 +259,6 @@ class Xian(BaseApplication):
         # unset current_block_meta & cleanup
         self.current_block_meta = None
         self.fingerprint_hashes = []
-
         self.current_block_rewards = {}
 
         gc.collect()
@@ -274,7 +268,7 @@ class Xian(BaseApplication):
     def query(self, req) -> ResponseQuery:
         """
         Query the application state
-        Request Ex. http://89.163.130.217:26657/abci_query?path=%22path%22
+        Request Ex. http://localhost:26657/abci_query?path="path"
         (Yes you need to quote the path)
         """
 
@@ -286,37 +280,37 @@ class Xian(BaseApplication):
             request_path = req.path
             path_parts = [part for part in request_path.split("/") if part]
 
-            # http://89.163.130.217:26657/abci_query?path="/get/currency.balances:c93dee52d7dc6cc43af44007c3b1dae5b730ccf18a9e6fb43521f8e4064561e6"
+            # http://localhost:26657/abci_query?path="/get/currency.balances:c93dee52d7dc6cc43af44007c3b1dae5b730ccf18a9e6fb43521f8e4064561e6"
             if path_parts and path_parts[0] == "get":
                 result = get_value_of_key(path_parts[1], self.driver)
                 key = path_parts[1]
 
+            # http://localhost:26657/abci_query?path="/keys/currency.balances" BLOCK SERVICE MODE ONLY
             if self.block_service_mode:
-                # http://89.163.130.217:26657/abci_query?path="/keys/currency.balances" BLOCK SERVICE MODE ONLY
                 if path_parts[0] == "keys":
                     result = get_keys(self.driver, path_parts[1])
 
-            # http://89.163.130.217:26657/abci_query?path="/health"
+            # http://localhost:26657/abci_query?path="/health"
             if path_parts[0] == "health":
                 result = "OK"
 
-            # http://89.163.130.217:26657/abci_query?path="/get_next_nonce/ddd326fddb5d1677595311f298b744a4e9f415b577ac179a6afbf38483dc0791"
+            # http://localhost:26657/abci_query?path="/get_next_nonce/ddd326fddb5d1677595311f298b744a4e9f415b577ac179a6afbf38483dc0791"
             if path_parts[0] == "get_next_nonce":
                 result = self.nonce_storage.get_next_nonce(sender=path_parts[1])
 
-            # http://89.163.130.217:26657/abci_query?path="/contract/con_some_contract"
+            # http://localhost:26657/abci_query?path="/contract/con_some_contract"
             if path_parts[0] == "contract":
                 self.client.raw_driver.clear_pending_state()
                 result = self.client.raw_driver.get_contract(path_parts[1])
 
-            # http://89.163.130.217:26657/abci_query?path="/contract_methods/con_some_contract"
+            # http://localhost:26657/abci_query?path="/contract_methods/con_some_contract"
             if path_parts[0] == "contract_methods":
                 self.client.raw_driver.clear_pending_state()
                 contract_code = self.client.raw_driver.get_contract(path_parts[1])
                 funcs = parser.methods_for_contract(contract_code)
                 result = {"methods": funcs}
 
-            # http://89.163.130.217:26657/abci_query?path="/contract_methods/con_some_contract"
+            # http://localhost:26657/abci_query?path="/contract_methods/con_some_contract"
             if path_parts[0] == "contract_methods":
                 self.client.raw_driver.clear_pending_state()
                 contract_code = self.client.raw_driver.get_contract(path_parts[1])
@@ -324,7 +318,7 @@ class Xian(BaseApplication):
                     funcs = parser.methods_for_contract(contract_code)
                     result = {"methods": funcs}
 
-            # http://89.163.130.217:26657/abci_query?path="/contract_vars/con_some_contract"
+            # http://localhost:26657/abci_query?path="/contract_vars/con_some_contract"
             if path_parts[0] == "contract_vars":
                 self.client.raw_driver.clear_pending_state()
 
@@ -332,7 +326,7 @@ class Xian(BaseApplication):
                 if contract_code is not None:
                     result = parser.variables_for_contract(contract_code)
 
-            # http://89.163.130.217:26657/abci_query?path="/ping"
+            # http://localhost:26657/abci_query?path="/ping"
             if path_parts[0] == "ping":
                 result = {'status': 'online'}
 
