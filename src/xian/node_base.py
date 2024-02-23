@@ -50,20 +50,6 @@ class Node:
         except Exception as e:
             raise TransactionException(f"Failed to get stamp cost: {e}")
 
-        # TODO: Are these checks really necessary? Already done in check_tx_formatting()?
-        if "contract" not in tx["payload"]:
-            print("Contract is missing")
-            return False
-
-        # TODO: Are these checks really necessary? Already done in check_tx_formatting()?
-        if "function" not in tx["payload"]:
-            print("Function is missing")
-            return False
-
-        if "stamps_supplied" not in tx["payload"]:
-            print("Stamps Supplied is missing")
-            return False
-
         contract = tx["payload"]["contract"]
         func = tx["payload"]["function"]
         stamps_supplied = tx["payload"]["stamps_supplied"]
