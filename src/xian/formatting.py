@@ -1,8 +1,6 @@
 import re
 
-from xian.utils import TransactionException
 
-    
 def vk_is_formatted(s: str):
     try:
         int(s, 16)
@@ -35,12 +33,14 @@ def identifier_is_formatted(s: str):
         return True
     except TypeError:
         return False
-    
+
+
 def kwargs_are_formatted(k: dict):
     for k in k.keys():
         if not identifier_is_formatted(k):
             return False
     return True
+
 
 def number_is_formatted(i: int):
     if type(i) != int:
@@ -49,8 +49,10 @@ def number_is_formatted(i: int):
         return False
     return True
 
+
 def cid_id_formated(s: str):
     return isinstance(s, str)
+
 
 def contract_name_is_formatted(s: str):
     try:
@@ -61,13 +63,6 @@ def contract_name_is_formatted(s: str):
     except TypeError:
         return False
 
-def contract_name_is_valid(contract, function, name):
-    if (
-        contract == "submission"
-        and function == "submit_contract"
-        and (len(name) > 255 or not contract_name_is_formatted(name))
-    ):
-        raise TransactionException('Transaction contract name is invalid')
 
 TRANSACTION_PAYLOAD_RULES = {
     'sender': vk_is_formatted,

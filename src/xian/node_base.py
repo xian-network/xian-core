@@ -1,7 +1,8 @@
 from contracting.db.encoder import encode
-from xian.utils import verify, has_enough_stamps, TransactionException
+from xian.utils import verify, check_enough_stamps
+from xian.exceptions import TransactionException
 from xian.processor import TxProcessor
-from xian.formatting import TRANSACTION_PAYLOAD_RULES, TRANSACTION_RULES, contract_name_is_valid
+from xian.formatting import TRANSACTION_PAYLOAD_RULES, TRANSACTION_RULES, contract_name_is_formatted
 from contracting.db.encoder import convert_dict
 import gc
 import asyncio
@@ -12,22 +13,102 @@ import binascii
 
 class Node:
     def __init__(self, client, driver, nonce_storage):
-
         self.driver = driver
         self.nonces = nonce_storage
         self.client = client
-        self.tx_processor = TxProcessor(client = self.client, driver = self.driver)
+        self.tx_processor = TxProcessor(
+            client=self.client,
+            driver=self.driver
+        )
         
-
     def validate_transaction(self, tx):
-        return self.transaction_is_valid(tx, self.client, self.nonces)
-    
+        # Check transaction formatting
+        self.check_tx_formatting(tx)
+
+        # Check if nonce is greater than the current nonce
+        self.check_nonce(tx)
+
+        # TODO: is this giving up to date value ? or is value only updated after hard_apply ?
+        # Get the senders balance and the current stamp rate
+        try:
+            balance = self.client.get_var(
+                contract="currency",
+                variable="balances",
+                arguments=[tx["payload"]["sender"]],
+                mark=False
+            )
+        except Exception as e:
+            raise TransactionException(f"Failed to retrieve 'currency' balance for sender: {e}")
+
+        try:
+            stamp_rate = self.client.get_var(
+                contract="stamp_cost",
+                variable="S",
+                arguments=["value"],
+                mark=False
+            )
+        except Exception as e:
+            raise TransactionException(f"Failed to get stamp cost: {e}")
+
+        # TODO: Are these checks really necessary? Already done in check_tx_formatting()?
+        if "contract" not in tx["payload"]:
+            print("Contract is missing")
+            return False
+
+        # TODO: Are these checks really necessary? Already done in check_tx_formatting()?
+        if "function" not in tx["payload"]:
+            print("Function is missing")
+            return False
+
+        if "stamps_supplied" not in tx["payload"]:
+            print("Stamps Supplied is missing")
+            return False
+
+        contract = tx["payload"]["contract"]
+        func = tx["payload"]["function"]
+        stamps_supplied = tx["payload"]["stamps_supplied"]
+
+        if stamps_supplied is None:
+            stamps_supplied = 0
+
+        if stamp_rate is None:
+            stamp_rate = 0
+
+        if balance is None:
+            balance = 0
+
+        # Get how much they are sending
+        amount = tx["payload"]["kwargs"].get("amount")
+        if amount is None:
+            amount = 0
+
+        # Check if they have enough stamps for the operation
+        check_enough_stamps(
+            balance,
+            stamp_rate,
+            stamps_supplied,
+            contract=contract,
+            function=func,
+            amount=amount,
+        )
+
+        # Check if contract name is valid
+        name = tx["payload"]["kwargs"].get("name")
+        self.check_contract_name(contract, func, name)
+
+    def check_contract_name(self, contract, function, name):
+        if (
+                contract == "submission"
+                and function == "submit_contract"
+                and (len(name) > 255 or not contract_name_is_formatted(name))
+        ):
+            raise TransactionException('Transaction contract name is invalid')
 
     def set_nonce(self, tx):
         self.nonces.set_nonce(
-        sender=tx['payload']['sender'],
-        value=tx['payload']['nonce']
-    )
+            sender=tx['payload']['sender'],
+            value=tx['payload']['nonce']
+        )
         
     def dict_has_keys(self, d: dict, keys: set):
         key_set = set(d.keys())
@@ -55,159 +136,60 @@ class Node:
 
         return True
 
-
     def check_format(self, d: dict, rule: dict):
         expected_keys = set(rule.keys())
 
         if not self.dict_has_keys(d, expected_keys):
-            return False
-
-        return self.recurse_rules(d, rule)
+            raise TransactionException("Transaction has unexpected or missing keys")
+        if not self.recurse_rules(d, rule):
+            raise TransactionException("Transaction has wrongly formatted dictionary")
         
     def check_tx_keys(self, tx):
         metadata = tx.get("metadata")
-        if not metadata or len(metadata.keys()) != 1:
-            print("Metadata is missing")
-            return False
+
+        if not metadata:
+            raise TransactionException("Metadata is missing")
+        if len(metadata.keys()) != 1:
+            raise TransactionException("Wrong number of metadata entries")
+
         payload = tx.get("payload")
+
         if not payload:
-            print("Payload is missing")
-            return False
+            raise TransactionException("Payload is missing")
+        if not payload["sender"]:
+            raise TransactionException("Payload key 'sender' is missing")
+        if not payload["contract"]:
+            raise TransactionException("Payload key 'contract' is missing")
+        if not payload["function"]:
+            raise TransactionException("Payload key 'function' is missing")
+        if not payload["stamps_supplied"]:
+            raise TransactionException("Payload key 'stamps_supplied' is missing")
+
         keys = list(payload.keys())
         keys_are_valid = list(
             map(lambda key: key in keys, list(TRANSACTION_PAYLOAD_RULES.keys()))
         )
 
         if not all(keys_are_valid) and len(keys) == len(list(TRANSACTION_PAYLOAD_RULES.keys())):
-            print("Payload Keys are not valid")
-            return False
-        return True
-        
+            raise TransactionException("Payload keys are not valid")
+
     def check_tx_formatting(self, tx: dict):
-        if not self.check_tx_keys(tx):
-            raise TransactionException('Transaction is not formatted properly - Keys are not valid')
-        if not self.check_format(tx, TRANSACTION_RULES):
-            raise TransactionException('Transaction is not formatted properly - Format is not valid')
+        self.check_tx_keys(tx)
+        self.check_format(tx, TRANSACTION_RULES)
+
         if not verify(
             tx["payload"]["sender"], encode(tx["payload"]), tx["metadata"]["signature"]
         ):
             raise TransactionException('Transaction is not signed by the sender')
 
-        
     def check_nonce(self, tx: dict):
         tx_nonce = tx["payload"]["nonce"]
         tx_sender = tx["payload"]["sender"]
         current_nonce = self.nonces.get_nonce(sender=tx_sender)
         
-        valid = current_nonce is None or tx_nonce > current_nonce
-
-        if not valid:
+        if not (current_nonce is None or tx_nonce > current_nonce):
             raise TransactionException('Transaction nonce is invalid')
 
-        return valid
-        
-    # Run through all tests
-    def transaction_is_valid(self,
-        transaction,
-        client,
-        strict=True,
-        tx_per_block=15,
-        timeout=60,
-    ):
-        # Checks if correct processor and if signature is valid
-        try:
-            self.check_tx_formatting(transaction)
-        except Exception as e:
-            print(f"Check Tx Formatting Failed: {e}")
-            return False
-        
-        # Put in to variables for visual ease
-        if "payload" not in transaction:
-            print("Payload is missing")
-            return False
-        if "sender" not in transaction["payload"]:
-            print("Sender is missing")
-            return False
-        sender = transaction["payload"]["sender"]
-
-        # Check the Nonce is greater than the current nonce we have
-        try:
-            self.check_nonce(tx=transaction)
-        except Exception as e:
-            print(f"Check Nonce Failed: {e}")
-            return False
-        
-        # Get the senders balance and the current stamp rate
-        try:
-            balance = client.get_var(
-                contract="currency", variable="balances", arguments=[sender], mark=False
-            )  # is this giving up to date value ? or is value only updated after hard_apply ?
-        except Exception as e:
-            print(f"Get Currency Balance for Sender Failed: {e}")
-            return False
-        
-        try:
-            stamp_rate = client.get_var(
-                contract="stamp_cost", variable="S", arguments=["value"], mark=False
-            )
-
-        except Exception as e:
-            print(f"Get Stamp Cost Failed: {e}")
-            return False
-        
-        if "contract" not in transaction["payload"]:
-            print("Contract is missing")
-            return False
-        
-        if "function" not in transaction["payload"]:
-            print("Function is missing")
-            return False
-        
-        if "stamps_supplied" not in transaction["payload"]:
-            print("Stamps Supplied is missing")
-            return False
-
-        contract = transaction["payload"]["contract"]
-        func = transaction["payload"]["function"]
-        stamps_supplied = transaction["payload"]["stamps_supplied"]
-
-        if stamps_supplied is None:
-            stamps_supplied = 0
-
-        if stamp_rate is None:
-            stamp_rate = 0
-
-        if balance is None:
-            balance = 0
-
-        # Get how much they are sending
-        amount = transaction["payload"]["kwargs"].get("amount")
-        if amount is None:
-            amount = 0
-
-        # Check if they have enough stamps for the operation
-        try:
-            has_enough_stamps(
-                balance,
-                stamp_rate,
-                stamps_supplied,
-                contract=contract,
-                function=func,
-                amount=amount,
-            )
-        except Exception as e:
-            print(f"Checking if Sender has enough stamps failed: {e}")
-            return False
-
-        # Check if contract name is valid
-        name = transaction["payload"]["kwargs"].get("name")
-        try:
-            contract_name_is_valid(contract, func, name)
-        except Exception as e:
-            print(f"Checking if Contract Name is valid failed: {e}")
-            return False
-        return True
-    
     def recompile_contract_from_source(self, s: dict):
         code = compile(s["value"], '', "exec")
         serialized_code = marshal.dumps(code)

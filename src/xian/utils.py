@@ -1,22 +1,19 @@
 import binascii
 import json
 import struct
-from contracting.db.encoder import encode, decode
 import os
 import shutil
 import logging
-from contracting.stdlib.bridge.decimal import ContractingDecimal
 import toml
 import nacl
 import nacl.encoding
 import nacl.signing
 import hashlib
 
+from contracting.stdlib.bridge.decimal import ContractingDecimal
 from contracting.stdlib.bridge.time import Datetime
-
-
-class TransactionException(Exception):
-    pass
+from contracting.db.encoder import encode, decode
+from xian.exceptions import TransactionException
 
 
 # Z85CHARS is the base 85 symbol table
@@ -70,6 +67,7 @@ def z85_decode(z85bytes):
         values.append(value)
     return struct.pack(">%dI" % nvalues, *values)
 
+
 def verify(vk: str, msg: str, signature: str):
     vk = bytes.fromhex(vk)
     msg = msg.encode()
@@ -82,6 +80,7 @@ def verify(vk: str, msg: str, signature: str):
         return False
     return True
 
+
 def hash_list(obj: list) -> bytes:
     h = hashlib.sha3_256()
     str = "".join(obj)
@@ -89,11 +88,14 @@ def hash_list(obj: list) -> bytes:
     h.update(encoded_tx)
     return h.hexdigest().encode("utf-8")
 
+
 def encode_int(value):
     return struct.pack(">I", value)
 
+
 def encode_number(value):
     return struct.pack(">d", value)
+
 
 def encode_str(value):
     return value.encode("utf-8")
@@ -204,6 +206,7 @@ def get_genesis_json():
         genesis = json.load(f)
     return genesis
 
+
 def format_dictionary(d: dict) -> dict:
     for k, v in d.items():
         assert type(k) == str, 'Non-string key types not allowed.'
@@ -215,6 +218,7 @@ def format_dictionary(d: dict) -> dict:
             d[k] = format_dictionary(v)
     return {k: v for k, v in sorted(d.items())}
 
+
 def tx_hash_from_tx(tx):
     h = hashlib.sha3_256()
     tx_dict = format_dictionary(tx)
@@ -222,9 +226,16 @@ def tx_hash_from_tx(tx):
     h.update(encoded_tx)
     return h.hexdigest()
 
-def has_enough_stamps(
-    balance, stamps_per_tau, stamps_supplied, contract=None, function=None, amount=0
+
+def check_enough_stamps(
+        balance: object,
+        stamps_per_tau: object,
+        stamps_supplied: object,
+        contract: object = None,
+        function: object = None,
+        amount: object = 0
 ):
+
     if balance * stamps_per_tau < stamps_supplied:
         raise TransactionException('Transaction sender has too few stamps for this transaction')
 
