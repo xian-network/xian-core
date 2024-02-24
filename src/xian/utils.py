@@ -1,14 +1,14 @@
 import binascii
 import json
 import struct
-import os
-import shutil
 import logging
 import toml
 import nacl
 import nacl.encoding
 import nacl.signing
 import hashlib
+
+import constants as c
 
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 from contracting.stdlib.bridge.time import Datetime
@@ -162,19 +162,21 @@ def convert_binary_to_hex(binary_data):
 
 
 def load_tendermint_config():
-    config_path = os.getenv("CONFIG_PATH")
-    path = os.path.dirname(os.path.abspath(__file__))
-    toml_path = os.path.join(path, "config/config.toml" if not config_path else config_path)
-    home = os.path.expanduser("~")
-    if not os.path.exists(os.path.join(home, ".tendermint/")):
-        logging.error("You must initialize tendermint before running this command.")
+    # TODO: Why do we never run into this error even if we start without this folder?
+    if not (c.TENDERMINT_HOME.exists() and c.TENDERMINT_HOME.is_dir()):
+        raise FileNotFoundError("You must initialize Tendermint first")
+    if not (c.TENDERMINT_CONFIG.exists() and c.TENDERMINT_CONFIG.is_file()):
+        raise FileNotFoundError(f"File not found: {c.TENDERMINT_CONFIG}")
 
-    tendermint_config_path = os.path.join(home, ".tendermint/config/config.toml")
-    shutil.copyfile(toml_path, tendermint_config_path)
-    logger.info("Copied config.toml to ~/.tendermint/config/config.toml")
-    with open(tendermint_config_path, "r") as f:
-        config = toml.load(tendermint_config_path)
-    return config
+    return toml.load(c.TENDERMINT_CONFIG)
+
+
+def load_genesis_data():
+    if not (c.TENDERMINT_GENESIS.exists() and c.TENDERMINT_GENESIS.is_file()):
+        raise FileNotFoundError(f"File not found: {c.TENDERMINT_GENESIS}")
+
+    with open(c.TENDERMINT_GENESIS, "r") as file:
+        return json.load(file)
 
 
 def stringify_decimals(obj):
@@ -198,14 +200,6 @@ def stringify_decimals(obj):
     except Exception as e:
         return ""
     
-
-def get_genesis_json():
-    home = os.path.expanduser("~")
-    path = os.path.join(home, ".tendermint/config/genesis.json")
-    with open(path, "r") as f:
-        genesis = json.load(f)
-    return genesis
-
 
 def format_dictionary(d: dict) -> dict:
     for k, v in d.items():
