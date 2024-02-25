@@ -84,9 +84,8 @@ class Xian(BaseApplication):
         if self.chain_id is None:
             raise ValueError("No value set for 'chain_id' in Tendermint config")
 
-        # TODO: I fail to see why genesis.json needs the chain_id and why we need to compare it
         if self.genesis.get("chain_id") != self.chain_id:
-            raise ValueError("Value of 'chain_id' in config.toml does not match 'chain_id' in Tendermint genesis.json")
+            raise ValueError("Value of 'chain_id' in config.toml does not match value in Tendermint genesis.json")
         
         if self.genesis.get("abci_genesis", None) is None:
             raise ValueError("No value set for 'abci_genesis' in Tendermint genesis.json")
