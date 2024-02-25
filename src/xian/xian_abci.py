@@ -79,6 +79,7 @@ class Xian(BaseApplication):
         self.current_block_meta: dict = None
         self.fingerprint_hashes = []
         self.chain_id = self.config.get("chain_id", None)
+        self.block_service_mode = self.config.get("block_service_mode", True)
 
         if self.chain_id is None:
             raise ValueError("No value set for 'chain_id' in Tendermint config")
@@ -124,7 +125,7 @@ class Xian(BaseApplication):
         logger.debug(f"LAST_BLOCK_HEIGHT = {r.last_block_height}")
         logger.debug(f"LAST_BLOCK_HASH = {r.last_block_app_hash}")
         logger.debug(f"CHAIN_ID = {self.chain_id}")
-        logger.debug(f"Blockservice Mode = {self.config.get('block_service_mode', True)}")
+        logger.debug(f"BLOCK_SERVICE_MODE = {self.block_service_mode}")
         logger.debug(f"BOOTED")
         return r
 
@@ -293,7 +294,7 @@ class Xian(BaseApplication):
                 key = path_parts[1]
 
             # http://localhost:26657/abci_query?path="/keys/currency.balances" BLOCK SERVICE MODE ONLY
-            if self.config.get("block_service_mode", True):
+            if self.block_service_mode:
                 if path_parts[0] == "keys":
                     result = get_keys(self.driver, path_parts[1])
 
