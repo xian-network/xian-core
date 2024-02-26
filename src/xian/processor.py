@@ -9,7 +9,6 @@ from datetime import datetime
 
 class TxProcessor():
     def __init__(self, client, driver, metering=False, testing=False):
-        super().__init__()
 
         self.client = client
         self.driver = driver
