@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class TxProcessor:
-    def __init__(self, client, driver, metering=False, testing=False):
+    def __init__(self, client, driver, metering=False):
 
         self.client = client
         self.driver = driver
@@ -101,10 +101,12 @@ class TxProcessor:
         # Log out to the node logs if the tx fails
         print(f"status code = {output['status_code']}")
         if output['status_code'] > 0:
-            logger.error(f'TX executed unsuccessfully. '
-                           f'{output["stamps_used"]} stamps used. '
-                           f'{len(output["writes"])} writes.'
-                           f' Result = {output["result"]}')
+            logger.error(
+                f'TX executed unsuccessfully. '
+                f'{output["stamps_used"]} stamps used. '
+                f'{len(output["writes"])} writes.'
+                f' Result = {output["result"]}'
+            )
 
         tx_hash = tx_hash_from_tx(transaction)
 
