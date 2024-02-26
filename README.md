@@ -77,7 +77,7 @@ Docker and Docker Compose must be installed on your system. See [Docker document
 Clone the Xian repository:
 
 ```
-git clone https://github.com/XianChain/xian.git
+git clone https://github.com/xian-network/xian-core.git
 cd xian
 ```
 
