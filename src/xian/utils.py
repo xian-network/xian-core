@@ -1,14 +1,20 @@
 import binascii
 import json
 import struct
-from contracting.db.encoder import encode, decode
-import os
-import shutil
 import logging
-from contracting.stdlib.bridge.decimal import ContractingDecimal
 import toml
+import nacl
+import nacl.encoding
+import nacl.signing
+import hashlib
 
+import constants as c
+
+from contracting.stdlib.bridge.decimal import ContractingDecimal
 from contracting.stdlib.bridge.time import Datetime
+from contracting.db.encoder import encode, decode
+from xian.exceptions import TransactionException
+
 
 # Z85CHARS is the base 85 symbol table
 Z85CHARS = b"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#"
@@ -61,11 +67,35 @@ def z85_decode(z85bytes):
         values.append(value)
     return struct.pack(">%dI" % nvalues, *values)
 
+
+def verify(vk: str, msg: str, signature: str):
+    vk = bytes.fromhex(vk)
+    msg = msg.encode()
+    signature = bytes.fromhex(signature)
+
+    vk = nacl.signing.VerifyKey(vk)
+    try:
+        vk.verify(msg, signature)
+    except nacl.exceptions.BadSignatureError:
+        return False
+    return True
+
+
+def hash_list(obj: list) -> bytes:
+    h = hashlib.sha3_256()
+    str = "".join(obj)
+    encoded_tx = encode(str).encode()
+    h.update(encoded_tx)
+    return h.hexdigest().encode("utf-8")
+
+
 def encode_int(value):
     return struct.pack(">I", value)
 
+
 def encode_number(value):
     return struct.pack(">d", value)
+
 
 def encode_str(value):
     return value.encode("utf-8")
@@ -132,19 +162,21 @@ def convert_binary_to_hex(binary_data):
 
 
 def load_tendermint_config():
-    config_path = os.getenv("CONFIG_PATH")
-    path = os.path.dirname(os.path.abspath(__file__))
-    toml_path = os.path.join(path, "config/config.toml" if not config_path else config_path)
-    home = os.path.expanduser("~")
-    if not os.path.exists(os.path.join(home, ".tendermint/")):
-        logging.error("You must initialize tendermint before running this command.")
+    # TODO: Why do we never run into this error even if we start without this folder?
+    if not (c.TENDERMINT_HOME.exists() and c.TENDERMINT_HOME.is_dir()):
+        raise FileNotFoundError("You must initialize Tendermint first")
+    if not (c.TENDERMINT_CONFIG.exists() and c.TENDERMINT_CONFIG.is_file()):
+        raise FileNotFoundError(f"File not found: {c.TENDERMINT_CONFIG}")
 
-    tendermint_config_path = os.path.join(home, ".tendermint/config/config.toml")
-    shutil.copyfile(toml_path, tendermint_config_path)
-    logger.info("Copied config.toml to ~/.tendermint/config/config.toml")
-    with open(tendermint_config_path, "r") as f:
-        config = toml.load(tendermint_config_path)
-    return config
+    return toml.load(c.TENDERMINT_CONFIG)
+
+
+def load_genesis_data():
+    if not (c.TENDERMINT_GENESIS.exists() and c.TENDERMINT_GENESIS.is_file()):
+        raise FileNotFoundError(f"File not found: {c.TENDERMINT_GENESIS}")
+
+    with open(c.TENDERMINT_GENESIS, "r") as file:
+        return json.load(file)
 
 
 def stringify_decimals(obj):
@@ -169,9 +201,41 @@ def stringify_decimals(obj):
         return ""
     
 
-def get_genesis_json():
-    home = os.path.expanduser("~")
-    path = os.path.join(home, ".tendermint/config/genesis.json")
-    with open(path, "r") as f:
-        genesis = json.load(f)
-    return genesis
+def format_dictionary(d: dict) -> dict:
+    for k, v in d.items():
+        assert type(k) == str, 'Non-string key types not allowed.'
+        if type(v) == list:
+            for i in range(len(v)):
+                if isinstance(v[i], dict):
+                    v[i] = format_dictionary(v[i])
+        elif isinstance(v, dict):
+            d[k] = format_dictionary(v)
+    return {k: v for k, v in sorted(d.items())}
+
+
+def tx_hash_from_tx(tx):
+    h = hashlib.sha3_256()
+    tx_dict = format_dictionary(tx)
+    encoded_tx = encode(tx_dict).encode()
+    h.update(encoded_tx)
+    return h.hexdigest()
+
+
+def check_enough_stamps(
+        balance: object,
+        stamps_per_tau: object,
+        stamps_supplied: object,
+        contract: object = None,
+        function: object = None,
+        amount: object = 0
+):
+
+    if balance * stamps_per_tau < stamps_supplied:
+        raise TransactionException('Transaction sender has too few stamps for this transaction')
+
+    # Prevent people from sending their entire balances for free by checking if that is what they are doing.
+    if contract == "currency" and function == "transfer":
+
+        # If you have less than 2 transactions worth of tau after trying to send your amount, fail.
+        if ((balance - amount) * stamps_per_tau) / 6 < 2:
+            raise TransactionException('Transaction sender has too few stamps for this transaction')

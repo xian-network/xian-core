@@ -9,13 +9,12 @@ RUN apt-get update \
 # Clone Xian and related repositories
 RUN git clone https://github.com/XianChain/xian.git /xian \
     && cd /xian \
-    && git clone https://github.com/XianChain/contracting.git \
-    && git clone https://github.com/XianChain/lamden.git
+    && git clone https://github.com/XianChain/contracting.git
 
 # Set up Python virtual environment and dependencies
 RUN python3.11 -m venv /xian_venv \
     && . /xian_venv/bin/activate \
-    && pip install -e /xian/contracting/ -e /xian/lamden/ -e /xian/
+    && pip install -e /xian/contracting/ -e /xian/
 
 # Set the working directory
 WORKDIR /xian

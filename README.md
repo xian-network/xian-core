@@ -23,14 +23,13 @@ Set up the environment on Ubuntu 22.04 with the following steps:
     git clone https://github.com/XianChain/xian.git
     cd xian
     git clone https://github.com/XianChain/contracting.git
-    git clone https://github.com/XianChain/lamden.git
     ```
 
 4. Set up Python virtual environment and dependencies:
     ```
     python3.11 -m venv xian_venv
     source xian_venv/bin/activate
-    pip install -e contracting/ -e lamden/ -e .
+    pip install -e contracting/ -e .
     ```
 
 5. Download, unpack, and initialize Tendermint:

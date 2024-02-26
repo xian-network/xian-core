@@ -1,11 +1,3 @@
-"""
-To see the latest count:
-curl http://localhost:26657/abci_query
-
-The way the app state is structured, you can also see the current state value
-in the tendermint console output (see app_hash).
-"""
-
 import asyncio
 import json
 import time
@@ -37,14 +29,12 @@ from xian.driver_api import (
     get_latest_block_height,
     set_latest_block_height,
     get_value_of_key,
-    distribute_rewards,
-    distribute_static_rewards,
     get_keys,
-    get_contract,
 )
+from xian.rewards import (
+    distribute_rewards,
+    distribute_static_rewards,)
 from xian.utils import (
-    encode_number,
-    encode_int,
     encode_str,
     decode_transaction_bytes,
     unpack_transaction,
@@ -52,21 +42,19 @@ from xian.utils import (
     convert_binary_to_hex,
     load_tendermint_config,
     stringify_decimals,
-    get_genesis_json
+    load_genesis_data,
+    verify,
+    hash_list
 )
 
-from lamden.crypto.wallet import verify
-from lamden.storage import NonceStorage
-from lamden.rewards import RewardManager
+from xian.storage import NonceStorage
 from contracting.client import ContractingClient
 from contracting.db.driver import (
     ContractDriver,
 )
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 from contracting.compilation import parser
-from lamden.crypto.canonical import hash_list
-from lamden.nodes.base import Lamden
-from pathlib import Path
+from xian.node_base import Node
 
 # Logging
 logging.basicConfig(
@@ -77,27 +65,30 @@ logger = logging.getLogger(__name__)
 
 class Xian(BaseApplication):
     def __init__(self):
-        config = load_tendermint_config()
-        self.genesis = get_genesis_json() 
+        try:
+            self.config = load_tendermint_config()
+            self.genesis = load_genesis_data()
+        except Exception as e:
+            logger.error(e)
+            raise SystemExit()
 
         self.client = ContractingClient()
         self.driver = ContractDriver()
-        self.reward_manager = RewardManager()
         self.nonce_storage = NonceStorage()
-        self.lamden = Lamden(client=self.client, driver=self.driver)
+        self.xian = Node(self.client, self.driver, self.nonce_storage)
         self.current_block_meta: dict = None
         self.fingerprint_hashes = []
-        self.chain_id = config.get("chain_id", None)
-        self.block_service_mode = config.get("block_service_mode", False)
+        self.chain_id = self.config.get("chain_id", None)
+        self.block_service_mode = self.config.get("block_service_mode", True)
 
         if self.chain_id is None:
-            raise ValueError("chain_id is not set in the tendermint config")
-        
+            raise ValueError("No value set for 'chain_id' in Tendermint config")
+
         if self.genesis.get("chain_id") != self.chain_id:
-            raise ValueError("chain_id in config.toml does not match the chain_id in the tendermint genesis.json")
+            raise ValueError("Value of 'chain_id' in config.toml does not match value in Tendermint genesis.json")
         
         if self.genesis.get("abci_genesis", None) is None:
-            raise ValueError("abci_genesis is not set in the tendermint genesis.json. Overwrite the genesis.json with one provided in the xian repo/genesis folder")
+            raise ValueError("No value set for 'abci_genesis' in Tendermint genesis.json")
 
         # current_block_meta :
         # schema :
@@ -121,7 +112,6 @@ class Xian(BaseApplication):
 
         self.current_block_rewards = {}
 
-
     def info(self, req) -> ResponseInfo:
         """
         Called every time the application starts
@@ -134,7 +124,7 @@ class Xian(BaseApplication):
         logger.debug(f"LAST_BLOCK_HEIGHT = {r.last_block_height}")
         logger.debug(f"LAST_BLOCK_HASH = {r.last_block_app_hash}")
         logger.debug(f"CHAIN_ID = {self.chain_id}")
-        logger.debug(f"Blockservice Mode = {self.block_service_mode}")
+        logger.debug(f"BLOCK_SERVICE_MODE = {self.block_service_mode}")
         logger.debug(f"BOOTED")
         return r
 
@@ -142,7 +132,7 @@ class Xian(BaseApplication):
         """Called the first time the application starts; when block_height is 0"""
 
         abci_genesis_state = self.genesis["abci_genesis"]
-        asyncio.ensure_future(self.lamden.store_genesis_block(abci_genesis_state))
+        asyncio.ensure_future(self.xian.store_genesis_block(abci_genesis_state))
 
         return ResponseInitChain()
 
@@ -155,12 +145,10 @@ class Xian(BaseApplication):
         """
         try:
             tx = decode_transaction_bytes(raw_tx)
-            if self.lamden.validate_transaction(tx):
-                return ResponseCheckTx(code=OkCode)
-            else:
-                return ResponseCheckTx(code=ErrorCode)
+            self.xian.validate_transaction(tx)
+            return ResponseCheckTx(code=OkCode)
         except Exception as e:
-            print(e)
+            logger.error(e)
             return ResponseCheckTx(code=ErrorCode)
 
     def begin_block(self, req: RequestBeginBlock) -> ResponseBeginBlock:
@@ -176,7 +164,6 @@ class Xian(BaseApplication):
         commit()
         """
 
-
         nanos = get_nanotime_from_block_time(req.header.time)
         hash = convert_binary_to_hex(req.hash)
         height = req.header.height
@@ -189,7 +176,6 @@ class Xian(BaseApplication):
 
         self.fingerprint_hashes.append(hash)
 
-
         return ResponseBeginBlock()
 
     def deliver_tx(self, tx_raw) -> ResponseDeliverTx:
@@ -200,7 +186,7 @@ class Xian(BaseApplication):
             tx = decode_transaction_bytes(tx_raw)
             sender, signature, payload = unpack_transaction(tx)
 
-            # Verify the contents of the txn before processing.
+            # Verify the contents of the txn before processing
             if verify(vk=sender, msg=payload, signature=signature):
                 payload = json.loads(payload)
                 if payload["chain_id"] != self.chain_id:
@@ -213,12 +199,15 @@ class Xian(BaseApplication):
 
             # Attach metadata to the transaction
             tx["b_meta"] = self.current_block_meta
-            result = self.lamden.tx_processor.process_tx(tx, enabled_fees=self.enable_tx_fee)
+            result = self.xian.tx_processor.process_tx(tx, enabled_fees=self.enable_tx_fee)
 
             if self.enable_tx_fee:
-                self.current_block_rewards[tx['b_meta']['hash']] = {"amount": result["stamp_rewards_amount"], "contract": result["stamp_rewards_contract"]}
+                self.current_block_rewards[tx['b_meta']['hash']] = {
+                    "amount": result["stamp_rewards_amount"],
+                    "contract": result["stamp_rewards_contract"]
+                }
 
-            self.lamden.set_nonce(tx)
+            self.xian.set_nonce(tx)
             tx_hash = result["tx_result"]["hash"]
             self.fingerprint_hashes.append(tx_hash)
             parsed_tx_result = json.dumps(stringify_decimals(result["tx_result"]))
@@ -230,7 +219,7 @@ class Xian(BaseApplication):
             )
         except Exception as err:
             logger.error(f"DELIVER TX ERROR: {err}")
-            ResponseDeliverTx(code=ErrorCode)
+            return ResponseDeliverTx(code=ErrorCode)
 
     def end_block(self, req: RequestEndBlock) -> ResponseEndBlock:
         """
@@ -264,7 +253,6 @@ class Xian(BaseApplication):
                 distribute_rewards(
                     stamp_rewards_amount=reward["amount"],
                     stamp_rewards_contract=reward["contract"],
-                    reward_manager=self.reward_manager,
                     driver=self.driver,
                     client=self.client,
                 )
@@ -278,7 +266,6 @@ class Xian(BaseApplication):
         # unset current_block_meta & cleanup
         self.current_block_meta = None
         self.fingerprint_hashes = []
-
         self.current_block_rewards = {}
 
         gc.collect()
@@ -288,7 +275,7 @@ class Xian(BaseApplication):
     def query(self, req) -> ResponseQuery:
         """
         Query the application state
-        Request Ex. http://89.163.130.217:26657/abci_query?path=%22path%22
+        Request Ex. http://localhost:26657/abci_query?path="path"
         (Yes you need to quote the path)
         """
 
@@ -300,43 +287,37 @@ class Xian(BaseApplication):
             request_path = req.path
             path_parts = [part for part in request_path.split("/") if part]
 
-            # http://89.163.130.217:26657/abci_query?path="/get/currency.balances:c93dee52d7dc6cc43af44007c3b1dae5b730ccf18a9e6fb43521f8e4064561e6"
+            # http://localhost:26657/abci_query?path="/get/currency.balances:c93dee52d7dc6cc43af44007c3b1dae5b730ccf18a9e6fb43521f8e4064561e6"
             if path_parts and path_parts[0] == "get":
                 result = get_value_of_key(path_parts[1], self.driver)
                 key = path_parts[1]
 
+            # http://localhost:26657/abci_query?path="/keys/currency.balances" BLOCK SERVICE MODE ONLY
             if self.block_service_mode:
-                # http://89.163.130.217:26657/abci_query?path="/keys/currency.balances" BLOCK SERVICE MODE ONLY
                 if path_parts[0] == "keys":
                     result = get_keys(self.driver, path_parts[1])
-                    type_of_data = "str"
 
-                # http://89.163.130.217:26657/abci_query?path="/contract/currency" BLOCK SERVICE MODE ONLY
-                if path_parts[0] == "contract":
-                    result = get_contract(self.driver, path_parts[1])
-                    type_of_data = "str"
-
-            # http://89.163.130.217:26657/abci_query?path="/health"
+            # http://localhost:26657/abci_query?path="/health"
             if path_parts[0] == "health":
                 result = "OK"
 
-            # http://89.163.130.217:26657/abci_query?path="/get_next_nonce/ddd326fddb5d1677595311f298b744a4e9f415b577ac179a6afbf38483dc0791"
+            # http://localhost:26657/abci_query?path="/get_next_nonce/ddd326fddb5d1677595311f298b744a4e9f415b577ac179a6afbf38483dc0791"
             if path_parts[0] == "get_next_nonce":
                 result = self.nonce_storage.get_next_nonce(sender=path_parts[1])
 
-            # http://89.163.130.217:26657/abci_query?path="/contract/con_some_contract"
+            # http://localhost:26657/abci_query?path="/contract/con_some_contract"
             if path_parts[0] == "contract":
                 self.client.raw_driver.clear_pending_state()
                 result = self.client.raw_driver.get_contract(path_parts[1])
 
-            # http://89.163.130.217:26657/abci_query?path="/contract_methods/con_some_contract"
+            # http://localhost:26657/abci_query?path="/contract_methods/con_some_contract"
             if path_parts[0] == "contract_methods":
                 self.client.raw_driver.clear_pending_state()
                 contract_code = self.client.raw_driver.get_contract(path_parts[1])
                 funcs = parser.methods_for_contract(contract_code)
                 result = {"methods": funcs}
 
-            # http://89.163.130.217:26657/abci_query?path="/contract_methods/con_some_contract"
+            # http://localhost:26657/abci_query?path="/contract_methods/con_some_contract"
             if path_parts[0] == "contract_methods":
                 self.client.raw_driver.clear_pending_state()
                 contract_code = self.client.raw_driver.get_contract(path_parts[1])
@@ -344,7 +325,7 @@ class Xian(BaseApplication):
                     funcs = parser.methods_for_contract(contract_code)
                     result = {"methods": funcs}
 
-            # http://89.163.130.217:26657/abci_query?path="/contract_vars/con_some_contract"
+            # http://localhost:26657/abci_query?path="/contract_vars/con_some_contract"
             if path_parts[0] == "contract_vars":
                 self.client.raw_driver.clear_pending_state()
 
@@ -352,7 +333,7 @@ class Xian(BaseApplication):
                 if contract_code is not None:
                     result = parser.variables_for_contract(contract_code)
 
-            # http://89.163.130.217:26657/abci_query?path="/ping"
+            # http://localhost:26657/abci_query?path="/ping"
             if path_parts[0] == "ping":
                 result = {'status': 'online'}
 
