@@ -83,13 +83,11 @@ dwu:
 	make up
 
 pull:
-	cd ./lamden && git pull && cd ..
 	cd ./contracting && git pull && cd ..
 	git pull
 
 install:
 	pip install -e ./contracting
-	pip install -e ./lamden
 	pip install -e .
 
 pull-and-install:
