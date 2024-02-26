@@ -42,7 +42,7 @@ from xian.utils import (
     convert_binary_to_hex,
     load_tendermint_config,
     stringify_decimals,
-    get_genesis_json,
+    load_genesis_data,
     verify,
     hash_list
 )
@@ -65,8 +65,12 @@ logger = logging.getLogger(__name__)
 
 class Xian(BaseApplication):
     def __init__(self):
-        config = load_tendermint_config()
-        self.genesis = get_genesis_json() 
+        try:
+            self.config = load_tendermint_config()
+            self.genesis = load_genesis_data()
+        except Exception as e:
+            logger.error(e)
+            raise SystemExit()
 
         self.client = ContractingClient()
         self.driver = ContractDriver()
@@ -74,17 +78,17 @@ class Xian(BaseApplication):
         self.xian = Node(self.client, self.driver, self.nonce_storage)
         self.current_block_meta: dict = None
         self.fingerprint_hashes = []
-        self.chain_id = config.get("chain_id", None)
-        self.block_service_mode = config.get("block_service_mode", True)
+        self.chain_id = self.config.get("chain_id", None)
+        self.block_service_mode = self.config.get("block_service_mode", True)
 
         if self.chain_id is None:
-            raise ValueError("chain_id is not set in the tendermint config")
-        
+            raise ValueError("No value set for 'chain_id' in Tendermint config")
+
         if self.genesis.get("chain_id") != self.chain_id:
-            raise ValueError("chain_id in config.toml does not match the chain_id in the tendermint genesis.json")
+            raise ValueError("Value of 'chain_id' in config.toml does not match value in Tendermint genesis.json")
         
         if self.genesis.get("abci_genesis", None) is None:
-            raise ValueError("abci_genesis is not set in the tendermint genesis.json. Overwrite the genesis.json with one provided in the xian repo/genesis folder")
+            raise ValueError("No value set for 'abci_genesis' in Tendermint genesis.json")
 
         # current_block_meta :
         # schema :
@@ -120,7 +124,7 @@ class Xian(BaseApplication):
         logger.debug(f"LAST_BLOCK_HEIGHT = {r.last_block_height}")
         logger.debug(f"LAST_BLOCK_HASH = {r.last_block_app_hash}")
         logger.debug(f"CHAIN_ID = {self.chain_id}")
-        logger.debug(f"Blockservice Mode = {self.block_service_mode}")
+        logger.debug(f"BLOCK_SERVICE_MODE = {self.block_service_mode}")
         logger.debug(f"BOOTED")
         return r
 
@@ -198,7 +202,10 @@ class Xian(BaseApplication):
             result = self.xian.tx_processor.process_tx(tx, enabled_fees=self.enable_tx_fee)
 
             if self.enable_tx_fee:
-                self.current_block_rewards[tx['b_meta']['hash']] = {"amount": result["stamp_rewards_amount"], "contract": result["stamp_rewards_contract"]}
+                self.current_block_rewards[tx['b_meta']['hash']] = {
+                    "amount": result["stamp_rewards_amount"],
+                    "contract": result["stamp_rewards_contract"]
+                }
 
             self.xian.set_nonce(tx)
             tx_hash = result["tx_result"]["hash"]

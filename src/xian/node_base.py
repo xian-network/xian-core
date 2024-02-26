@@ -182,7 +182,6 @@ class Node:
         hexadecimal_string = binascii.hexlify(serialized_code).decode()
         return hexadecimal_string
 
-
     def apply_state_changes_from_block(self, block):
         state_changes = block.get('genesis', [])
         rewards = block.get('rewards', [])
@@ -210,18 +209,11 @@ class Node:
 
         self.driver.hard_apply(hlc=hlc_timestamp)
 
-
     async def hard_apply_block(self, processing_results: dict = None, block: dict = None, force=False):
         if block is not None:
-            block_num = block.get("number")
-            hlc_timestamp = block.get('hlc_timestamp')
-
             self.apply_state_changes_from_block(block)
-            self.hard_apply_store_block(block=block)
-            self.hard_apply_block_finish(block=block)
-
-            return block
-
+            self.hard_apply_store_block(block=block)  # TODO: This function doesn't save / return anything
+            self.hard_apply_block_finish(block=block)  # TODO: Do we need this? What does it do?
         else:
             if processing_results is None:
                 raise AttributeError('Processing Results are NONE')
@@ -229,27 +221,27 @@ class Node:
             hlc_timestamp = processing_results.get('hlc_timestamp')
             processor = processing_results['tx_result']['transaction']['payload']['processor']
 
+            # FIXME: This method 'is_known_masternode' doesn't exist
             if not self.is_known_masternode(processor):
+                # FIXME: Variable 'log' doesn't exist
                 self.log.error(f'Processor {processor[:8]} is not a known masternode. Dropping {hlc_timestamp}')
                 return
 
-            return block
-
+        return block
 
     def hard_apply_store_block(self, block: dict):
         encoded_block = encode(block)
         encoded_block = json.loads(encoded_block)
 
-    async def stop(self):
-        pass
-
     def hard_apply_block_finish(self, block: dict):
         gc.collect()
 
-        # # check to see if we need to process any missing blocks.
-        asyncio.ensure_future(self.stop())
-        # pass
-        
+        async def stop():
+            pass
 
-    async def store_genesis_block(self, genesis_block: dict) -> bool:
+        # # check to see if we need to process any missing blocks.
+        asyncio.ensure_future(stop())
+        # pass
+
+    async def store_genesis_block(self, genesis_block: dict):
         await self.hard_apply_block(block=genesis_block)
