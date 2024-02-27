@@ -21,6 +21,8 @@ from tendermint.abci.types_pb2 import (
     ResponseCommit,
 )
 
+from xian.validators import ValidatorHandler
+
 from abci.server import ABCIServer
 from abci.application import BaseApplication, OkCode, ErrorCode
 from xian.driver_api import (
@@ -76,6 +78,7 @@ class Xian(BaseApplication):
         self.driver = ContractDriver()
         self.nonce_storage = NonceStorage()
         self.xian = Node(self.client, self.driver, self.nonce_storage)
+        self.validator_handler = ValidatorHandler(self)
         self.current_block_meta: dict = None
         self.fingerprint_hashes = []
         self.chain_id = self.config.get("chain_id", None)
@@ -227,7 +230,7 @@ class Xian(BaseApplication):
         you can use the height from the request to record the last_block_height
         """
 
-        return ResponseEndBlock()
+        return ResponseEndBlock(validator_updates=self.validator_handler.build_validator_updates())
 
     def commit(self) -> ResponseCommit:
         """
