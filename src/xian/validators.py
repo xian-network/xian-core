@@ -20,7 +20,7 @@ class ValidatorHandler():
         updates = []
         for validator in validators_state:
             if validator not in validators_tendermint:
-                updates.append(ValidatorUpdate(pub_key=PublicKey(ed25519=validator), power=0))
-            else:
                 updates.append(ValidatorUpdate(pub_key=PublicKey(ed25519=validator), power=10))
+            else:
+                updates.append(ValidatorUpdate(pub_key=PublicKey(ed25519=validator), power=0))
         return updates
