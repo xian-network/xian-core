@@ -1,6 +1,7 @@
 from tendermint.abci.types_pb2 import ValidatorUpdate
 from tendermint.crypto.keys_pb2 import PublicKey
 import requests
+import base64
 
 class ValidatorHandler():
     def __init__(self, app):
@@ -12,7 +13,7 @@ class ValidatorHandler():
     
     def get_tendermint_validators(self) -> list[str]:
         response = requests.get("http://localhost:26657/validators")
-        return [validator['pub_key']['data'] for validator in response.json()['result']['validators']]
+        return [base64.b64decode(validator['pub_key']['data']).hex() for validator in response.json()['result']['validators']]
     
     def build_validator_updates(self) -> list[ValidatorUpdate]:
         validators_state = self.get_validators_from_state()
