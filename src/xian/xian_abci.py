@@ -63,8 +63,8 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO
 )
 logger = logging.getLogger(__name__)
-logging.getLogger("requests").setLevel(logging.WARNING) # silence requests
-logging.getLogger("urllib3").setLevel(logging.WARNING) # silence urllib3
+logging.getLogger("requests").setLevel(logging.WARNING)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 
 class Xian(BaseApplication):
@@ -126,10 +126,12 @@ class Xian(BaseApplication):
         r.version = req.version
         r.last_block_height = get_latest_block_height(self.driver)
         r.last_block_app_hash = get_latest_block_hash(self.driver)
+        current_validator_set = self.validator_handler.get_validators_from_state()
         logger.debug(f"LAST_BLOCK_HEIGHT = {r.last_block_height}")
         logger.debug(f"LAST_BLOCK_HASH = {r.last_block_app_hash}")
         logger.debug(f"CHAIN_ID = {self.chain_id}")
         logger.debug(f"BLOCK_SERVICE_MODE = {self.block_service_mode}")
+        logger.debug(f"Validators: {current_validator_set}")
         logger.debug(f"BOOTED")
         return r
 
