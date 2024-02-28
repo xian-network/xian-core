@@ -14,18 +14,16 @@
       "max_bytes": "1048576"
     },
     "validator": {
-      "pub_key_types": [
-        "ed25519"
-      ]
+      "pub_key_types": ["ed25519"]
     },
     "version": {}
   },
   "validators": [
-    { 
-      "address": "6B71182D7896D649D4D870930FA6E521AFDAC768",
+    {
+      "address": "8ABB2DE01AE15C5F4EBD0D4455C6BCD9047B7CBB",
       "pub_key": {
         "type": "tendermint/PubKeyEd25519",
-        "value": "Yn6qJ3U7xiFeSKnf7xHq6jv5PAh8kT1a9plI/A7i+AY="
+        "value": "7gajTPCL9yzlktJtNrkMedq6KCm6ljSZLQNDGBYNSfk="
       },
       "power": "10",
       "name": ""
@@ -49,8 +47,14 @@
         }
       },
       { "key": "currency.__developer__", "value": "sys" },
-      { "key": "currency.__submitted__", "value": { "__time__": [2023, 9, 2, 13, 7, 0, 0] } },
-      { "key": "currency.balances:ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9", "value": 300000000 },
+      {
+        "key": "currency.__submitted__",
+        "value": { "__time__": [2023, 9, 2, 13, 7, 0, 0] }
+      },
+      {
+        "key": "currency.balances:ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9",
+        "value": 300000000
+      },
       { "key": "dao.S:motion_delay", "value": { "__delta__": [1, 0] } },
       { "key": "dao.S:motion_period", "value": { "__delta__": [1, 0] } },
       { "key": "dao.S:nays", "value": 0 },
@@ -67,7 +71,10 @@
       },
       { "key": "dao.__developer__", "value": "sys" },
       { "key": "dao.__owner__", "value": "election_house" },
-      { "key": "dao.__submitted__", "value": { "__time__": [2023, 9, 2, 13, 7, 0, 0] } },
+      {
+        "key": "dao.__submitted__",
+        "value": { "__time__": [2023, 9, 2, 13, 7, 0, 0] }
+      },
       { "key": "dao.pending_motions", "value": { "pending_motions": [] } },
       {
         "key": "elect_masternodes.__code__",
@@ -80,7 +87,10 @@
         }
       },
       { "key": "elect_masternodes.__developer__", "value": "sys" },
-      { "key": "elect_masternodes.__submitted__", "value": { "__time__": [2023, 9, 2, 13, 7, 0, 0] } },
+      {
+        "key": "elect_masternodes.__submitted__",
+        "value": { "__time__": [2023, 9, 2, 13, 7, 0, 0] }
+      },
       { "key": "elect_masternodes.controller", "value": "masternodes" },
       { "key": "elect_masternodes.member_cost", "value": 100000 },
       {
@@ -94,7 +104,10 @@
         }
       },
       { "key": "election_house.__developer__", "value": "sys" },
-      { "key": "election_house.__submitted__", "value": { "__time__": [2023, 9, 2, 13, 7, 0, 0] } },
+      {
+        "key": "election_house.__submitted__",
+        "value": { "__time__": [2023, 9, 2, 13, 7, 0, 0] }
+      },
       { "key": "election_house.policies:dao", "value": true },
       { "key": "election_house.policies:masternodes", "value": true },
       { "key": "election_house.policies:rewards", "value": true },
@@ -110,11 +123,26 @@
         }
       },
       { "key": "foundation.__developer__", "value": "sys" },
-      { "key": "foundation.__submitted__", "value": { "__time__": [2023, 9, 2, 13, 7, 0, 0] } },
-      { "key": "foundation.owner", "value": "ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9" },
+      {
+        "key": "foundation.__submitted__",
+        "value": { "__time__": [2023, 9, 2, 13, 7, 0, 0] }
+      },
+      {
+        "key": "foundation.owner",
+        "value": "ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9"
+      },
       { "key": "masternodes.S:current_motion", "value": 0 },
-      { "key": "masternodes.S:members", "value": ["ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9"] },
-      { "key": "masternodes.S:motion_opened", "value": { "__time__": [2023, 9, 2, 13, 7, 0, 0] } },
+      {
+        "key": "masternodes.S:members",
+        "value": [
+          "ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9",
+          "ddd326fddb5d1677595311f298b744a4e9f415b577ac179a6afbf38483dc0791"
+        ]
+      },
+      {
+        "key": "masternodes.S:motion_opened",
+        "value": { "__time__": [2023, 9, 2, 13, 7, 0, 0] }
+      },
       { "key": "masternodes.S:nays", "value": 0 },
       { "key": "masternodes.S:yays", "value": 0 },
       {
@@ -129,18 +157,29 @@
       },
       { "key": "masternodes.__developer__", "value": "sys" },
       { "key": "masternodes.__owner__", "value": "election_house" },
-      { "key": "masternodes.__submitted__", "value": { "__time__": [2023, 9, 2, 13, 7, 0, 0] } },
+      {
+        "key": "masternodes.__submitted__",
+        "value": { "__time__": [2023, 9, 2, 13, 7, 0, 0] }
+      },
       { "key": "masternodes.candidate_contract", "value": "elect_masternodes" },
       { "key": "masternodes.minimum_nodes", "value": 1 },
       { "key": "rewards.S:current_votes:blackhole", "value": 0 },
       { "key": "rewards.S:current_votes:developer", "value": 0 },
       { "key": "rewards.S:current_votes:foundation", "value": 0 },
       { "key": "rewards.S:current_votes:masternodes", "value": 0 },
-      { "key": "rewards.S:election_max_length", "value": { "__delta__": [1, 0] } },
+      {
+        "key": "rewards.S:election_max_length",
+        "value": { "__delta__": [1, 0] }
+      },
       { "key": "rewards.S:master_contract", "value": "masternodes" },
       {
         "key": "rewards.S:value",
-        "value": [{ "__fixed__": "0.88" }, { "__fixed__": "0.01" }, { "__fixed__": "0.01" }, { "__fixed__": "0.1" }]
+        "value": [
+          { "__fixed__": "0.88" },
+          { "__fixed__": "0.01" },
+          { "__fixed__": "0.01" },
+          { "__fixed__": "0.1" }
+        ]
       },
       { "key": "rewards.S:vote_count", "value": 0 },
       {
@@ -155,9 +194,15 @@
       },
       { "key": "rewards.__developer__", "value": "sys" },
       { "key": "rewards.__owner__", "value": "election_house" },
-      { "key": "rewards.__submitted__", "value": { "__time__": [2023, 9, 2, 13, 7, 0, 0] } },
+      {
+        "key": "rewards.__submitted__",
+        "value": { "__time__": [2023, 9, 2, 13, 7, 0, 0] }
+      },
       { "key": "stamp_cost.S:current_total", "value": 20 },
-      { "key": "stamp_cost.S:election_max_length", "value": { "__delta__": [1, 0] } },
+      {
+        "key": "stamp_cost.S:election_max_length",
+        "value": { "__delta__": [1, 0] }
+      },
       { "key": "stamp_cost.S:master_contract", "value": "masternodes" },
       { "key": "stamp_cost.S:value", "value": 20 },
       { "key": "stamp_cost.S:vote_count", "value": 1 },
@@ -173,7 +218,10 @@
       },
       { "key": "stamp_cost.__developer__", "value": "sys" },
       { "key": "stamp_cost.__owner__", "value": "election_house" },
-      { "key": "stamp_cost.__submitted__", "value": { "__time__": [2023, 9, 2, 13, 7, 0, 0] } },
+      {
+        "key": "stamp_cost.__submitted__",
+        "value": { "__time__": [2023, 9, 2, 13, 7, 0, 0] }
+      },
       {
         "key": "submission.__code__",
         "value": "@__export('submission')\ndef submit_contract(name: str, code: str, owner: Any=None, constructor_args: dict={}):\n    if ctx.caller != 'sys':\n        assert not name.isdigit() and all(c.isalnum() or c == '_' for c in name), 'Invalid contract name!'\n\n        assert name.startswith('con_')\n\n    assert ctx.caller == ctx.signer, 'Cannot be called from a smart contract!'\n\n    assert name.islower(), 'Name must be lowercase!'\n\n    __Contract().submit(name=name, code=code, owner=owner, constructor_args=constructor_args, developer=ctx.caller)\n\n\n@__export('submission')\ndef change_developer(contract: str, new_developer: str):\n    d = __Contract()._driver.get_var(contract=contract, variable='__developer__')\n    assert ctx.caller == d, 'Sender is not current developer!'\n\n    __Contract()._driver.set_var(contract=contract,\n                                 variable='__developer__',\n                                 value=new_developer)\n"
@@ -184,7 +232,10 @@
           "__bytes__": "e30000000000000000000000000700000040000000733e000000650064008301640169006602650165016502650364029c0464036404840583015a046500640083016501650164059c0264066407840483015a05640153002908da0a7375626d697373696f6e4e2904da046e616d65da04636f6465da056f776e6572da10636f6e7374727563746f725f61726773630400000000000000040000000700000043000000737a00000074006a0164016b03723a7c00a002a100732474036402640384007c00440083018301732c74046404830182017c00a0056405a101733a7404820174006a0174006a066b02734e74046406830182017c00a007a100735e7404640783018201740883006a097c007c017c027c0374006a0164088d0501006400530029094eda03737973630100000000000000020000000300000073000000731e0000007c005d167d017c01a000a10070147c0164006b02560001007102640153002902da015f4e2901da076973616c6e756d2902da022e30da0163a900720b000000da00fa093c67656e657870723e04000000730200000004007a227375626d69745f636f6e74726163742e3c6c6f63616c733e2e3c67656e657870723e7a16496e76616c696420636f6e7472616374206e616d65215a04636f6e5f7a2743616e6e6f742062652063616c6c65642066726f6d206120736d61727420636f6e7472616374217a174e616d65206d757374206265206c6f776572636173652129057202000000720300000072040000007205000000da09646576656c6f706572290ada03637478da0663616c6c6572da0769736469676974da03616c6cda0e417373657274696f6e4572726f72da0a73746172747377697468da067369676e6572da0769736c6f776572da0a5f5f436f6e7472616374da067375626d697429047202000000720300000072040000007205000000720b000000720b000000720c000000da0f7375626d69745f636f6e747261637401000000730c00000000020a0122020e021402100272190000002902da08636f6e7472616374da0d6e65775f646576656c6f706572630200000000000000030000000500000043000000733c000000740083006a016a027c00640164028d027d0274036a047c026b0273247405640383018201740083006a016a067c0064017c0164048d0301006400530029054eda0d5f5f646576656c6f7065725f5f2902721a000000da087661726961626c657a2053656e646572206973206e6f742063757272656e7420646576656c6f706572212903721a000000721d000000da0576616c756529077217000000da075f647269766572da076765745f766172720f00000072100000007213000000da077365745f7661722903721a000000721b000000da0164720b000000720b000000720c000000da106368616e67655f646576656c6f7065720f000000730a0000000002120112020a01020172230000002906da085f5f6578706f7274da03737472da03416e79da046469637472190000007223000000720b000000720b000000720b000000720c000000da083c6d6f64756c653e01000000730600000006011c0d0601"
         }
       },
-      { "key": "submission.__submitted__", "value": { "__time__": [2023, 9, 2, 13, 7, 44, 592184] } },
+      {
+        "key": "submission.__submitted__",
+        "value": { "__time__": [2023, 9, 2, 13, 7, 44, 592184] }
+      },
       { "key": "upgrade.S:contracting_tag", "value": "v2.0.0" },
       { "key": "upgrade.S:lamden_tag", "value": "v2.0.0" },
       {
@@ -198,11 +249,14 @@
         }
       },
       { "key": "upgrade.__developer__", "value": "sys" },
-      { "key": "upgrade.__submitted__", "value": { "__time__": [2023, 9, 2, 13, 7, 0, 0] } }
+      {
+        "key": "upgrade.__submitted__",
+        "value": { "__time__": [2023, 9, 2, 13, 7, 0, 0] }
+      }
     ],
     "origin": {
       "signature": "a72367e27b82bba7da4da5dc1d77039013506f57219fca1f76c6fc40f5331437ab7dbef66ff9b7854b6557b3cc936b3f2bd905ad73de379f0a5ac140b97e3908",
       "sender": "c674a8a398fb81765277f77fc11464496dae94632de18eea1d69bf0c7894ad03"
-    }  
+    }
   }
 }
