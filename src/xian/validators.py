@@ -9,12 +9,16 @@ class ValidatorHandler():
         self.app = app
        
     def get_validators_from_state(self) -> list[str]:
-        return self.driver.get("masternodes.S:members")
+        validators = self.driver.get("masternodes.S:members")
+        print(f"Current state validators: {validators}")
+        return validators
     
     def get_tendermint_validators(self) -> list[str]:
         response = requests.get("http://localhost:26657/validators")
         # Only add the validators that are voting power > 0
-        return [base64.b64decode(validator['pub_key']['value']).hex() for validator in response.json()['result']['validators'] if int(validator['voting_power']) > 0]
+        validators = [base64.b64decode(validator['pub_key']['value']).hex() for validator in response.json()['result']['validators'] if int(validator['voting_power']) > 0]
+        print(f"Current tendermint validators: {validators}")
+        return validators
     
     def build_validator_updates(self) -> list[ValidatorUpdate]:
         validators_state = self.get_validators_from_state()
