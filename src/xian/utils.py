@@ -8,7 +8,7 @@ import nacl.encoding
 import nacl.signing
 import hashlib
 
-import constants as c
+import xian.constants as c
 
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 from contracting.stdlib.bridge.time import Datetime
