@@ -63,6 +63,8 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO
 )
 logger = logging.getLogger(__name__)
+logging.getLogger("requests").setLevel(logging.WARNING) # silence requests
+logging.getLogger("urllib3").setLevel(logging.WARNING) # silence urllib3
 
 
 class Xian(BaseApplication):
