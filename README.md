@@ -20,7 +20,7 @@ Set up the environment on Ubuntu 22.04 with the following steps:
 
 3. Clone Xian and related repositories:
     ```
-    git clone https://github.com/XianChain/xian.git
+    git clone https://github.com/xian-network/xian-core.git
     cd xian
     git clone https://github.com/XianChain/contracting.git
     ```
