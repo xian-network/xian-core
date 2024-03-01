@@ -149,7 +149,7 @@
       { "key": "foundation.__submitted__", "value": { "__time__": [2023, 9, 2, 13, 7, 0, 0] } },
       { "key": "foundation.owner", "value": "ddd326fddb5d1677595311f298b744a4e9f415b577ac179a6afbf38483dc0791" },
       { "key": "masternodes.S:current_motion", "value": 0 },
-      { "key": "masternodes.S:members", "value": ["ddd326fddb5d1677595311f298b744a4e9f415b577ac179a6afbf38483dc0791"] },
+      { "key": "masternodes.S:members", "value": ["ddd326fddb5d1677595311f298b744a4e9f415b577ac179a6afbf38483dc0791","ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9"] },
       { "key": "masternodes.S:motion_opened", "value": { "__time__": [2023, 9, 2, 13, 7, 0, 0] } },
       { "key": "masternodes.S:nays", "value": 0 },
       { "key": "masternodes.S:yays", "value": 0 },
