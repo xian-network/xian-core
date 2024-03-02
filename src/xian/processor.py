@@ -41,6 +41,13 @@ class TxProcessor:
                 metering=enabled_fees
             )
 
+            if output is None:
+                return {
+                    'tx_result': None,
+                    'stamp_rewards_amount': 0,
+                    'stamp_rewards_contract': None
+                }
+
             # Process the result of the executor
             tx_result = self.process_tx_output(
                 output=output,
@@ -81,6 +88,7 @@ class TxProcessor:
             )
         except (TypeError, ValueError) as err:
             print("Error executing transaction, skipping.")
+            return None
             # self.stop_node()
 
     def process_tx_output(self, output, transaction, stamp_cost):
