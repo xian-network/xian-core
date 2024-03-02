@@ -8,7 +8,7 @@ import nacl.encoding
 import nacl.signing
 import hashlib
 
-import constants as c
+import xian.constants as c
 
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 from contracting.stdlib.bridge.time import Datetime
@@ -154,11 +154,12 @@ def get_nanotime_from_block_time(timeobj) -> int:
 def convert_binary_to_hex(binary_data):
     try:
         return binascii.hexlify(binary_data).decode()
-    except UnicodeDecodeError:
-        logger.error("The binary data could not be decoded with UTF-8 encoding.")
-        raise UnicodeDecodeError(
-            "The binary data could not be decoded with UTF-8 encoding."
-        )
+    except UnicodeDecodeError as e:
+        logger.error(f"The binary data could not be decoded with UTF-8 encoding: {e}")
+        raise
+    except Exception as e:
+        logger.error(f"An unexpected error occurred: {e}")
+        raise
 
 
 def load_tendermint_config():

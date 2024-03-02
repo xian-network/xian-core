@@ -1,19 +1,26 @@
+import math
+import hashlib
+import logging
+
+from datetime import datetime
+
 from xian.utils import format_dictionary, tx_hash_from_tx
 from contracting.execution.executor import Executor
 from contracting.db.encoder import convert_dict, safe_repr
 from contracting.stdlib.bridge.time import Datetime
 
-import math
-import hashlib
-from datetime import datetime
+# Logging
+logging.basicConfig(
+    format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO
+)
+logger = logging.getLogger(__name__)
 
-class TxProcessor():
-    def __init__(self, client, driver, metering=False, testing=False):
 
+class TxProcessor:
+    def __init__(self, client, driver, metering=False):
         self.client = client
         self.driver = driver
         self.executor = Executor(driver=self.driver, metering=metering)
-
 
     def process_tx(self, tx, enabled_fees=False):
         # TODO better error handling of anything in here
@@ -40,15 +47,15 @@ class TxProcessor():
                 transaction=tx,
                 stamp_cost=stamp_cost
             )
-            
+
             return {
                 'tx_result': tx_result,
                 'stamp_rewards_amount': output['stamps_used'],
-                'stamp_rewards_contract': tx_result['transaction']['payload']['contract'],
-                
+                'stamp_rewards_contract': tx_result['transaction']['payload']['contract']
             }
         except Exception as e:
-            print(e)
+            logger.error(e)
+
             return {
                 'tx_result': None,
                 'stamp_rewards_amount': 0,
@@ -57,7 +64,8 @@ class TxProcessor():
 
     def execute_tx(self, transaction, stamp_cost, environment: dict = {}, metering=False):
         # TODO better error handling of anything in here
-        print("EXECUTING TX")
+        logger.debug("Executing transaction...")
+
         try:
             # Execute transaction
             return self.executor.execute(
@@ -80,7 +88,8 @@ class TxProcessor():
         # self.executor.driver.pending_writes.clear()
 
         # Log out to the node logs if the tx fails
-        print(f"status code = {output['status_code']}")
+        logger.debug(f"status code = {output['status_code']}")
+
         if output['status_code'] > 0:
             print(f"Transaction failed with status code {output['status_code']}")
             print(f"Transaction: {transaction}")
@@ -135,7 +144,6 @@ class TxProcessor():
             except AssertionError:
                 new_bal = 0
 
-
             writes = [{
                 'key': 'currency.balances:{}'.format(tx_sender),
                 'value': new_bal
@@ -143,9 +151,8 @@ class TxProcessor():
 
         try:
             writes.sort(key=lambda x: x['key'])
-        except Exception as err:
-            print("Unable to sort state writes by 'key'.")
-            print(err)
+        except Exception as e:
+            logger.error(f"Unable to sort state writes by 'key': {e}")
 
         return writes
 
@@ -168,12 +175,10 @@ class TxProcessor():
             'AUXILIARY_SALT': signature
         }
 
-
     def get_hlc_hash_from_tx(self, nanos, signature):
         h = hashlib.sha3_256()
         h.update('{}'.format(str(nanos)+signature).encode())
         return h.hexdigest()
-
 
     def get_now_from_nanos(self, nanos):
         return Datetime._from_datetime(
