@@ -72,18 +72,7 @@ class TxProcessor():
                 metering=metering
             )
         except (TypeError, ValueError) as err:
-            self.log.error(err)
-            self.log.debug({
-                'transaction': transaction,
-                'sender': transaction['payload']['sender'],
-                'contract_name': transaction['payload']['contract'],
-                'function_name': transaction['payload']['function'],
-                'stamps': transaction['payload']['stamps_supplied'],
-                'stamp_cost': stamp_cost,
-                'kwargs': convert_dict(transaction['payload']['kwargs']),
-                'environment': environment,
-                'auto_commit': False
-            })
+            print("Error executing transaction, skipping.")
             # self.stop_node()
 
     def process_tx_output(self, output, transaction, stamp_cost):
@@ -93,10 +82,9 @@ class TxProcessor():
         # Log out to the node logs if the tx fails
         print(f"status code = {output['status_code']}")
         if output['status_code'] > 0:
-            self.log.error(f'TX executed unsuccessfully. '
-                           f'{output["stamps_used"]} stamps used. '
-                           f'{len(output["writes"])} writes.'
-                           f' Result = {output["result"]}')
+            print(f"Transaction failed with status code {output['status_code']}")
+            print(f"Transaction: {transaction}")
+            print(f"Output: {output}")
 
         tx_hash = tx_hash_from_tx(transaction)
 

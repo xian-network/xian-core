@@ -221,12 +221,6 @@ class Node:
             hlc_timestamp = processing_results.get('hlc_timestamp')
             processor = processing_results['tx_result']['transaction']['payload']['processor']
 
-            # FIXME: This method 'is_known_masternode' doesn't exist
-            if not self.is_known_masternode(processor):
-                # FIXME: Variable 'log' doesn't exist
-                self.log.error(f'Processor {processor[:8]} is not a known masternode. Dropping {hlc_timestamp}')
-                return
-
         return block
 
     def hard_apply_store_block(self, block: dict):
