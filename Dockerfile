@@ -7,7 +7,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # Clone Xian and related repositories
-RUN git clone https://github.com/XianChain/xian.git /xian \
+RUN git clone https://github.com/xian-network/xian-core.git /xian \
     && cd /xian \
     && git clone https://github.com/XianChain/contracting.git
 
