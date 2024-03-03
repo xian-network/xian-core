@@ -7,7 +7,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # Clone Xian and related repositories
-RUN git clone https://github.com/XianChain/xian.git /xian \
+RUN git clone https://github.com/xian-network/xian-core.git /xian \
     && cd /xian \
     && git clone https://github.com/XianChain/contracting.git
 
@@ -30,10 +30,10 @@ RUN wget https://github.com/tendermint/tendermint/releases/download/v0.34.24/ten
 EXPOSE 26657
 
 # Copy the script to the container
-COPY start_services.sh /start_services.sh
+COPY start_node.sh /start_node.sh
 
 # Make the script executable
-RUN chmod +x /start_services.sh
+RUN chmod +x /start_node.sh
 
 # Run the script when the container starts
-CMD ["/start_services.sh"]
+CMD ["/start_node.sh"]
