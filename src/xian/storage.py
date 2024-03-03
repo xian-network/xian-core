@@ -1,7 +1,7 @@
 import xian.constants as c
 
 from contracting import config
-from contracting.db.driver import ContractDriver, FSDriver
+from contracting.db.driver import FSDriver
 
 
 class NonceStorage:
