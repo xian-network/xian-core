@@ -224,6 +224,7 @@ class Node:
         # pass
 
     async def store_genesis_block(self, genesis_block: dict):
-        self.apply_state_changes_from_block(genesis_block)
-        self.hard_apply_store_block(block=genesis_block)  # TODO: This function doesn't save / return anything
-        self.hard_apply_block_finish(block=genesis_block)  # TODO: Do we need this? What does it do?
+        if genesis_block is not None:
+            self.apply_state_changes_from_block(genesis_block)
+            self.hard_apply_store_block(block=genesis_block)  # TODO: This function doesn't save / return anything
+            self.hard_apply_block_finish(block=genesis_block)  # TODO: Do we need this? What does it do?
