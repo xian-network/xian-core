@@ -247,20 +247,26 @@ class Xian(BaseApplication):
         fingerprint_hash = hash_list(self.fingerprint_hashes)
 
         if self.static_rewards:
-            distribute_static_rewards(
-                driver=self.driver,
-                foundation_reward=self.static_rewards_amount_foundation,
-                master_reward=self.static_rewards_amount_validators,
-            )
+            try:
+                distribute_static_rewards(
+                    driver=self.driver,
+                    foundation_reward=self.static_rewards_amount_foundation,
+                    master_reward=self.static_rewards_amount_validators,
+                )
+            except Exception as e:
+                print(f"REWARD ERROR: {e}, No reward distributed for this block")
 
         if self.current_block_rewards:
             for tx_hash, reward in self.current_block_rewards.items():
-                distribute_rewards(
-                    stamp_rewards_amount=reward["amount"],
-                    stamp_rewards_contract=reward["contract"],
-                    driver=self.driver,
-                    client=self.client,
-                )
+                try:
+                    distribute_rewards(
+                        stamp_rewards_amount=reward["amount"],
+                        stamp_rewards_contract=reward["contract"],
+                        driver=self.driver,
+                        client=self.client,
+                    )
+                except Exception as e:
+                    print(f"REWARD ERROR: {e}, No reward distributed for {tx_hash}")
 
         # commit block to filesystem db
         set_latest_block_hash(fingerprint_hash, self.driver)
