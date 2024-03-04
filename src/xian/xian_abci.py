@@ -21,6 +21,8 @@ from tendermint.abci.types_pb2 import (
     ResponseCommit,
 )
 
+from xian.validators import ValidatorHandler
+
 from abci.server import ABCIServer
 from abci.application import BaseApplication, OkCode, ErrorCode
 from xian.driver_api import (
@@ -61,6 +63,8 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO
 )
 logger = logging.getLogger(__name__)
+logging.getLogger("requests").setLevel(logging.WARNING)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 
 class Xian(BaseApplication):
@@ -76,6 +80,7 @@ class Xian(BaseApplication):
         self.driver = ContractDriver()
         self.nonce_storage = NonceStorage()
         self.xian = Node(self.client, self.driver, self.nonce_storage)
+        self.validator_handler = ValidatorHandler(self)
         self.current_block_meta: dict = None
         self.fingerprint_hashes = []
         self.chain_id = self.config.get("chain_id", None)
@@ -227,7 +232,7 @@ class Xian(BaseApplication):
         you can use the height from the request to record the last_block_height
         """
 
-        return ResponseEndBlock()
+        return ResponseEndBlock(validator_updates=self.validator_handler.build_validator_updates())
 
     def commit(self) -> ResponseCommit:
         """
@@ -242,20 +247,26 @@ class Xian(BaseApplication):
         fingerprint_hash = hash_list(self.fingerprint_hashes)
 
         if self.static_rewards:
-            distribute_static_rewards(
-                driver=self.driver,
-                foundation_reward=self.static_rewards_amount_foundation,
-                master_reward=self.static_rewards_amount_validators,
-            )
+            try:
+                distribute_static_rewards(
+                    driver=self.driver,
+                    foundation_reward=self.static_rewards_amount_foundation,
+                    master_reward=self.static_rewards_amount_validators,
+                )
+            except Exception as e:
+                print(f"REWARD ERROR: {e}, No reward distributed for this block")
 
         if self.current_block_rewards:
             for tx_hash, reward in self.current_block_rewards.items():
-                distribute_rewards(
-                    stamp_rewards_amount=reward["amount"],
-                    stamp_rewards_contract=reward["contract"],
-                    driver=self.driver,
-                    client=self.client,
-                )
+                try:
+                    distribute_rewards(
+                        stamp_rewards_amount=reward["amount"],
+                        stamp_rewards_contract=reward["contract"],
+                        driver=self.driver,
+                        client=self.client,
+                    )
+                except Exception as e:
+                    print(f"REWARD ERROR: {e}, No reward distributed for {tx_hash}")
 
         # commit block to filesystem db
         set_latest_block_hash(fingerprint_hash, self.driver)
