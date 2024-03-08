@@ -7,23 +7,20 @@ from pathlib import Path
 import hashlib
 import json
 
-GENESIS_CONTRACTS = ['submission', 'currency', 'election_house', 'stamp_cost', 'rewards', 'foundation', 'masternodes', 'elect_masternodes']
-GENESIS_CONTRACTS_KEYS = [contract + '.' + key for key in [CODE_KEY, COMPILED_KEY, OWNER_KEY, TIME_KEY, DEVELOPER_KEY] for contract in GENESIS_CONTRACTS]
-GENESIS_BLOCK_NUMBER = "0"
-GENESIS_HLC_TIMESTAMP = '0000-00-00T00:00:00.000000000Z_0'
-GENESIS_PREVIOUS_HASH = '0' * 64
-TMP_STATE_PATH = Path('/tmp/tmp_state')
 
-def block_hash_from_block(hlc_timestamp: str, block_number: str, previous_block_hash: str) -> str:
+def hash_block_data(hlc_timestamp: str, block_number: str, previous_block_hash: str) -> str:
     h = hashlib.sha3_256()
-    h.update('{}{}{}'.format(hlc_timestamp, block_number, previous_block_hash).encode())
+    h.update(f'{hlc_timestamp}{block_number}{previous_block_hash}'.encode())
     return h.hexdigest()
 
-def hash_genesis_block_state_changes(state_changes: list) -> str:
+
+def hash_state_changes(state_changes: list) -> str:
     state_changes.sort(key=lambda x: x.get('key'))
     h = hashlib.sha3_256()
+    # TODO: Adjust to f-string
     h.update('{}'.format(encode(state_changes).encode()).encode())
     return h.hexdigest()
+
 
 def submit_from_genesis_json_file(client: ContractingClient):
     with open(Path.cwd().joinpath('genesis.json')) as f:
@@ -43,6 +40,7 @@ def submit_from_genesis_json_file(client: ContractingClient):
             client.submit(code, name=contract_name, owner=contract['owner'],
                           constructor_args=contract['constructor_args'])
 
+
 def setup_member_contracts(initial_masternode, client: ContractingClient):
     current_dir = Path.cwd()
     genesis_folder = current_dir.joinpath('genesis')
@@ -57,8 +55,8 @@ def setup_member_contracts(initial_masternode, client: ContractingClient):
             'candidate': 'elect_masternodes'
         })
 
+
 def register_policies(client: ContractingClient):
-    # add to election house
     election_house = client.get_contract('election_house')
 
     policies_to_register = [
@@ -76,6 +74,8 @@ def register_policies(client: ContractingClient):
         ) is None:
             election_house.register_policy(contract=policy)
 
+
+# TODO: Overwrite 'masternode_price' or set in some constants file
 def setup_member_election_contracts(client: ContractingClient, masternode_price=500_000, root=Path.cwd()):
     elect_members = root.joinpath('genesis').joinpath('elect_members.s.py')
 
@@ -89,26 +89,27 @@ def setup_member_election_contracts(client: ContractingClient, masternode_price=
         })
 
 
-def build_block(founder_sk: str, initial_masternode: str):
-    state_changes = {}
-    contracting_client = ContractingClient(driver=ContractDriver(FSDriver(root=TMP_STATE_PATH)))
+def build_genesis_block(founder_sk: str, masternode_pk: str):
+    contracting_client = ContractingClient(driver=ContractDriver(FSDriver(root='/tmp/tmp_state')))
     contracting_client.set_submission_contract(filename=Path.cwd().joinpath('submission.s.py'), commit=False)
 
+    # TODO: Make own sub-folder for contracts that can simply be submitted directly?
     submit_from_genesis_json_file(contracting_client)
-    setup_member_contracts(initial_masternode, contracting_client)
+    setup_member_contracts(masternode_pk, contracting_client)
     register_policies(contracting_client)
     setup_member_election_contracts(contracting_client)
 
-    state_changes.update(contracting_client.raw_driver.pending_writes)
-    contracting_client.raw_driver.flush()
-    
-    data = {k: v for k, v in state_changes.items() if v is not None}
+    block_number = "0"
+    hlc_timestamp = '0000-00-00T00:00:00.000000000Z_0'
+    previous_hash = '0' * 64
+
+    block_hash = hash_block_data(hlc_timestamp, block_number, previous_hash)
 
     genesis_block = {
-        'hash': block_hash_from_block(GENESIS_HLC_TIMESTAMP, GENESIS_BLOCK_NUMBER, GENESIS_PREVIOUS_HASH),
-        'number': GENESIS_BLOCK_NUMBER,
-        'hlc_timestamp': GENESIS_HLC_TIMESTAMP,
-        'previous': GENESIS_PREVIOUS_HASH,
+        'hash': block_hash,
+        'number': block_number,
+        'hlc_timestamp': hlc_timestamp,
+        'previous': previous_hash,
         'genesis': [],
         'origin': {
             'signature': '',
@@ -116,50 +117,72 @@ def build_block(founder_sk: str, initial_masternode: str):
         }
     }
 
+    state_changes = {}
+    state_changes.update(contracting_client.raw_driver.pending_writes)
+    contracting_client.raw_driver.flush()
+    
+    data = {k: v for k, v in state_changes.items() if v is not None}
+
     for key, value in data.items():
         genesis_block['genesis'].append({
             'key': key,
             'value': value
         })
 
-    print('Signing genesis block with founder\'s wallet...')
-    founders_wallet = Wallet(seed=founder_sk)
-    genesis_block['origin']['sender'] = founders_wallet.public_key
-    genesis_block['origin']['signature'] = founders_wallet.sign_msg(hash_genesis_block_state_changes(genesis_block['genesis']))
+    # Signing genesis block with founder's wallet
+    wallet = Wallet(seed=founder_sk)
+
+    genesis_block['origin']['sender'] = wallet.public_key
+    genesis_block['origin']['signature'] = wallet.sign_msg(
+        hash_state_changes(genesis_block['genesis'])
+    )
 
     return genesis_block
 
 
-def main(
-    founder_sk: str,
-    output_path: Path = None,
-    initial_masternode: str = None,
-):
-    if output_path is None:
-        output_path = Path.cwd()
-    else:
-        output_path = Path(output_path)
-    output_path = output_path.joinpath('genesis.json')
+def main(founder_sk: str, masternode_pk: str = None, output_path: Path = None):
 
-    genesis_block = build_block(founder_sk, initial_masternode)
+    output_path = Path(output_path) if output_path else Path.cwd()
+    output_file = output_path.joinpath('genesis.json')
 
-    print(f'Loading genesis block')
-    with open(output_path) as f:
+    print(f'Building genesis block...')
+    genesis_block = build_genesis_block(founder_sk, masternode_pk)
+
+    print(f'Loading genesis block...')
+    with open(output_file) as f:
         genesis = json.load(f)
 
-    print('Enrich genesis file with genesis data')
+    print('Enrich genesis.json with genesis block data...')
     genesis['abci_genesis'] = encode(genesis_block)
 
-    print(f'Saving genesis block to "{output_path}"')
-    with open(output_path, 'w') as f:
+    print(f'Saving genesis block to "{output_file}..."')
+    with open(output_file, 'w') as f:
         f.write(genesis)
 
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('-n', '--initial-masternode-address', type=str, required=True, help='The initial masternode address')
-    parser.add_argument('-k', '--key', type=str, required=True, help='The founder\'s private key')
-    parser.add_argument('-o', '--output-path', type=Path, default=None, help='The path to save the genesis block')
+    parser.add_argument(
+        '-m',
+        '--masternode-pk',
+        type=str,
+        required=True,
+        help="Masternode public key"
+    )
+    parser.add_argument(
+        '-f',
+        '--founder-sk',
+        type=str,
+        required=True,
+        help="Founder's private key"
+    )
+    parser.add_argument(
+        '-o',
+        '--output-path',
+        type=Path,
+        default=None,
+        help="The path to save the genesis block"
+    )
     args = parser.parse_args()
 
-    main(founder_sk=args.key, output_path=args.output_path or None, initial_masternode=args.initial_masternode_address)
+    main(founder_sk=args.founder_sk, masternode_pk=args.masternode_pk, output_path=args.output_path or None)
