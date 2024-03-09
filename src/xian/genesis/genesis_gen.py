@@ -97,7 +97,7 @@ def setup_member_election(client: ContractingClient, masternode_price=100_000):
 
 def build_genesis_block(founder_sk: str, masternode_pk: str):
     contracting = ContractingClient(driver=ContractDriver(FSDriver(root='/tmp/tmp_state')))
-    contracting.set_submission_contract(filename=Path.cwd() / 'submission.s.py', commit=False)
+    contracting.set_submission_contract(filename=CONTRACT_DIR / 'submission.s.py', commit=False)
 
     submit_from_config(contracting)
     submit_masternodes(masternode_pk, contracting)
