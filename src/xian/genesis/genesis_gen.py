@@ -1,11 +1,15 @@
 from argparse import ArgumentParser
 from contracting.client import ContractingClient
-from contracting.db.driver import FSDriver, ContractDriver, CODE_KEY, COMPILED_KEY, OWNER_KEY, TIME_KEY, DEVELOPER_KEY
+from contracting.db.driver import FSDriver, ContractDriver
 from contracting.db.encoder import encode
 from xian_py.wallet import Wallet
 from pathlib import Path
 import hashlib
 import json
+
+
+CONTRACT_DIR = Path.cwd().parent.absolute() / 'contracts'
+MASTERNODE_PRICE = 100_000
 
 
 def hash_block_data(hlc_timestamp: str, block_number: str, previous_block_hash: str) -> str:
@@ -22,36 +26,40 @@ def hash_state_changes(state_changes: list) -> str:
     return h.hexdigest()
 
 
-def submit_from_genesis_json_file(client: ContractingClient):
-    with open(Path.cwd().joinpath('genesis.json')) as f:
-        genesis = json.load(f)
+def submit_from_config(client: ContractingClient):
+    con_cfg_path = CONTRACT_DIR / 'contracts.json'
 
-    for contract in genesis['contracts']:
-        c_filepath = Path.cwd().joinpath('genesis').joinpath(contract['name'] + '.s.py')
+    with open(con_cfg_path) as f:
+        con_cfg = json.load(f)
 
-        with open(c_filepath) as f:
+    for contract in con_cfg['contracts']:
+        con_name = contract['name']
+        con_ext = contract['extension']
+
+        con_path = CONTRACT_DIR / con_name + con_ext
+
+        with open(con_path) as f:
             code = f.read()
 
-        contract_name = contract['name']
         if contract.get('submit_as') is not None:
-            contract_name = contract['submit_as']
+            con_name = contract['submit_as']
 
-        if client.get_contract(contract_name) is None:
-            client.submit(code, name=contract_name, owner=contract['owner'],
-                          constructor_args=contract['constructor_args'])
+        if client.get_contract(con_name) is None:
+            client.submit(
+                code,
+                name=con_name,
+                owner=contract['owner'],
+                constructor_args=contract['constructor_args']
+            )
 
 
-def setup_member_contracts(initial_masternode, client: ContractingClient):
-    current_dir = Path.cwd()
-    genesis_folder = current_dir.joinpath('genesis')
-    members = genesis_folder.joinpath('members.s.py')
-
-    with open(members) as f:
+def submit_masternodes(masternode_pk, client: ContractingClient):
+    with open(CONTRACT_DIR / 'members.s.py') as f:
         code = f.read()
 
     if client.get_contract('masternodes') is None:
         client.submit(code, name='masternodes', owner='election_house', constructor_args={
-            'initial_members': [initial_masternode],
+            'initial_members': [masternode_pk],
             'candidate': 'elect_masternodes'
         })
 
@@ -59,14 +67,14 @@ def setup_member_contracts(initial_masternode, client: ContractingClient):
 def register_policies(client: ContractingClient):
     election_house = client.get_contract('election_house')
 
-    policies_to_register = [
+    policies = [
         'masternodes',
         'rewards',
         'stamp_cost',
         'dao'
     ]
 
-    for policy in policies_to_register:
+    for policy in policies:
         if client.get_var(
             contract='election_house',
             variable='policies',
@@ -76,10 +84,8 @@ def register_policies(client: ContractingClient):
 
 
 # TODO: Overwrite 'masternode_price' or set in some constants file
-def setup_member_election_contracts(client: ContractingClient, masternode_price=500_000, root=Path.cwd()):
-    elect_members = root.joinpath('genesis').joinpath('elect_members.s.py')
-
-    with open(elect_members) as f:
+def setup_member_election(client: ContractingClient, masternode_price=100_000):
+    with open(CONTRACT_DIR / 'elect_members.s.py') as f:
         code = f.read()
 
     if client.get_contract('elect_masternodes') is None:
@@ -90,14 +96,13 @@ def setup_member_election_contracts(client: ContractingClient, masternode_price=
 
 
 def build_genesis_block(founder_sk: str, masternode_pk: str):
-    contracting_client = ContractingClient(driver=ContractDriver(FSDriver(root='/tmp/tmp_state')))
-    contracting_client.set_submission_contract(filename=Path.cwd().joinpath('submission.s.py'), commit=False)
+    contracting = ContractingClient(driver=ContractDriver(FSDriver(root='/tmp/tmp_state')))
+    contracting.set_submission_contract(filename=Path.cwd() / 'submission.s.py', commit=False)
 
-    # TODO: Make own sub-folder for contracts that can simply be submitted directly?
-    submit_from_genesis_json_file(contracting_client)
-    setup_member_contracts(masternode_pk, contracting_client)
-    register_policies(contracting_client)
-    setup_member_election_contracts(contracting_client)
+    submit_from_config(contracting)
+    submit_masternodes(masternode_pk, contracting)
+    register_policies(contracting)
+    setup_member_election(contracting)
 
     block_number = "0"
     hlc_timestamp = '0000-00-00T00:00:00.000000000Z_0'
@@ -118,8 +123,8 @@ def build_genesis_block(founder_sk: str, masternode_pk: str):
     }
 
     state_changes = {}
-    state_changes.update(contracting_client.raw_driver.pending_writes)
-    contracting_client.raw_driver.flush()
+    state_changes.update(contracting.raw_driver.pending_writes)
+    contracting.raw_driver.flush()
     
     data = {k: v for k, v in state_changes.items() if v is not None}
 

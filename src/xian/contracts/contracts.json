@@ -1,5 +1,4 @@
 {
-	"base_directory": "/genesis",
 	"extension": ".s.py",
 	"contracts": [
 		{
