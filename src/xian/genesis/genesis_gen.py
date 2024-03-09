@@ -83,8 +83,7 @@ def register_policies(client: ContractingClient):
             election_house.register_policy(contract=policy)
 
 
-# TODO: Overwrite 'masternode_price' or set in some constants file
-def setup_member_election(client: ContractingClient, masternode_price=100_000):
+def setup_member_election(client: ContractingClient, masternode_price=MASTERNODE_PRICE):
     with open(CONTRACT_DIR / 'elect_members.s.py') as f:
         code = f.read()
 
