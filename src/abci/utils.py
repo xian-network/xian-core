@@ -85,7 +85,7 @@ def write_message(message: Message) -> bytes:
     """
     Write length prefixed protobuf message
     """
-    print("Sending response:")
+    print("Sending response to CometBFT:")
     print(message)
     buffer = BytesIO(b"")
     bz = message.SerializeToString()
@@ -108,6 +108,6 @@ def read_messages(reader: BytesIO, message: Message) -> Message:
             return
         m = message()
         m.ParseFromString(data)
-        print("Received message:")
+        print("Received message to CometBFT:")
         print(m)
         yield m
