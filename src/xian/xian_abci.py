@@ -154,11 +154,11 @@ class Xian(BaseApplication):
             sender, signature, payload = unpack_transaction(tx)
 
             if not verify(vk=sender, msg=payload, signature=signature):
-                return ResponseDeliverTx(code=ErrorCode, info="Invalid Signature")
+                return ResponseCheckTx(code=ErrorCode, info="Invalid Signature")
                 
             payload = json.loads(payload)
             if payload.get("chain_id") != self.chain_id:
-                return ResponseDeliverTx(code=ErrorCode, info="Invalid Chain ID")
+                return ResponseCheckTx(code=ErrorCode, info="Invalid Chain ID")
             
             return ResponseCheckTx(code=OkCode)
         except Exception as e:
