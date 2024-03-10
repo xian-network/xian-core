@@ -108,6 +108,6 @@ def read_messages(reader: BytesIO, message: Message) -> Message:
             return
         m = message()
         m.ParseFromString(data)
-        print("Received message to CometBFT:")
+        print("Received message from CometBFT:")
         print(m)
         yield m
