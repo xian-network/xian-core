@@ -118,9 +118,6 @@ class Xian(BaseApplication):
         self.current_block_rewards = {}
 
     def flush(self, req) -> ResponseFlush:
-        """
-        Called when the app is being shutdown
-        """
         r = ResponseFlush()
         return r
 
