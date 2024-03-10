@@ -106,5 +106,5 @@ def read_messages(reader: BytesIO, message: Message) -> Message:
             return
         m = message()
         m.ParseFromString(data)
-
+        print(m)
         yield m

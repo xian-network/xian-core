@@ -203,7 +203,8 @@ class BaseApplication:
         """
         Consensus: Flush
         """
-        return ResponseFlush()
+        r = ResponseFlush()
+        return r
     
     def echo(self, req: RequestEcho) -> ResponseEcho:
         """
