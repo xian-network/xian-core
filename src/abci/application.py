@@ -52,6 +52,8 @@ from cometbft.abci.v1beta1.types_pb2 import (
     ResponseApplySnapshotChunk,
     RequestFlush,
     ResponseFlush,
+    RequestEcho,
+    ResponseEcho,
 )
 from cometbft.abci.v1beta2.types_pb2 import (
    ResponsePrepareProposal,
@@ -96,7 +98,7 @@ class BaseApplication:
         If blockheight == 0, Tendermint will call ``init_chain()``
         """
         r = ResponseInfo()
-        r.version = "0.0.1"
+        r.version = "0.38.5"
         r.app_version = 1
         r.last_block_height = 0
         r.last_block_app_hash = b""
@@ -201,5 +203,10 @@ class BaseApplication:
         """
         Consensus: Flush
         """
-        r = ResponseFlush()
         return ResponseFlush()
+    
+    def echo(self, req: RequestEcho) -> ResponseEcho:
+        """
+        Consensus: Echo
+        """
+        return ResponseEcho()

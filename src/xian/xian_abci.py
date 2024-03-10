@@ -13,12 +13,14 @@ from cometbft.abci.v1beta1.types_pb2 import (
     ResponseQuery,
     ResponseCommit,
     ResponseFlush,
+    ResponseEcho,
 )
 from cometbft.abci.v1beta3.types_pb2 import (
     ResponseInitChain,
     ResponseFinalizeBlock,
     ExecTxResult,    
 )
+
 
 
 from xian.validators import ValidatorHandler
@@ -120,6 +122,14 @@ class Xian(BaseApplication):
     def flush(self, req) -> ResponseFlush:
         r = ResponseFlush()
         return r
+    
+    def echo(self, req) -> ResponseEcho:
+        r = ResponseEcho()
+        r.version = req.version
+        r.app_version = 1
+        r.last_block_height = get_latest_block_height(self.driver)
+        r.last_block_app_hash = get_latest_block_hash(self.driver)
+        return r
 
     def info(self, req) -> ResponseInfo:
         """
@@ -134,6 +144,8 @@ class Xian(BaseApplication):
         logger.debug(f"LAST_BLOCK_HASH = {r.last_block_app_hash}")
         logger.debug(f"CHAIN_ID = {self.chain_id}")
         logger.debug(f"BLOCK_SERVICE_MODE = {self.block_service_mode}")
+        logger.debug(f"COMETBFT_VERSION = {r.version}")
+        logger.debug(f"APP_VERSION = {r.app_version}")
         logger.debug(f"BOOTED")
         return r
 
@@ -141,7 +153,7 @@ class Xian(BaseApplication):
         """Called the first time the application starts; when block_height is 0"""
         abci_genesis_state = self.genesis["abci_genesis"]
         asyncio.ensure_future(self.xian.store_genesis_block(abci_genesis_state))
-        
+
         return ResponseInitChain()
 
     def check_tx(self, raw_tx) -> ResponseCheckTx:
