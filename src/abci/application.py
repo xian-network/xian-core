@@ -50,6 +50,8 @@ from cometbft.abci.v1beta1.types_pb2 import (
     ResponseOfferSnapshot,
     RequestApplySnapshotChunk,
     ResponseApplySnapshotChunk,
+    RequestFlush,
+    ResponseFlush,
 )
 from cometbft.abci.v1beta2.types_pb2 import (
    ResponsePrepareProposal,
@@ -194,3 +196,9 @@ class BaseApplication:
         """
         return ResponseVerifyVoteExtension()
     
+    def flush(self, req: RequestFlush) -> ResponseFlush:
+        """
+        Consensus: Flush
+        """
+        r = ResponseFlush()
+        return ResponseFlush()

@@ -12,13 +12,12 @@ from cometbft.abci.v1beta1.types_pb2 import (
     ResponseCheckTx,
     ResponseQuery,
     ResponseCommit,
+    ResponseFlush,
 )
-
 from cometbft.abci.v1beta3.types_pb2 import (
     ResponseInitChain,
     ResponseFinalizeBlock,
-    ExecTxResult,
-    
+    ExecTxResult,    
 )
 
 
@@ -117,6 +116,13 @@ class Xian(BaseApplication):
         self.static_rewards_amount_validators = 1
 
         self.current_block_rewards = {}
+
+    def flush(self, req) -> ResponseFlush:
+        """
+        Called when the app is being shutdown
+        """
+        r = ResponseFlush()
+        return r
 
     def info(self, req) -> ResponseInfo:
         """
