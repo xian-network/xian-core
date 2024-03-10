@@ -98,10 +98,6 @@ class BaseApplication:
         If blockheight == 0, Tendermint will call ``init_chain()``
         """
         r = ResponseInfo()
-        r.version = "0.38.5"
-        r.app_version = 1
-        r.last_block_height = 0
-        r.last_block_app_hash = b""
         return r
 
     def check_tx(self, tx: bytes) -> ResponseCheckTx:

@@ -135,19 +135,12 @@ class Xian(BaseApplication):
         """
         Called every time the application starts
         """
-        r = ResponseInfo()
-        r.version = req.version
-        r.app_version = 1
-        r.last_block_height = get_latest_block_height(self.driver)
-        r.last_block_app_hash = get_latest_block_hash(self.driver)
-        logger.debug(f"LAST_BLOCK_HEIGHT = {r.last_block_height}")
-        logger.debug(f"LAST_BLOCK_HASH = {r.last_block_app_hash}")
-        logger.debug(f"CHAIN_ID = {self.chain_id}")
-        logger.debug(f"BLOCK_SERVICE_MODE = {self.block_service_mode}")
-        logger.debug(f"COMETBFT_VERSION = {r.version}")
-        logger.debug(f"APP_VERSION = {r.app_version}")
-        logger.debug(f"BOOTED")
-        return r
+        res = ResponseInfo()
+        res.version = req.version
+        res.app_version = 1
+        res.last_block_height = get_latest_block_height(self.driver)
+        res.last_block_app_hash = get_latest_block_hash(self.driver)
+        return res
 
     def init_chain(self, req) -> ResponseInitChain:
         """Called the first time the application starts; when block_height is 0"""
