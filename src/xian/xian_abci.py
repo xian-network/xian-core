@@ -151,10 +151,19 @@ class Xian(BaseApplication):
         try:
             tx = decode_transaction_bytes(raw_tx)
             self.xian.validate_transaction(tx)
+            sender, signature, payload = unpack_transaction(tx)
+
+            if not verify(vk=sender, msg=payload, signature=signature):
+                return ResponseDeliverTx(code=ErrorCode, info="Invalid Signature")
+                
+            payload = json.loads(payload)
+            if payload.get("chain_id") != self.chain_id:
+                return ResponseDeliverTx(code=ErrorCode, info="Invalid Chain ID")
+            
             return ResponseCheckTx(code=OkCode)
         except Exception as e:
             logger.error(e)
-            return ResponseCheckTx(code=ErrorCode)
+            return ResponseCheckTx(code=ErrorCode, info=f"ERROR: {e}")
 
     def begin_block(self, req: RequestBeginBlock) -> ResponseBeginBlock:
         """
@@ -189,18 +198,6 @@ class Xian(BaseApplication):
         """
         try:
             tx = decode_transaction_bytes(tx_raw)
-            sender, signature, payload = unpack_transaction(tx)
-
-            # Verify the contents of the txn before processing
-            if verify(vk=sender, msg=payload, signature=signature):
-                payload = json.loads(payload)
-                if payload["chain_id"] != self.chain_id:
-                    logger.debug("DELIVER TX, CHAIN ID MISMATCH")
-                    return ResponseDeliverTx(code=ErrorCode)
-                logger.debug("DELIVER TX, SIGNATURE VERIFICATION PASSED")
-            else:
-                logger.debug("DELIVER TX, SIGNATURE VERIFICATION FAILED")
-                return ResponseDeliverTx(code=ErrorCode)
 
             # Attach metadata to the transaction
             tx["b_meta"] = self.current_block_meta
@@ -224,7 +221,7 @@ class Xian(BaseApplication):
             )
         except Exception as err:
             logger.error(f"DELIVER TX ERROR: {err}")
-            return ResponseDeliverTx(code=ErrorCode)
+            return ResponseDeliverTx(code=ErrorCode, info=f"ERROR: {err}")
 
     def end_block(self, req: RequestEndBlock) -> ResponseEndBlock:
         """
