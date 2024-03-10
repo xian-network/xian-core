@@ -229,20 +229,6 @@ class Xian(BaseApplication):
         you can use the height from the request to record the last_block_height
         """
 
-        return ResponseEndBlock(validator_updates=self.validator_handler.build_validator_updates())
-
-    def commit(self) -> ResponseCommit:
-        """
-        Called after ``end_block``.  This should return a compact ``fingerprint``
-        of the current state of the application. This is usually the root hash
-        of a merkletree.  The returned data is used as part of the consensus process.
-
-        Save all cached state from the block to filesystem DB
-        """
-
-        # a hash of the previous block's app_hash + each of the tx hashes from this block.
-        fingerprint_hash = hash_list(self.fingerprint_hashes)
-
         if self.static_rewards:
             try:
                 distribute_static_rewards(
@@ -264,6 +250,20 @@ class Xian(BaseApplication):
                     )
                 except Exception as e:
                     print(f"REWARD ERROR: {e}, No reward distributed for {tx_hash}")
+
+        return ResponseEndBlock(validator_updates=self.validator_handler.build_validator_updates())
+
+    def commit(self) -> ResponseCommit:
+        """
+        Called after ``end_block``.  This should return a compact ``fingerprint``
+        of the current state of the application. This is usually the root hash
+        of a merkletree.  The returned data is used as part of the consensus process.
+
+        Save all cached state from the block to filesystem DB
+        """
+
+        # a hash of the previous block's app_hash + each of the tx hashes from this block.
+        fingerprint_hash = hash_list(self.fingerprint_hashes)
 
         # commit block to filesystem db
         set_latest_block_hash(fingerprint_hash, self.driver)
