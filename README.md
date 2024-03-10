@@ -34,11 +34,11 @@ Set up the environment on Ubuntu 22.04 with the following steps:
 
 5. Download, unpack, and initialize Tendermint:
     ```
-    wget https://github.com/tendermint/tendermint/releases/download/v0.34.24/tendermint_0.34.24_linux_amd64.tar.gz
-    tar -xf tendermint_0.34.24_linux_amd64.tar.gz
-    rm tendermint_0.34.24_linux_amd64.tar.gz
-    ./tendermint init
-    ./tendermint node --rpc.laddr tcp://0.0.0.0:26657
+    wget https://github.com/cometbft/cometbft/releases/tag/v0.38.5
+    tar -xf cometbft_0.38.5_linux_amd64.tar.gz
+    rm cometbft_0.38.5_linux_amd64.tar.gz
+    ./cometbft init
+    ./cometbft node --rpc.laddr tcp://0.0.0.0:26657
     ```
 
 6. Run Xian:

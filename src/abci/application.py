@@ -23,20 +23,25 @@ Each of these calls are handled below
 """
 
 
-from tendermint.abci.types_pb2 import (
-    RequestInfo,
-    ResponseInfo,
+from cometbft.abci.v1beta3.types_pb2 import (
     RequestInitChain,
     ResponseInitChain,
     ResponseCheckTx,
-    ResponseDeliverTx,
+    ResponseFinalizeBlock,
+    RequestFinalizeBlock,
+    ResponseCommit,
+    RequestPrepareProposal,
+    RequestProcessProposal,
+    RequestExtendVote,
+    ResponseExtendVote,
+    RequestVerifyVoteExtension,
+    ResponseVerifyVoteExtension,
+)
+from cometbft.abci.v1beta1.types_pb2 import (
+    RequestInfo,
+    ResponseInfo,
     RequestQuery,
     ResponseQuery,
-    RequestBeginBlock,
-    ResponseBeginBlock,
-    RequestEndBlock,
-    ResponseEndBlock,
-    ResponseCommit,
     RequestLoadSnapshotChunk,
     ResponseLoadSnapshotChunk,
     RequestListSnapshots,
@@ -45,6 +50,10 @@ from tendermint.abci.types_pb2 import (
     ResponseOfferSnapshot,
     RequestApplySnapshotChunk,
     ResponseApplySnapshotChunk,
+)
+from cometbft.abci.v1beta2.types_pb2 import (
+   ResponsePrepareProposal,
+    ResponseProcessProposal,
 )
 
 
@@ -72,7 +81,11 @@ class BaseApplication:
         - Bootstrap Contracts
         - Initial delegate set.
         """
-        return ResponseInitChain()
+        r = ResponseInitChain()
+        r.app_hash = b""
+        r.consensus_params = None
+        r.validators = None
+        return r
 
     def info(self, req: RequestInfo) -> ResponseInfo:
         """
@@ -83,22 +96,12 @@ class BaseApplication:
         If blockheight == 0, Tendermint will call ``init_chain()``
         """
         r = ResponseInfo()
+        r.data = ""
+        r.version = "0.0.1"
+        r.app_version = 1
         r.last_block_height = 0
         r.last_block_app_hash = b""
         return r
-
-    def deliver_tx(self, tx: bytes) -> ResponseDeliverTx:
-        """
-        This is called via the consensus connection.
-
-        Process the transaction, apply state changes (storing stuff),
-        and return the approriate ``code`` in  ``ResponseDeliverTx``.
-        A code of zero means the computation was successful.
-        A non-zero response code implies an error. However, the transaction
-        will still be included in the block, but marked as invalid via the ``code``
-        """
-
-        return ResponseDeliverTx(code=OkCode)
 
     def check_tx(self, tx: bytes) -> ResponseCheckTx:
         """
@@ -107,6 +110,13 @@ class BaseApplication:
         A non-zero response code implies an error and the transaction will be rejected
         """
         return ResponseCheckTx(code=OkCode)
+    
+    def finalize_block(self, req: RequestFinalizeBlock) -> ResponseFinalizeBlock:
+        r = ResponseFinalizeBlock()
+        r.app_hash = b""
+        r.validator_updates = None
+        r.consensus_param_updates = None
+        return ResponseFinalizeBlock()
 
     def query(self, req: RequestQuery) -> ResponseQuery:
         """
@@ -115,26 +125,6 @@ class BaseApplication:
         """
         return ResponseQuery(code=OkCode)
 
-    def begin_block(self, req: RequestBeginBlock) -> ResponseBeginBlock:
-        """
-        Called during the consensus process.
-
-        You can use this to do ``something`` for each new block.
-        The overall flow of the calls are:
-        begin_block()
-         for each tx:
-           deliver_tx(tx)
-        end_block()
-        commit()
-        """
-        return ResponseBeginBlock()
-
-    def end_block(self, req: RequestEndBlock) -> ResponseEndBlock:
-        """
-        Called at the end of processing the current block. If this is a stateful application
-        you can use the height from the request to record the last_block_height
-        """
-        return ResponseEndBlock()
 
     def commit(self) -> ResponseCommit:
         """
@@ -175,3 +165,36 @@ class BaseApplication:
         State sync: Apply a snapshot to state
         """
         return ResponseApplySnapshotChunk()
+
+    def prepare_proposal(
+        self, req: RequestPrepareProposal
+    ) -> ResponsePrepareProposal:
+        """
+        Consensus: Prepare proposal
+        """
+        return ResponsePrepareProposal()
+    
+    def process_proposal(
+        self, req: RequestProcessProposal
+    ) -> ResponseProcessProposal:
+        """
+        Consensus: Process proposal
+        """
+        return ResponseProcessProposal()
+    
+    def extend_vote(
+        self, req: RequestExtendVote
+    ) -> ResponseExtendVote:
+        """
+        Consensus: Extend vote
+        """
+        return ResponseExtendVote()
+    
+    def verify_vote_extension(
+        self, req: RequestVerifyVoteExtension
+    ) -> ResponseVerifyVoteExtension:
+        """
+        Consensus: Verify vote extension
+        """
+        return ResponseVerifyVoteExtension()
+    

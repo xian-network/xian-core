@@ -166,3 +166,6 @@ dist
 tendermint
 contracting
 lamden
+contract.py
+wallet.py
+/cometbft

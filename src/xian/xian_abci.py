@@ -7,19 +7,20 @@ import os
 
 os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
 
-from tendermint.abci.types_pb2 import (
+from cometbft.abci.v1beta1.types_pb2 import (
     ResponseInfo,
-    ResponseInitChain,
     ResponseCheckTx,
-    ResponseDeliverTx,
     ResponseQuery,
     ResponseCommit,
-    RequestBeginBlock,
-    ResponseBeginBlock,
-    RequestEndBlock,
-    ResponseEndBlock,
-    ResponseCommit,
 )
+
+from cometbft.abci.v1beta3.types_pb2 import (
+    ResponseInitChain,
+    ResponseFinalizeBlock,
+    ExecTxResult,
+    
+)
+
 
 from xian.validators import ValidatorHandler
 
@@ -121,9 +122,10 @@ class Xian(BaseApplication):
         """
         Called every time the application starts
         """
-
         r = ResponseInfo()
         r.version = req.version
+        r.app_version = 1
+        r.data = b""
         r.last_block_height = get_latest_block_height(self.driver)
         r.last_block_app_hash = get_latest_block_hash(self.driver)
         logger.debug(f"LAST_BLOCK_HEIGHT = {r.last_block_height}")
@@ -135,7 +137,6 @@ class Xian(BaseApplication):
 
     def init_chain(self, req) -> ResponseInitChain:
         """Called the first time the application starts; when block_height is 0"""
-
         abci_genesis_state = self.genesis["abci_genesis"]
         asyncio.ensure_future(self.xian.store_genesis_block(abci_genesis_state))
 
@@ -156,22 +157,17 @@ class Xian(BaseApplication):
             logger.error(e)
             return ResponseCheckTx(code=ErrorCode)
 
-    def begin_block(self, req: RequestBeginBlock) -> ResponseBeginBlock:
+    def finalize_block(self, req) -> ResponseFinalizeBlock:
         """
         Called during the consensus process.
 
-        You can use this to do ``something`` for each new block.
-        The overall flow of the calls are:
-        begin_block()
-        for each tx:
-        deliver_tx(tx)
-        end_block()
-        commit()
+        CometBFT, ABCI 2.0 coalesces the BeginBlock, DeliverTx and EndBlock messages into a single message called FinalizeBlock.
         """
 
         nanos = get_nanotime_from_block_time(req.header.time)
         hash = convert_binary_to_hex(req.hash)
         height = req.header.height
+        tx_results = []
 
         self.current_block_meta = {
             "nanos": nanos,
@@ -180,28 +176,9 @@ class Xian(BaseApplication):
         }
 
         self.fingerprint_hashes.append(hash)
-
-        return ResponseBeginBlock()
-
-    def deliver_tx(self, tx_raw) -> ResponseDeliverTx:
-        """
-        Process each tx from the block & add to cached state.
-        """
-        try:
-            tx = decode_transaction_bytes(tx_raw)
-            sender, signature, payload = unpack_transaction(tx)
-
-            # Verify the contents of the txn before processing
-            if verify(vk=sender, msg=payload, signature=signature):
-                payload = json.loads(payload)
-                if payload["chain_id"] != self.chain_id:
-                    logger.debug("DELIVER TX, CHAIN ID MISMATCH")
-                    return ResponseDeliverTx(code=ErrorCode)
-                logger.debug("DELIVER TX, SIGNATURE VERIFICATION PASSED")
-            else:
-                logger.debug("DELIVER TX, SIGNATURE VERIFICATION FAILED")
-                return ResponseDeliverTx(code=ErrorCode)
-
+        
+        for tx in req.txs: 
+            tx = decode_transaction_bytes(tx)
             # Attach metadata to the transaction
             tx["b_meta"] = self.current_block_meta
             result = self.xian.tx_processor.process_tx(tx, enabled_fees=self.enable_tx_fee)
@@ -217,22 +194,12 @@ class Xian(BaseApplication):
             self.fingerprint_hashes.append(tx_hash)
             parsed_tx_result = json.dumps(stringify_decimals(result["tx_result"]))
             logger.debug(f"parsed tx result : {parsed_tx_result}")
-            return ResponseDeliverTx(
-                code=result["tx_result"]["status"],
-                data=encode_str(parsed_tx_result),
-                gas_used=result["stamp_rewards_amount"],
-            )
-        except Exception as err:
-            logger.error(f"DELIVER TX ERROR: {err}")
-            return ResponseDeliverTx(code=ErrorCode)
+            tx_results.append(ExecTxResult(code=result["tx_result"]["status"],data=encode_str(parsed_tx_result),gas_used=result["stamp_rewards_amount"]))
+           
+     
 
-    def end_block(self, req: RequestEndBlock) -> ResponseEndBlock:
-        """
-        Called at the end of processing the current block. If this is a stateful application
-        you can use the height from the request to record the last_block_height
-        """
+        return ResponseFinalizeBlock(validator_updates=self.validator_handler.build_validator_updates(), tx_results=tx_results, app_hash=bytes.fromhex(hash))
 
-        return ResponseEndBlock(validator_updates=self.validator_handler.build_validator_updates())
 
     def commit(self) -> ResponseCommit:
         """
