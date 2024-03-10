@@ -21,11 +21,11 @@ def hash_block_data(hlc_timestamp: str, block_number: str, previous_block_hash: 
 def hash_state_changes(state_changes: list) -> str:
     state_changes.sort(key=lambda x: x.get('key'))
     h = hashlib.sha3_256()
-    # TODO: Adjust to f-string
-    h.update('{}'.format(encode(state_changes).encode()).encode())
+    h.update(f'{encode(state_changes).encode()}'.encode())
     return h.hexdigest()
 
 
+# TODO: Remove
 def submit_from_config(client: ContractingClient):
     con_cfg_path = CONTRACT_DIR / 'contracts.json'
 
@@ -44,6 +44,10 @@ def submit_from_config(client: ContractingClient):
         if contract.get('submit_as') is not None:
             con_name = contract['submit_as']
 
+        for k, v in contract['constructor_args'].items():
+            if v.startswith('%') and v.endswith('%'):
+                contract['constructor_args'][k] = locals()[v.replace('%', '')]
+
         if client.get_contract(con_name) is None:
             client.submit(
                 code,
@@ -53,6 +57,7 @@ def submit_from_config(client: ContractingClient):
             )
 
 
+# TODO: Remove
 def submit_masternodes(masternode_pk, client: ContractingClient):
     with open(CONTRACT_DIR / 'members.s.py') as f:
         code = f.read()
@@ -83,6 +88,7 @@ def register_policies(client: ContractingClient):
             election_house.register_policy(contract=policy)
 
 
+# TODO: Remove
 def setup_member_election(client: ContractingClient, masternode_price=MASTERNODE_PRICE):
     with open(CONTRACT_DIR / 'elect_members.s.py') as f:
         code = f.read()
@@ -98,10 +104,37 @@ def build_genesis_block(founder_sk: str, masternode_pk: str):
     contracting = ContractingClient(driver=ContractDriver(FSDriver(root='/tmp/tmp_state')))
     contracting.set_submission_contract(filename=CONTRACT_DIR / 'submission.s.py', commit=False)
 
-    submit_from_config(contracting)
-    submit_masternodes(masternode_pk, contracting)
+    con_cfg_path = CONTRACT_DIR / 'contracts.json'
+
+    with open(con_cfg_path) as f:
+        con_cfg = json.load(f)
+
+    for contract in con_cfg['contracts']:
+        con_name = contract['name']
+        con_ext = contract['extension']
+
+        con_path = CONTRACT_DIR / con_name + con_ext
+
+        with open(con_path) as f:
+            code = f.read()
+
+        if contract.get('submit_as') is not None:
+            con_name = contract['submit_as']
+
+        for k, v in contract['constructor_args'].items():
+            if v.startswith('%') and v.endswith('%'):
+                contract['constructor_args'][k] = locals()[v.replace('%', '')]
+
+        if contracting.get_contract(con_name) is None:
+            contracting.submit(
+                code,
+                name=con_name,
+                owner=contract['owner'],
+                constructor_args=contract['constructor_args']
+            )
+
+    # TODO: Put content in here?
     register_policies(contracting)
-    setup_member_election(contracting)
 
     block_number = "0"
     hlc_timestamp = '0000-00-00T00:00:00.000000000Z_0'
