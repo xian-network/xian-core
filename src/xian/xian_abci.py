@@ -125,7 +125,6 @@ class Xian(BaseApplication):
         r = ResponseInfo()
         r.version = req.version
         r.app_version = 1
-        r.data = b""
         r.last_block_height = get_latest_block_height(self.driver)
         r.last_block_app_hash = get_latest_block_hash(self.driver)
         logger.debug(f"LAST_BLOCK_HEIGHT = {r.last_block_height}")

@@ -82,9 +82,6 @@ class BaseApplication:
         - Initial delegate set.
         """
         r = ResponseInitChain()
-        r.app_hash = b""
-        r.consensus_params = None
-        r.validators = None
         return r
 
     def info(self, req: RequestInfo) -> ResponseInfo:
@@ -96,7 +93,6 @@ class BaseApplication:
         If blockheight == 0, Tendermint will call ``init_chain()``
         """
         r = ResponseInfo()
-        r.data = ""
         r.version = "0.0.1"
         r.app_version = 1
         r.last_block_height = 0
