@@ -118,10 +118,6 @@ class Xian(BaseApplication):
         self.static_rewards_amount_validators = 1
 
         self.current_block_rewards = {}
-
-    def flush(self, req) -> ResponseFlush:
-        r = ResponseFlush()
-        return r
     
     def echo(self, req) -> ResponseEcho:
         r = ResponseEcho()

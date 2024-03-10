@@ -102,7 +102,6 @@ def read_messages(reader: BytesIO, message: Message) -> Message:
         try:
             length = decode_varint(reader)
         except EOFError:
-            print("End of stream, something went wrong and we are stuck.")
             return
         data = reader.read(length)
         if len(data) < length:
