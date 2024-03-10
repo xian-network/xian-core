@@ -180,14 +180,11 @@ class ABCIServer:
             ## with varint encoded length. We use the 'data' buffer to
             ## keep track of where we are in the byte stream and progress
             ## based on the length encoding
-            try:
-                for message in read_messages(data, Request):
-                    req_type = message.WhichOneof("value")
-                    response = self.protocol.process(req_type, message)
-                    writer.write(response)
-                    last_pos = data.tell()
-            except Exception as e:
-                breakpoint
+            for message in read_messages(data, Request):
+                req_type = message.WhichOneof("value")
+                response = self.protocol.process(req_type, message)
+                writer.write(response)
+                last_pos = data.tell()
 
         # Any connection fails and we shut the whole thing down
         await _stop()

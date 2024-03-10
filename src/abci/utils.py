@@ -98,7 +98,7 @@ def read_messages(reader: BytesIO, message: Message) -> Message:
     """
     while True:
         try:
-            length = decode_varint(reader) >> 1
+            length = decode_varint(reader)
         except EOFError:
             return
         data = reader.read(length)
