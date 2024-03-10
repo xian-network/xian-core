@@ -85,6 +85,8 @@ def write_message(message: Message) -> bytes:
     """
     Write length prefixed protobuf message
     """
+    print("Sending response:")
+    print(message)
     buffer = BytesIO(b"")
     bz = message.SerializeToString()
     buffer.write(encode_varint(len(bz)))
@@ -106,5 +108,6 @@ def read_messages(reader: BytesIO, message: Message) -> Message:
             return
         m = message()
         m.ParseFromString(data)
+        print("Received message:")
         print(m)
         yield m

@@ -188,8 +188,6 @@ class ABCIServer:
             ## based on the length encoding
             for message in read_messages(data, Request):
                 req_type = message.WhichOneof("value")
-                if req_type:
-                    log.info(f" ... received {req_type} request")
                 response = self.protocol.process(req_type, message)
                 writer.write(response)
                 last_pos = data.tell()
