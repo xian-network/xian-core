@@ -84,6 +84,7 @@ class BaseApplication:
         - Initial delegate set.
         """
         r = ResponseInitChain()
+        r.app_hash = b""
         return r
 
     def info(self, req: RequestInfo) -> ResponseInfo:

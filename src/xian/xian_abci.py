@@ -141,7 +141,7 @@ class Xian(BaseApplication):
         """Called the first time the application starts; when block_height is 0"""
         abci_genesis_state = self.genesis["abci_genesis"]
         asyncio.ensure_future(self.xian.store_genesis_block(abci_genesis_state))
-
+        
         return ResponseInitChain()
 
     def check_tx(self, raw_tx) -> ResponseCheckTx:
