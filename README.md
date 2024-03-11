@@ -34,11 +34,11 @@ Set up the environment on Ubuntu 22.04 with the following steps:
 
 5. Download, unpack, and initialize Tendermint:
     ```
-    wget https://github.com/tendermint/tendermint/releases/download/v0.34.24/tendermint_0.34.24_linux_amd64.tar.gz
-    tar -xf tendermint_0.34.24_linux_amd64.tar.gz
-    rm tendermint_0.34.24_linux_amd64.tar.gz
-    ./tendermint init
-    ./tendermint node --rpc.laddr tcp://0.0.0.0:26657
+    wget https://github.com/cometbft/cometbft/releases/download/v0.34.29/cometbft_0.34.29_linux_amd64.tar.gz
+    tar -xf cometbft_0.34.29_linux_amd64.tar.gz
+    rm cometbft_0.34.29_linux_amd64.tar.gz
+    ./cometbft init
+    ./cometbft node --rpc.laddr tcp://0.0.0.0:26657
     ```
 
 6. Run Xian:
@@ -54,12 +54,12 @@ npm install pm2 -g
 ```
 
 
-Then start tendermint node and xian_acbi with:
+Then start cometbft node and xian_acbi with:
 ```
 make up
 ```
 
-And stop tendermint node and xian_acbi with:
+And stop cometbft node and xian_acbi with:
 ```
 make down
 ```
@@ -96,7 +96,7 @@ Xian is running inside the container and can be accessed accordingly.
 
 ## API Endpoints Documentation
 
-This section documents the available API endpoints for querying the application state and interacting with transactions. Each query and transaction request is made to the Tendermint RPC interface with specific paths to interact with the application.
+This section documents the available API endpoints for querying the application state and interacting with transactions. Each query and transaction request is made to the cometbft RPC interface with specific paths to interact with the application.
 
 ### Query Application State
 
