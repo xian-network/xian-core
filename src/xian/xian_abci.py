@@ -287,6 +287,7 @@ class Xian(BaseApplication):
 
         return ResponseCommit(data=fingerprint_hash)
 
+    # TODO: Probably best to use FastAPI here and add proper error handling
     def query(self, req) -> ResponseQuery:
         """
         Query the application state
@@ -328,13 +329,7 @@ class Xian(BaseApplication):
             # http://localhost:26657/abci_query?path="/contract_methods/con_some_contract"
             if path_parts[0] == "contract_methods":
                 self.client.raw_driver.clear_pending_state()
-                contract_code = self.client.raw_driver.get_contract(path_parts[1])
-                funcs = parser.methods_for_contract(contract_code)
-                result = {"methods": funcs}
-
-            # http://localhost:26657/abci_query?path="/contract_methods/con_some_contract"
-            if path_parts[0] == "contract_methods":
-                self.client.raw_driver.clear_pending_state()
+                
                 contract_code = self.client.raw_driver.get_contract(path_parts[1])
                 if contract_code is not None:
                     funcs = parser.methods_for_contract(contract_code)
