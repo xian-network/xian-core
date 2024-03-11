@@ -151,10 +151,19 @@ class Xian(BaseApplication):
         try:
             tx = decode_transaction_bytes(raw_tx)
             self.xian.validate_transaction(tx)
+            sender, signature, payload = unpack_transaction(tx)
+
+            if not verify(vk=sender, msg=payload, signature=signature):
+                return ResponseCheckTx(code=ErrorCode, info="Invalid Signature")
+                
+            payload = json.loads(payload)
+            if payload.get("chain_id") != self.chain_id:
+                return ResponseCheckTx(code=ErrorCode, info="Invalid Chain ID")
+            
             return ResponseCheckTx(code=OkCode)
         except Exception as e:
             logger.error(e)
-            return ResponseCheckTx(code=ErrorCode)
+            return ResponseCheckTx(code=ErrorCode, info=f"ERROR: {e}")
 
     def begin_block(self, req: RequestBeginBlock) -> ResponseBeginBlock:
         """
@@ -189,18 +198,6 @@ class Xian(BaseApplication):
         """
         try:
             tx = decode_transaction_bytes(tx_raw)
-            sender, signature, payload = unpack_transaction(tx)
-
-            # Verify the contents of the txn before processing
-            if verify(vk=sender, msg=payload, signature=signature):
-                payload = json.loads(payload)
-                if payload["chain_id"] != self.chain_id:
-                    logger.debug("DELIVER TX, CHAIN ID MISMATCH")
-                    return ResponseDeliverTx(code=ErrorCode)
-                logger.debug("DELIVER TX, SIGNATURE VERIFICATION PASSED")
-            else:
-                logger.debug("DELIVER TX, SIGNATURE VERIFICATION FAILED")
-                return ResponseDeliverTx(code=ErrorCode)
 
             # Attach metadata to the transaction
             tx["b_meta"] = self.current_block_meta
@@ -224,27 +221,13 @@ class Xian(BaseApplication):
             )
         except Exception as err:
             logger.error(f"DELIVER TX ERROR: {err}")
-            return ResponseDeliverTx(code=ErrorCode)
+            return ResponseDeliverTx(code=ErrorCode, info=f"ERROR: {err}")
 
     def end_block(self, req: RequestEndBlock) -> ResponseEndBlock:
         """
         Called at the end of processing the current block. If this is a stateful application
         you can use the height from the request to record the last_block_height
         """
-
-        return ResponseEndBlock(validator_updates=self.validator_handler.build_validator_updates())
-
-    def commit(self) -> ResponseCommit:
-        """
-        Called after ``end_block``.  This should return a compact ``fingerprint``
-        of the current state of the application. This is usually the root hash
-        of a merkletree.  The returned data is used as part of the consensus process.
-
-        Save all cached state from the block to filesystem DB
-        """
-
-        # a hash of the previous block's app_hash + each of the tx hashes from this block.
-        fingerprint_hash = hash_list(self.fingerprint_hashes)
 
         if self.static_rewards:
             try:
@@ -267,6 +250,20 @@ class Xian(BaseApplication):
                     )
                 except Exception as e:
                     print(f"REWARD ERROR: {e}, No reward distributed for {tx_hash}")
+
+        return ResponseEndBlock(validator_updates=self.validator_handler.build_validator_updates())
+
+    def commit(self) -> ResponseCommit:
+        """
+        Called after ``end_block``.  This should return a compact ``fingerprint``
+        of the current state of the application. This is usually the root hash
+        of a merkletree.  The returned data is used as part of the consensus process.
+
+        Save all cached state from the block to filesystem DB
+        """
+
+        # a hash of the previous block's app_hash + each of the tx hashes from this block.
+        fingerprint_hash = hash_list(self.fingerprint_hashes)
 
         # commit block to filesystem db
         set_latest_block_hash(fingerprint_hash, self.driver)
