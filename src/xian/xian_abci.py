@@ -45,6 +45,7 @@ from xian.utils import (
     load_tendermint_config,
     stringify_decimals,
     load_genesis_data,
+    hash_from_rewards,
     verify,
     hash_list
 )
@@ -229,27 +230,33 @@ class Xian(BaseApplication):
         you can use the height from the request to record the last_block_height
         """
 
+        rewards = []
+
         if self.static_rewards:
             try:
-                distribute_static_rewards(
+                reward_write = distribute_static_rewards(
                     driver=self.driver,
                     foundation_reward=self.static_rewards_amount_foundation,
                     master_reward=self.static_rewards_amount_validators,
                 )
+                rewards.append(reward_write)
             except Exception as e:
                 print(f"REWARD ERROR: {e}, No reward distributed for this block")
 
         if self.current_block_rewards:
             for tx_hash, reward in self.current_block_rewards.items():
                 try:
-                    distribute_rewards(
+                    reward_write = distribute_rewards(
                         stamp_rewards_amount=reward["amount"],
                         stamp_rewards_contract=reward["contract"],
                         driver=self.driver,
                         client=self.client,
                     )
+                    rewards.append(reward_write)
                 except Exception as e:
                     print(f"REWARD ERROR: {e}, No reward distributed for {tx_hash}")
+
+        self.fingerprint_hashes.append(hash_from_rewards(rewards))
 
         return ResponseEndBlock(validator_updates=self.validator_handler.build_validator_updates())
 
