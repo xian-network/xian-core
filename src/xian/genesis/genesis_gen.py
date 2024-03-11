@@ -9,7 +9,6 @@ import json
 
 
 CONTRACT_DIR = Path.cwd().parent.absolute() / 'contracts'
-MASTERNODE_PRICE = 100_000
 
 
 def hash_block_data(hlc_timestamp: str, block_number: str, previous_block_hash: str) -> str:
@@ -23,50 +22,6 @@ def hash_state_changes(state_changes: list) -> str:
     h = hashlib.sha3_256()
     h.update(f'{encode(state_changes).encode()}'.encode())
     return h.hexdigest()
-
-
-# TODO: Remove
-def submit_from_config(client: ContractingClient):
-    con_cfg_path = CONTRACT_DIR / 'contracts.json'
-
-    with open(con_cfg_path) as f:
-        con_cfg = json.load(f)
-
-    for contract in con_cfg['contracts']:
-        con_name = contract['name']
-        con_ext = contract['extension']
-
-        con_path = CONTRACT_DIR / con_name + con_ext
-
-        with open(con_path) as f:
-            code = f.read()
-
-        if contract.get('submit_as') is not None:
-            con_name = contract['submit_as']
-
-        for k, v in contract['constructor_args'].items():
-            if v.startswith('%') and v.endswith('%'):
-                contract['constructor_args'][k] = locals()[v.replace('%', '')]
-
-        if client.get_contract(con_name) is None:
-            client.submit(
-                code,
-                name=con_name,
-                owner=contract['owner'],
-                constructor_args=contract['constructor_args']
-            )
-
-
-# TODO: Remove
-def submit_masternodes(masternode_pk, client: ContractingClient):
-    with open(CONTRACT_DIR / 'members.s.py') as f:
-        code = f.read()
-
-    if client.get_contract('masternodes') is None:
-        client.submit(code, name='masternodes', owner='election_house', constructor_args={
-            'initial_members': [masternode_pk],
-            'candidate': 'elect_masternodes'
-        })
 
 
 def register_policies(client: ContractingClient):
@@ -88,18 +43,6 @@ def register_policies(client: ContractingClient):
             election_house.register_policy(contract=policy)
 
 
-# TODO: Remove
-def setup_member_election(client: ContractingClient, masternode_price=MASTERNODE_PRICE):
-    with open(CONTRACT_DIR / 'elect_members.s.py') as f:
-        code = f.read()
-
-    if client.get_contract('elect_masternodes') is None:
-        client.submit(code, name='elect_masternodes', constructor_args={
-            'policy': 'masternodes',
-            'cost': masternode_price,
-        })
-
-
 def build_genesis_block(founder_sk: str, masternode_pk: str):
     contracting = ContractingClient(driver=ContractDriver(FSDriver(root='/tmp/tmp_state')))
     contracting.set_submission_contract(filename=CONTRACT_DIR / 'submission.s.py', commit=False)
@@ -109,11 +52,12 @@ def build_genesis_block(founder_sk: str, masternode_pk: str):
     with open(con_cfg_path) as f:
         con_cfg = json.load(f)
 
+    con_ext = con_cfg['extension']
+
     for contract in con_cfg['contracts']:
         con_name = contract['name']
-        con_ext = contract['extension']
 
-        con_path = CONTRACT_DIR / con_name + con_ext
+        con_path = CONTRACT_DIR / (con_name + con_ext)
 
         with open(con_path) as f:
             code = f.read()
@@ -121,9 +65,10 @@ def build_genesis_block(founder_sk: str, masternode_pk: str):
         if contract.get('submit_as') is not None:
             con_name = contract['submit_as']
 
-        for k, v in contract['constructor_args'].items():
-            if v.startswith('%') and v.endswith('%'):
-                contract['constructor_args'][k] = locals()[v.replace('%', '')]
+        if contract['constructor_args'] is not None:
+            for k, v in contract['constructor_args'].items():
+                if type(v) is str and v.startswith('%') and v.endswith('%'):
+                    contract['constructor_args'][k] = locals()[v.replace('%', '')]
 
         if contracting.get_contract(con_name) is None:
             contracting.submit(
@@ -190,11 +135,11 @@ def main(founder_sk: str, masternode_pk: str = None, output_path: Path = None):
         genesis = json.load(f)
 
     print('Enrich genesis.json with genesis block data...')
-    genesis['abci_genesis'] = encode(genesis_block)
+    genesis['abci_genesis'] = genesis_block
 
     print(f'Saving genesis block to "{output_file}..."')
     with open(output_file, 'w') as f:
-        f.write(genesis)
+        json.dump(genesis, f)
 
 
 if __name__ == '__main__':

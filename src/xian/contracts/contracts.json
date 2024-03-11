@@ -52,7 +52,7 @@
             "owner": "election_house",
             "constructor_args": {
 				"policy": "masternodes",
-				"cost": "%masternode_price%"
+				"cost": 100000
 			}
 		}
 	]
