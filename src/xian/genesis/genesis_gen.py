@@ -6,6 +6,7 @@ from xian_py.wallet import Wallet
 from pathlib import Path
 import hashlib
 import json
+import re
 
 
 CONTRACT_DIR = Path.cwd().parent.absolute() / 'contracts'
@@ -24,23 +25,14 @@ def hash_state_changes(state_changes: list) -> str:
     return h.hexdigest()
 
 
-def register_policies(client: ContractingClient):
-    election_house = client.get_contract('election_house')
+def replace_arg(arg: str, values: dict):
+    result = re.search('%%(.*)%%', arg)
 
-    policies = [
-        'masternodes',
-        'rewards',
-        'stamp_cost',
-        'dao'
-    ]
-
-    for policy in policies:
-        if client.get_var(
-            contract='election_house',
-            variable='policies',
-            arguments=[policy]
-        ) is None:
-            election_house.register_policy(contract=policy)
+    if result:
+        new_value = values[result.group(1)]
+        return arg.replace(result.group(), new_value)
+    else:
+        return arg
 
 
 def build_genesis_block(founder_sk: str, masternode_pk: str):
@@ -54,6 +46,7 @@ def build_genesis_block(founder_sk: str, masternode_pk: str):
 
     con_ext = con_cfg['extension']
 
+    # Process contracts in contracts.json
     for contract in con_cfg['contracts']:
         con_name = contract['name']
 
@@ -65,10 +58,15 @@ def build_genesis_block(founder_sk: str, masternode_pk: str):
         if contract.get('submit_as') is not None:
             con_name = contract['submit_as']
 
+        # Replace constructor argument values if needed
         if contract['constructor_args'] is not None:
             for k, v in contract['constructor_args'].items():
-                if type(v) is str and v.startswith('%') and v.endswith('%'):
-                    contract['constructor_args'][k] = locals()[v.replace('%', '')]
+                if type(v) is str:
+                    contract['constructor_args'][k] = replace_arg(v, locals())
+                elif type(v) is list:
+                    for i, s in enumerate(v):
+                        if type(s) is str:
+                            v[i] = replace_arg(s, locals())
 
         if contracting.get_contract(con_name) is None:
             contracting.submit(
@@ -78,8 +76,23 @@ def build_genesis_block(founder_sk: str, masternode_pk: str):
                 constructor_args=contract['constructor_args']
             )
 
-    # TODO: Put content in here?
-    register_policies(contracting)
+    # Set policies
+    election_house = contracting.get_contract('election_house')
+
+    policies = [
+        'masternodes',
+        'rewards',
+        'stamp_cost',
+        'dao'
+    ]
+
+    for policy in policies:
+        if contracting.get_var(
+            contract='election_house',
+            variable='policies',
+            arguments=[policy]
+        ) is None:
+            election_house.register_policy(contract=policy)
 
     block_number = "0"
     hlc_timestamp = '0000-00-00T00:00:00.000000000Z_0'
@@ -125,21 +138,14 @@ def build_genesis_block(founder_sk: str, masternode_pk: str):
 def main(founder_sk: str, masternode_pk: str = None, output_path: Path = None):
 
     output_path = Path(output_path) if output_path else Path.cwd()
-    output_file = output_path.joinpath('genesis.json')
+    output_file = output_path / Path('genesis_block.json')
 
-    print(f'Building genesis block...')
     genesis_block = build_genesis_block(founder_sk, masternode_pk)
 
-    print(f'Loading genesis block...')
-    with open(output_file) as f:
-        genesis = json.load(f)
+    print(f'Saving genesis block to {output_file}')
 
-    print('Enrich genesis.json with genesis block data...')
-    genesis['abci_genesis'] = genesis_block
-
-    print(f'Saving genesis block to "{output_file}..."')
     with open(output_file, 'w') as f:
-        json.dump(genesis, f)
+        f.write(encode(genesis_block))
 
 
 if __name__ == '__main__':
@@ -167,4 +173,8 @@ if __name__ == '__main__':
     )
     args = parser.parse_args()
 
-    main(founder_sk=args.founder_sk, masternode_pk=args.masternode_pk, output_path=args.output_path or None)
+    main(
+        founder_sk=args.founder_sk,
+        masternode_pk=args.masternode_pk,
+        output_path=args.output_path or None
+    )
