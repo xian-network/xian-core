@@ -45,6 +45,7 @@ from xian.utils import (
     load_tendermint_config,
     stringify_decimals,
     load_genesis_data,
+    hash_from_rewards,
     verify,
     hash_list
 )
@@ -151,10 +152,19 @@ class Xian(BaseApplication):
         try:
             tx = decode_transaction_bytes(raw_tx)
             self.xian.validate_transaction(tx)
+            sender, signature, payload = unpack_transaction(tx)
+
+            if not verify(vk=sender, msg=payload, signature=signature):
+                return ResponseCheckTx(code=ErrorCode, info="Invalid Signature")
+                
+            payload = json.loads(payload)
+            if payload.get("chain_id") != self.chain_id:
+                return ResponseCheckTx(code=ErrorCode, info="Invalid Chain ID")
+            
             return ResponseCheckTx(code=OkCode)
         except Exception as e:
             logger.error(e)
-            return ResponseCheckTx(code=ErrorCode)
+            return ResponseCheckTx(code=ErrorCode, info=f"ERROR: {e}")
 
     def begin_block(self, req: RequestBeginBlock) -> ResponseBeginBlock:
         """
@@ -189,18 +199,6 @@ class Xian(BaseApplication):
         """
         try:
             tx = decode_transaction_bytes(tx_raw)
-            sender, signature, payload = unpack_transaction(tx)
-
-            # Verify the contents of the txn before processing
-            if verify(vk=sender, msg=payload, signature=signature):
-                payload = json.loads(payload)
-                if payload["chain_id"] != self.chain_id:
-                    logger.debug("DELIVER TX, CHAIN ID MISMATCH")
-                    return ResponseDeliverTx(code=ErrorCode)
-                logger.debug("DELIVER TX, SIGNATURE VERIFICATION PASSED")
-            else:
-                logger.debug("DELIVER TX, SIGNATURE VERIFICATION FAILED")
-                return ResponseDeliverTx(code=ErrorCode)
 
             # Attach metadata to the transaction
             tx["b_meta"] = self.current_block_meta
@@ -224,13 +222,41 @@ class Xian(BaseApplication):
             )
         except Exception as err:
             logger.error(f"DELIVER TX ERROR: {err}")
-            return ResponseDeliverTx(code=ErrorCode)
+            return ResponseDeliverTx(code=ErrorCode, info=f"ERROR: {err}")
 
     def end_block(self, req: RequestEndBlock) -> ResponseEndBlock:
         """
         Called at the end of processing the current block. If this is a stateful application
         you can use the height from the request to record the last_block_height
         """
+
+        rewards = []
+
+        if self.static_rewards:
+            try:
+                reward_write = distribute_static_rewards(
+                    driver=self.driver,
+                    foundation_reward=self.static_rewards_amount_foundation,
+                    master_reward=self.static_rewards_amount_validators,
+                )
+                rewards.append(reward_write)
+            except Exception as e:
+                print(f"REWARD ERROR: {e}, No reward distributed for this block")
+
+        if self.current_block_rewards:
+            for tx_hash, reward in self.current_block_rewards.items():
+                try:
+                    reward_write = distribute_rewards(
+                        stamp_rewards_amount=reward["amount"],
+                        stamp_rewards_contract=reward["contract"],
+                        driver=self.driver,
+                        client=self.client,
+                    )
+                    rewards.append(reward_write)
+                except Exception as e:
+                    print(f"REWARD ERROR: {e}, No reward distributed for {tx_hash}")
+
+        self.fingerprint_hashes.append(hash_from_rewards(rewards))
 
         return ResponseEndBlock(validator_updates=self.validator_handler.build_validator_updates())
 
@@ -245,28 +271,6 @@ class Xian(BaseApplication):
 
         # a hash of the previous block's app_hash + each of the tx hashes from this block.
         fingerprint_hash = hash_list(self.fingerprint_hashes)
-
-        if self.static_rewards:
-            try:
-                distribute_static_rewards(
-                    driver=self.driver,
-                    foundation_reward=self.static_rewards_amount_foundation,
-                    master_reward=self.static_rewards_amount_validators,
-                )
-            except Exception as e:
-                print(f"REWARD ERROR: {e}, No reward distributed for this block")
-
-        if self.current_block_rewards:
-            for tx_hash, reward in self.current_block_rewards.items():
-                try:
-                    distribute_rewards(
-                        stamp_rewards_amount=reward["amount"],
-                        stamp_rewards_contract=reward["contract"],
-                        driver=self.driver,
-                        client=self.client,
-                    )
-                except Exception as e:
-                    print(f"REWARD ERROR: {e}, No reward distributed for {tx_hash}")
 
         # commit block to filesystem db
         set_latest_block_hash(fingerprint_hash, self.driver)
@@ -283,6 +287,7 @@ class Xian(BaseApplication):
 
         return ResponseCommit(data=fingerprint_hash)
 
+    # TODO: Probably best to use FastAPI here and add proper error handling
     def query(self, req) -> ResponseQuery:
         """
         Query the application state
@@ -324,13 +329,7 @@ class Xian(BaseApplication):
             # http://localhost:26657/abci_query?path="/contract_methods/con_some_contract"
             if path_parts[0] == "contract_methods":
                 self.client.raw_driver.clear_pending_state()
-                contract_code = self.client.raw_driver.get_contract(path_parts[1])
-                funcs = parser.methods_for_contract(contract_code)
-                result = {"methods": funcs}
-
-            # http://localhost:26657/abci_query?path="/contract_methods/con_some_contract"
-            if path_parts[0] == "contract_methods":
-                self.client.raw_driver.clear_pending_state()
+                
                 contract_code = self.client.raw_driver.get_contract(path_parts[1])
                 if contract_code is not None:
                     funcs = parser.methods_for_contract(contract_code)
