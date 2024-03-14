@@ -9,7 +9,7 @@ import json
 import re
 
 
-CONTRACT_DIR = Path.cwd().parent.absolute() / 'contracts'
+CONTRACT_DIR = Path.cwd() / 'contracts'
 
 
 def hash_block_data(hlc_timestamp: str, block_number: str, previous_block_hash: str) -> str:
