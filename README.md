@@ -1,187 +1,200 @@
-# Xian
-ABCI application to be used with Tendermint
+# CometBFT
 
-## Installation
-### Ubuntu 22.04
+[Byzantine-Fault Tolerant][bft] [State Machine Replication][smr]. Or
+[Blockchain], for short.
 
-Set up the environment on Ubuntu 22.04 with the following steps:
+[![Version][version-badge]][version-url]
+[![API Reference][api-badge]][api-url]
+[![Go version][go-badge]][go-url]
+[![Discord chat][discord-badge]][discord-url]
+[![License][license-badge]][license-url]
+[![Sourcegraph][sg-badge]][sg-url]
 
-1. Update and prepare the system:
-    ```
-    sudo apt-get update
-    sudo add-apt-repository ppa:deadsnakes/ppa -y
-    sudo apt-get update
-    ```
+| Branch  | Tests                                          | Linting                                     |
+|---------|------------------------------------------------|---------------------------------------------|
+| main    | [![Tests][tests-badge]][tests-url]             | [![Lint][lint-badge]][lint-url]             |
+| v0.38.x | [![Tests][tests-badge-v038x]][tests-url-v038x] | [![Lint][lint-badge-v038x]][lint-url-v038x] |
+| v0.37.x | [![Tests][tests-badge-v037x]][tests-url-v037x] | [![Lint][lint-badge-v037x]][lint-url-v037x] |
+| v0.34.x | [![Tests][tests-badge-v034x]][tests-url-v034x] | [![Lint][lint-badge-v034x]][lint-url-v034x] |
 
-2. Install necessary packages:
-    ```
-    sudo apt-get install pkg-config python3.11 python3.11-dev python3.11-venv libhdf5-dev build-essential
-    ```
+CometBFT is a Byzantine Fault Tolerant (BFT) middleware that takes a
+state transition machine - written in any programming language - and securely
+replicates it on many machines.
 
-3. Clone Xian and related repositories:
-    ```
-    git clone https://github.com/xian-network/xian-core.git
-    cd xian
-    git clone https://github.com/XianChain/contracting.git
-    ```
+It is a fork of [Tendermint Core][tm-core] and implements the Tendermint
+consensus algorithm.
 
-4. Set up Python virtual environment and dependencies:
-    ```
-    python3.11 -m venv xian_venv
-    source xian_venv/bin/activate
-    pip install -e contracting/ -e .
-    ```
+For protocol details, refer to the [CometBFT Specification](./spec/README.md).
 
-5. Download, unpack, and initialize Tendermint:
-    ```
-    wget https://github.com/cometbft/cometbft/releases/tag/v0.38.5
-    tar -xf cometbft_0.38.5_linux_amd64.tar.gz
-    rm cometbft_0.38.5_linux_amd64.tar.gz
-    ./cometbft init
-    ./cometbft node --rpc.laddr tcp://0.0.0.0:26657
-    ```
+For detailed analysis of the consensus protocol, including safety and liveness
+proofs, read our paper, "[The latest gossip on BFT
+consensus](https://arxiv.org/abs/1807.04938)".
 
-6. Run Xian:
-    ```
-   (If in a separate terminal session, don't forget to use: "source xian_venv/bin/activate" again)
-    python src/xian/xian_abci.py
-    ```
+## Documentation
 
-Either run step 5 and 6 in separate sessions and let the applications run in the background with the help of the `screen` command or install PM2 with:
-```
-sudo apt-get install npm
-npm install pm2 -g
-```
+Complete documentation can be found on the
+[website](https://docs.cometbft.com/).
 
+## Releases
 
-Then start tendermint node and xian_acbi with:
-```
-make up
-```
+Please do not depend on `main` as your production branch. Use
+[releases](https://github.com/cometbft/cometbft/releases) instead.
 
-And stop tendermint node and xian_acbi with:
-```
-make down
-```
+If you intend to run CometBFT in production, we're happy to help. To contact
+us, in order of preference:
 
-### Docker
+- [Create a new discussion on
+  GitHub](https://github.com/cometbft/cometbft/discussions)
+- Reach out to us via [Telegram](https://t.me/CometBFT)
+- [Join the Cosmos Network Discord](https://discord.gg/cosmosnetwork) and
+  discuss in
+  [`#cometbft`](https://discord.com/channels/669268347736686612/1069933855307472906)
 
-Alternatively, you can use Docker to set up and run the application. This method is simpler and doesn't require installing dependencies on your host system.
+More on how releases are conducted can be found [here](./RELEASES.md).
 
-#### Prerequisites
+## Security
 
-Docker and Docker Compose must be installed on your system. See [Docker documentation](https://docs.docker.com/get-docker/) for instructions.
+To report a security vulnerability, see our [bug bounty
+program](https://hackerone.com/cosmos). For examples of the kinds of bugs we're
+looking for, see [our security policy](SECURITY.md).
 
-#### Steps
+## Minimum requirements
 
-Clone the Xian repository:
+| CometBFT version | Requirement | Notes             |
+|------------------|-------------|-------------------|
+| main             | Go version  | Go 1.20 or higher |
+| v0.38.x          | Go version  | Go 1.20 or higher |
+| v0.37.x          | Go version  | Go 1.20 or higher |
+| v0.34.x          | Go version  | Go 1.19 or higher |
 
-```
-git clone https://github.com/xian-network/xian-core.git
-cd xian
-```
+### Install
 
-Build and run the Docker container:
+See the [install guide](./docs/guides/install.md).
 
-```
-docker-compose up --build
-```
+### Quick Start
 
-This command builds the Docker image according to the Dockerfile in the repository and starts the container. The Tendermint node and Xian application will run inside this container.
+- [Single node](./docs/guides/quick-start.md)
+- [Local cluster using docker-compose](./docs/networks/docker-compose.md)
 
-#### Accessing the Application
+## Contributing
 
-Tendermint RPC is exposed on `localhost:26657`.
-Xian is running inside the container and can be accessed accordingly.
+Please abide by the [Code of Conduct](CODE_OF_CONDUCT.md) in all interactions.
 
-## API Endpoints Documentation
+Before contributing to the project, please take a look at the [contributing
+guidelines](CONTRIBUTING.md) and the [style guide](STYLE_GUIDE.md). You may also
+find it helpful to read the [specifications](./spec/README.md), and familiarize
+yourself with our [Architectural Decision Records
+(ADRs)](./docs/architecture/README.md) and [Request For Comments
+(RFCs)](./docs/rfc/README.md).
 
-This section documents the available API endpoints for querying the application state and interacting with transactions. Each query and transaction request is made to the Tendermint RPC interface with specific paths to interact with the application.
+## Versioning
 
-### Query Application State
+### Semantic Versioning
 
-- **Endpoint**: `/abci_query`
-- **Method**: GET
-- **Base URL**: `http://89.163.130.217:26657`
+CometBFT uses [Semantic Versioning](http://semver.org/) to determine when and
+how the version changes. According to SemVer, anything in the public API can
+change at any time before version 1.0.0
 
-#### Query Examples
+To provide some stability to users of 0.X.X versions of CometBFT, the MINOR
+version is used to signal breaking changes across CometBFT's API. This API
+includes all publicly exposed types, functions, and methods in non-internal Go
+packages as well as the types and methods accessible via the CometBFT RPC
+interface.
 
-1. **Query Specific Path**
+Breaking changes to these public APIs will be documented in the CHANGELOG.
 
-   To query a specific path within the application, you must include the path parameter in the query string. Note that the path value should be URL-encoded and wrapped in quotes.
+### Upgrades
 
-   - **Request Example**: `/abci_query?path="path"`
+In an effort to avoid accumulating technical debt prior to 1.0.0, we do not
+guarantee that breaking changes (i.e. bumps in the MINOR version) will work with
+existing CometBFT blockchains. In these cases you will have to start a new
+blockchain, or write something custom to get the old data into the new chain.
+However, any bump in the PATCH version should be compatible with existing
+blockchain histories.
 
-     Replace `"path"` with the actual path you want to query. 
+For more information on upgrading, see [UPGRADING.md](./UPGRADING.md).
 
-2. **Get Value of a Key**
+### Supported Versions
 
-   Queries the value of a specified key from the application's state.
+Because we are a small core team, we have limited capacity to ship patch
+updates, including security updates. Consequently, we strongly recommend keeping
+CometBFT up-to-date. Upgrading instructions can be found in
+[UPGRADING.md](./UPGRADING.md).
 
-   - **Request Example**: `/abci_query?path="/get/currency.balances:c93dee52d7dc6cc43af44007c3b1dae5b730ccf18a9e6fb43521f8e4064561e6"`
+Currently supported versions include:
 
-3. **Check Health**
+- v0.38.x: CometBFT v0.38 introduces ABCI 2.0, which implements the entirety of
+  ABCI++
+- v0.37.x: CometBFT v0.37 introduces ABCI 1.0, which is the first major step
+  towards the full ABCI++ implementation in ABCI 2.0
+- v0.34.x: The CometBFT v0.34 series is compatible with the Tendermint Core
+  v0.34 series
 
-   Returns the health status of the application.
+## Resources
 
-   - **Request Example**: `/abci_query?path="/health"`
+### Libraries
 
-     Expected response: `"OK"`
+- [Cosmos SDK](http://github.com/cosmos/cosmos-sdk); A framework for building
+  applications in Golang
+- [Tendermint in Rust](https://github.com/informalsystems/tendermint-rs)
+- [ABCI Tower](https://github.com/penumbra-zone/tower-abci)
 
-4. **Get Next Nonce**
+### Applications
 
-   Fetches the next nonce for a given sender.
+- [Cosmos Hub](https://hub.cosmos.network/)
+- [Terra](https://www.terra.money/)
+- [Celestia](https://celestia.org/)
+- [Anoma](https://anoma.network/)
+- [Vocdoni](https://docs.vocdoni.io/)
 
-   - **Request Example**: `/abci_query?path="/get_next_nonce/ddd326fddb5d1677595311f298b744a4e9f415b577ac179a6afbf38483dc0791"`
+### Research
 
-5. **Estimate Stamps**
+Below are links to the original Tendermint consensus algorithm and relevant
+whitepapers which CometBFT will continue to build on.
 
-   Estimates the stamps required for a contract function call.
+- [The latest gossip on BFT consensus](https://arxiv.org/abs/1807.04938)
+- [Master's Thesis on Tendermint](https://atrium.lib.uoguelph.ca/xmlui/handle/10214/9769)
+- [Original Whitepaper: "Tendermint: Consensus Without Mining"](https://tendermint.com/static/docs/tendermint.pdf)
 
-   - **Request Example**: `/abci_query?path="/estimate_stamps/contract_name/function_name/{\"arg1\":\"value1\",\"arg2\":\"value2\"}"`
+## Join us
 
-     Replace `contract_name`, `function_name`, and the JSON object with your contract name, function name, and arguments, respectively. Note that the JSON object must be URL-encoded.
+CometBFT is currently maintained by [Informal
+Systems](https://informal.systems). If you'd like to work full-time on CometBFT,
+[we're hiring](https://informal.systems/careers)!
 
-### Broadcast Transaction
+Funding for CometBFT development comes primarily from the [Interchain
+Foundation](https://interchain.io), a Swiss non-profit. Informal Systems also
+maintains [cometbft.com](https://cometbft.com).
 
-- **Endpoint**: `/broadcast_tx_commit`
-- **Method**: POST
-- **Base URL**: `http://89.163.130.217:26657`
-- **Description**: Submits a transaction to be processed by the network.
-
-#### Broadcast Transaction Example
-
-   - **Request Example**: 
-
-     ```
-     POST /broadcast_tx_commit?tx="{payload}"
-     ```
-
-     Where `{payload}` is a hex-encoded string representing the transaction data. The transaction data includes metadata such as the signature and timestamp, along with the payload containing the contract information, function to be called, arguments (`kwargs`), nonce, sender, and stamps supplied.
-
-### Get Transaction
-
-- **Endpoint**: `/tx`
-- **Method**: GET
-- **Base URL**: `http://89.163.130.217:26657`
-- **Description**: Retrieves details of a transaction by its hash.
-
-#### Get Transaction Example
-
-   - **Request Example**: 
-
-     ```
-     GET /tx?hash=0x{tx_hash}
-     ```
-
-     Replace `{tx_hash}` with the actual transaction hash to retrieve its details.
-
-#### Response Structure
-
-Responses for querying the application state, broadcasting transactions, and retrieving transaction details will contain either the requested information or an error message. In case of an error, a log with the error message will be included.
-
-- **Success Response for Query**: `ResponseQuery(code=OkCode, value=v)`
-- **Success Response for Transaction Actions**: JSON object containing transaction details or result.
-- **Error Response**: `ResponseQuery(code=ErrorCode, log="QUERY ERROR")` or relevant error message in JSON format for transaction actions.
-
-Ensure that all paths, JSON objects in your queries, and transaction data are correctly formatted and URL-encoded to avoid errors.
+[bft]: https://en.wikipedia.org/wiki/Byzantine_fault_tolerance
+[smr]: https://en.wikipedia.org/wiki/State_machine_replication
+[Blockchain]: https://en.wikipedia.org/wiki/Blockchain
+[version-badge]: https://img.shields.io/github/v/release/cometbft/cometbft.svg
+[version-url]: https://github.com/cometbft/cometbft/releases/latest
+[api-badge]: https://camo.githubusercontent.com/915b7be44ada53c290eb157634330494ebe3e30a/68747470733a2f2f676f646f632e6f72672f6769746875622e636f6d2f676f6c616e672f6764646f3f7374617475732e737667
+[api-url]: https://pkg.go.dev/github.com/cometbft/cometbft
+[go-badge]: https://img.shields.io/badge/go-1.20-blue.svg
+[go-url]: https://github.com/moovweb/gvm
+[discord-badge]: https://img.shields.io/discord/669268347736686612.svg
+[discord-url]: https://discord.gg/cosmosnetwork
+[license-badge]: https://img.shields.io/github/license/cometbft/cometbft.svg
+[license-url]: https://github.com/cometbft/cometbft/blob/main/LICENSE
+[sg-badge]: https://sourcegraph.com/github.com/cometbft/cometbft/-/badge.svg
+[sg-url]: https://sourcegraph.com/github.com/cometbft/cometbft?badge
+[tests-url]: https://github.com/cometbft/cometbft/actions/workflows/tests.yml
+[tests-url-v038x]: https://github.com/cometbft/cometbft/actions/workflows/tests.yml?query=branch%3Av0.38.x
+[tests-url-v037x]: https://github.com/cometbft/cometbft/actions/workflows/tests.yml?query=branch%3Av0.37.x
+[tests-url-v034x]: https://github.com/cometbft/cometbft/actions/workflows/tests.yml?query=branch%3Av0.34.x
+[tests-badge]: https://github.com/cometbft/cometbft/actions/workflows/tests.yml/badge.svg?branch=main
+[tests-badge-v038x]: https://github.com/cometbft/cometbft/actions/workflows/tests.yml/badge.svg?branch=v0.38.x
+[tests-badge-v037x]: https://github.com/cometbft/cometbft/actions/workflows/tests.yml/badge.svg?branch=v0.37.x
+[tests-badge-v034x]: https://github.com/cometbft/cometbft/actions/workflows/tests.yml/badge.svg?branch=v0.34.x
+[lint-badge]: https://github.com/cometbft/cometbft/actions/workflows/lint.yml/badge.svg?branch=main
+[lint-badge-v034x]: https://github.com/cometbft/cometbft/actions/workflows/lint.yml/badge.svg?branch=v0.34.x
+[lint-badge-v037x]: https://github.com/cometbft/cometbft/actions/workflows/lint.yml/badge.svg?branch=v0.37.x
+[lint-badge-v038x]: https://github.com/cometbft/cometbft/actions/workflows/lint.yml/badge.svg?branch=v0.38.x
+[lint-url]: https://github.com/cometbft/cometbft/actions/workflows/lint.yml
+[lint-url-v034x]: https://github.com/cometbft/cometbft/actions/workflows/lint.yml?query=branch%3Av0.34.x
+[lint-url-v037x]: https://github.com/cometbft/cometbft/actions/workflows/lint.yml?query=branch%3Av0.37.x
+[lint-url-v038x]: https://github.com/cometbft/cometbft/actions/workflows/lint.yml?query=branch%3Av0.38.x
+[tm-core]: https://github.com/tendermint/tendermint

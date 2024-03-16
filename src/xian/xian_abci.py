@@ -122,7 +122,6 @@ class Xian(BaseApplication):
     def echo(self, req) -> ResponseEcho:
         r = ResponseEcho()
         r.version = req.version
-        r.app_version = 1
         r.last_block_height = get_latest_block_height(self.driver)
         r.last_block_app_hash = get_latest_block_hash(self.driver)
         return r
@@ -133,7 +132,6 @@ class Xian(BaseApplication):
         """
         res = ResponseInfo()
         res.version = req.version
-        res.app_version = 1
         res.last_block_height = get_latest_block_height(self.driver)
         res.last_block_app_hash = get_latest_block_hash(self.driver)
         return res
@@ -176,6 +174,7 @@ class Xian(BaseApplication):
         hash = convert_binary_to_hex(req.hash)
         height = req.header.height
         tx_results = []
+        reward_writes = []
 
         self.current_block_meta = {
             "nanos": nanos,
@@ -203,7 +202,31 @@ class Xian(BaseApplication):
             parsed_tx_result = json.dumps(stringify_decimals(result["tx_result"]))
             logger.debug(f"parsed tx result : {parsed_tx_result}")
             tx_results.append(ExecTxResult(code=result["tx_result"]["status"],data=encode_str(parsed_tx_result),gas_used=result["stamp_rewards_amount"]))
+
+        if self.static_rewards:
+            try:
+                reward_writes.append(distribute_static_rewards(
+                    driver=self.driver,
+                    foundation_reward=self.static_rewards_amount_foundation,
+                    master_reward=self.static_rewards_amount_validators,
+                ))
+            except Exception as e:
+                print(f"REWARD ERROR: {e}, No reward distributed for this block")
+
+        if self.current_block_rewards:
+            for tx_hash, reward in self.current_block_rewards.items():
+                try:
+                    reward_writes.append(distribute_rewards(
+                        stamp_rewards_amount=reward["amount"],
+                        stamp_rewards_contract=reward["contract"],
+                        driver=self.driver,
+                        client=self.client,
+                    ))
+                except Exception as e:
+                    print(f"REWARD ERROR: {e}, No reward distributed for {tx_hash}")
            
+        reward_hash = hash_list(reward_writes)
+        self.fingerprint_hashes.append(reward_hash)
      
 
         return ResponseFinalizeBlock(validator_updates=self.validator_handler.build_validator_updates(), tx_results=tx_results, app_hash=bytes.fromhex(hash))
@@ -220,28 +243,6 @@ class Xian(BaseApplication):
 
         # a hash of the previous block's app_hash + each of the tx hashes from this block.
         fingerprint_hash = hash_list(self.fingerprint_hashes)
-
-        if self.static_rewards:
-            try:
-                distribute_static_rewards(
-                    driver=self.driver,
-                    foundation_reward=self.static_rewards_amount_foundation,
-                    master_reward=self.static_rewards_amount_validators,
-                )
-            except Exception as e:
-                print(f"REWARD ERROR: {e}, No reward distributed for this block")
-
-        if self.current_block_rewards:
-            for tx_hash, reward in self.current_block_rewards.items():
-                try:
-                    distribute_rewards(
-                        stamp_rewards_amount=reward["amount"],
-                        stamp_rewards_contract=reward["contract"],
-                        driver=self.driver,
-                        client=self.client,
-                    )
-                except Exception as e:
-                    print(f"REWARD ERROR: {e}, No reward distributed for {tx_hash}")
 
         # commit block to filesystem db
         set_latest_block_hash(fingerprint_hash, self.driver)

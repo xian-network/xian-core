@@ -1,25 +1,5 @@
 """
 Base Application
-
-The Tendermint server will create 4 connections to the ABCI Server:
-- Query:
-    ``info()``
-    ``query()``
-- Mempool:
-    ``check_tx()``
-- Consensus:
-    ``init_chain()``
-    ``begin_block()``
-    ``deliver_tx()``
-    ``end_block()``
-    ``commit()``
-State Sync:
-    ``list_snapshots()``
-    ``offer_snapshots()``
-    ``load_snapshot_chunks()``
-    ``apply_snapshot_chunks()``
-
-Each of these calls are handled below
 """
 
 
