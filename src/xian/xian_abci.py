@@ -21,6 +21,9 @@ from cometbft.abci.v1beta3.types_pb2 import (
     ExecTxResult,    
 )
 
+from cometbft.abci.v1beta2.types_pb2 import (
+    ResponseProcessProposal,
+)
 
 
 from xian.validators import ValidatorHandler
@@ -258,6 +261,11 @@ class Xian(BaseApplication):
         gc.collect()
 
         return ResponseCommit(data=fingerprint_hash)
+    
+    def process_proposal(self, req) -> ResponseProcessProposal:
+        response = ResponseProcessProposal()
+        response.status = ResponseProcessProposal.ProposalStatus.ACCEPT
+        return response
 
     def query(self, req) -> ResponseQuery:
         """

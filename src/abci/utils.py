@@ -40,10 +40,8 @@ def get_logger(name: str) -> logging.Logger:
 
 def encode_varint(number: int) -> bytes:
     """
-    Encode varint into bytes
+    Encode varint (as uint64) into bytes
     """
-    # Shift to int64
-    number = number << 1
     buf = b""
     while True:
         towrite = number & 0x7F
