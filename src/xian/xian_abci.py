@@ -11,14 +11,13 @@ from cometbft.abci.v1beta1.types_pb2 import (
     ResponseInfo,
     ResponseCheckTx,
     ResponseQuery,
-    ResponseCommit,
-    ResponseFlush,
     ResponseEcho,
 )
 from cometbft.abci.v1beta3.types_pb2 import (
     ResponseInitChain,
     ResponseFinalizeBlock,
     ExecTxResult,    
+    ResponseCommit,
 )
 
 from cometbft.abci.v1beta2.types_pb2 import (
@@ -51,7 +50,8 @@ from xian.utils import (
     stringify_decimals,
     load_genesis_data,
     verify,
-    hash_list
+    hash_list,
+    hash_from_rewards
 )
 
 from xian.storage import NonceStorage
@@ -173,9 +173,9 @@ class Xian(BaseApplication):
         CometBFT, ABCI 2.0 coalesces the BeginBlock, DeliverTx and EndBlock messages into a single message called FinalizeBlock.
         """
 
-        nanos = get_nanotime_from_block_time(req.header.time)
+        nanos = get_nanotime_from_block_time(req.time)
         hash = convert_binary_to_hex(req.hash)
-        height = req.header.height
+        height = req.height
         tx_results = []
         reward_writes = []
 
@@ -228,25 +228,15 @@ class Xian(BaseApplication):
                 except Exception as e:
                     print(f"REWARD ERROR: {e}, No reward distributed for {tx_hash}")
            
-        reward_hash = hash_list(reward_writes)
+        reward_hash = hash_from_rewards(reward_writes)
         self.fingerprint_hashes.append(reward_hash)
-     
+        fingerprint_hash = hash_list(self.fingerprint_hashes)
 
-        return ResponseFinalizeBlock(validator_updates=self.validator_handler.build_validator_updates(), tx_results=tx_results, app_hash=bytes.fromhex(hash))
+        return ResponseFinalizeBlock(validator_updates=self.validator_handler.build_validator_updates(), tx_results=tx_results, app_hash=fingerprint_hash)
 
 
     def commit(self) -> ResponseCommit:
-        """
-        Called after ``end_block``.  This should return a compact ``fingerprint``
-        of the current state of the application. This is usually the root hash
-        of a merkletree.  The returned data is used as part of the consensus process.
-
-        Save all cached state from the block to filesystem DB
-        """
-
-        # a hash of the previous block's app_hash + each of the tx hashes from this block.
         fingerprint_hash = hash_list(self.fingerprint_hashes)
-
         # commit block to filesystem db
         set_latest_block_hash(fingerprint_hash, self.driver)
         set_latest_block_height(self.current_block_meta["height"], self.driver)
@@ -260,7 +250,7 @@ class Xian(BaseApplication):
 
         gc.collect()
 
-        return ResponseCommit(data=fingerprint_hash)
+        return ResponseCommit()
     
     def process_proposal(self, req) -> ResponseProcessProposal:
         response = ResponseProcessProposal()

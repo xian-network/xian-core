@@ -88,6 +88,12 @@ def hash_list(obj: list) -> bytes:
     h.update(encoded_tx)
     return h.hexdigest().encode("utf-8")
 
+def hash_from_rewards(rewards):
+    h = hashlib.sha3_256()
+    encoded_rewards = encode(rewards).encode()
+    h.update(encoded_rewards)
+    return h.hexdigest()
+
 
 def encode_int(value):
     return struct.pack(">I", value)

@@ -96,6 +96,16 @@ class ProtocolHandler:
         result = self.app.apply_snapshot_chunk(req.apply_snapshot_chunk)
         response = Response(apply_snapshot_chunk=result)
         return write_message(response)
+    
+    def process_proposal(self, req) -> bytes:
+        result = self.app.process_proposal(req.process_proposal)
+        response = Response(process_proposal=result)
+        return write_message(response)
+    
+    def prepare_proposal(self, req) -> bytes:
+        result = self.app.prepare_proposal(req.prepare_proposal)
+        response = Response(prepare_proposal=result)
+        return write_message(response)
 
     def no_match(self, req) -> bytes:
         response = Response(
