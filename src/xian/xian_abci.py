@@ -63,7 +63,7 @@ from contracting.db.driver import (
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 from contracting.compilation import parser
 from xian.node_base import Node
-
+import json
 # Logging
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -157,7 +157,8 @@ class Xian(BaseApplication):
             sender, signature, payload = unpack_transaction(tx)
             if not verify(sender, payload, signature):
                 return ResponseCheckTx(code=ErrorCode)
-            if payload["chain_id"] != self.chain_id:
+            payload_json = json.loads(payload)
+            if payload_json["chain_id"] != self.chain_id:
                 return ResponseCheckTx(code=ErrorCode)
             return ResponseCheckTx(code=OkCode)
         except Exception as e:
