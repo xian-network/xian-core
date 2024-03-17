@@ -13,6 +13,8 @@ from cometbft.abci.v1beta1.types_pb2 import (
     ResponseEcho,
 )
 from cometbft.abci.v1beta3.types_pb2 import (
+    RequestPrepareProposal,
+    RequestProcessProposal,
     ResponseInitChain,
     ResponseFinalizeBlock,
     ExecTxResult,    
@@ -21,6 +23,7 @@ from cometbft.abci.v1beta3.types_pb2 import (
 )
 
 from cometbft.abci.v1beta2.types_pb2 import (
+    ResponsePrepareProposal,
     ResponseProcessProposal,
 )
 
@@ -253,6 +256,10 @@ class Xian(BaseApplication):
     def process_proposal(self, req) -> ResponseProcessProposal:
         response = ResponseProcessProposal()
         response.status = ResponseProcessProposal.ProposalStatus.ACCEPT
+        return response
+    
+    def prepare_proposal(self, req) -> ResponsePrepareProposal:
+        response = ResponsePrepareProposal(txs=req.txs)
         return response
 
     # TODO: Probably best to use FastAPI here and add proper error handling
