@@ -64,7 +64,6 @@ from contracting.db.driver import (
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 from contracting.compilation import parser
 from xian.node_base import Node
-import json
 # Logging
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO
