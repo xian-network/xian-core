@@ -185,23 +185,28 @@ class Xian(BaseApplication):
 
         self.fingerprint_hashes.append(hash)        
         for tx in req.txs: 
-            tx = decode_transaction_bytes(tx)
-            # Attach metadata to the transaction
-            tx["b_meta"] = self.current_block_meta
-            result = self.xian.tx_processor.process_tx(tx, enabled_fees=self.enable_tx_fee)
+            try:
+                tx = decode_transaction_bytes(tx)
+                # Attach metadata to the transaction
+                tx["b_meta"] = self.current_block_meta
+                result = self.xian.tx_processor.process_tx(tx, enabled_fees=self.enable_tx_fee)
 
-            if self.enable_tx_fee:
-                self.current_block_rewards[tx['b_meta']['hash']] = {
-                    "amount": result["stamp_rewards_amount"],
-                    "contract": result["stamp_rewards_contract"]
-                }
+                if self.enable_tx_fee:
+                    self.current_block_rewards[tx['b_meta']['hash']] = {
+                        "amount": result["stamp_rewards_amount"],
+                        "contract": result["stamp_rewards_contract"]
+                    }
 
-            self.xian.set_nonce(tx)
-            tx_hash = result["tx_result"]["hash"]
-            self.fingerprint_hashes.append(tx_hash)
-            parsed_tx_result = json.dumps(stringify_decimals(result["tx_result"]))
-            logger.debug(f"parsed tx result : {parsed_tx_result}")
-            tx_results.append(ExecTxResult(code=result["tx_result"]["status"],data=encode_str(parsed_tx_result),gas_used=result["stamp_rewards_amount"]))
+                self.xian.set_nonce(tx)
+                tx_hash = result["tx_result"]["hash"]
+                self.fingerprint_hashes.append(tx_hash)
+                parsed_tx_result = json.dumps(stringify_decimals(result["tx_result"]))
+                logger.debug(f"parsed tx result : {parsed_tx_result}")
+                tx_results.append(ExecTxResult(code=result["tx_result"]["status"],data=encode_str(parsed_tx_result),gas_used=result["stamp_rewards_amount"]))
+            except Exception as e:
+                # Normally this cannot happen, but if it does, we need to catch it
+                logger.error(f"Fatal ERROR: {e}")
+                tx_results.append(ExecTxResult(code=ErrorCode, data=encode_str(f"ERROR: {e}"), gas_used=0))
 
         if self.static_rewards:
             try:
@@ -211,7 +216,7 @@ class Xian(BaseApplication):
                     master_reward=self.static_rewards_amount_validators,
                 ))
             except Exception as e:
-                print(f"REWARD ERROR: {e}, No reward distributed for this block")
+                logger.error(f"STATIC REWARD ERROR: {e} for block")
 
         if self.current_block_rewards:
             for tx_hash, reward in self.current_block_rewards.items():
@@ -224,7 +229,7 @@ class Xian(BaseApplication):
                     ))
 
                 except Exception as e:
-                    print(f"REWARD ERROR: {e}, No reward distributed for {tx_hash}")
+                    logger.error(f"REWARD ERROR: {e} for tx_hash: {tx_hash}")
            
         reward_hash = hash_from_rewards(reward_writes)
         self.fingerprint_hashes.append(reward_hash)
