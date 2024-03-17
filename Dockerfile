@@ -20,11 +20,11 @@ RUN python3.11 -m venv /xian_venv \
 WORKDIR /xian
 
 # Download, unpack, and initialize Tendermint
-RUN wget https://github.com/tendermint/tendermint/releases/download/v0.34.24/tendermint_0.34.24_linux_amd64.tar.gz && \
-    tar -xf tendermint_0.34.24_linux_amd64.tar.gz && \
-    rm tendermint_0.34.24_linux_amd64.tar.gz && \
-    mv tendermint /usr/local/bin && \
-    tendermint init
+RUN wget https://github.com/cometbft/cometbft/releases/download/v0.34.29/cometbft_0.34.29_linux_amd64.tar.gz && \
+    tar -xf cometbft_0.34.29_linux_amd64.tar.gz && \
+    rm cometbft_0.34.29_linux_amd64.tar.gz && \
+    mv cometbft /usr/local/bin && \
+    cometbft init
 
 # Expose the Tendermint RPC port
 EXPOSE 26657

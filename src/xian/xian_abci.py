@@ -49,6 +49,7 @@ from xian.utils import (
     load_tendermint_config,
     stringify_decimals,
     load_genesis_data,
+    hash_from_rewards,
     verify,
     hash_list,
     hash_from_rewards
@@ -161,7 +162,7 @@ class Xian(BaseApplication):
             return ResponseCheckTx(code=OkCode)
         except Exception as e:
             logger.error(e)
-            return ResponseCheckTx(code=ErrorCode)
+            return ResponseCheckTx(code=ErrorCode, info=f"ERROR: {e}")
 
     def finalize_block(self, req) -> ResponseFinalizeBlock:
         """
@@ -182,8 +183,7 @@ class Xian(BaseApplication):
             "hash": hash,
         }
 
-        self.fingerprint_hashes.append(hash)
-        
+        self.fingerprint_hashes.append(hash)        
         for tx in req.txs: 
             tx = decode_transaction_bytes(tx)
             # Attach metadata to the transaction
@@ -222,6 +222,7 @@ class Xian(BaseApplication):
                         driver=self.driver,
                         client=self.client,
                     ))
+
                 except Exception as e:
                     print(f"REWARD ERROR: {e}, No reward distributed for {tx_hash}")
            
@@ -230,7 +231,6 @@ class Xian(BaseApplication):
         self.fingerprint_hash = hash_list(self.fingerprint_hashes)
 
         return ResponseFinalizeBlock(validator_updates=self.validator_handler.build_validator_updates(), tx_results=tx_results, app_hash=self.fingerprint_hash)
-
 
     def commit(self) -> ResponseCommit:
         # commit block to filesystem db
@@ -254,6 +254,7 @@ class Xian(BaseApplication):
         response.status = ResponseProcessProposal.ProposalStatus.ACCEPT
         return response
 
+    # TODO: Probably best to use FastAPI here and add proper error handling
     def query(self, req) -> ResponseQuery:
         """
         Query the application state
@@ -295,13 +296,7 @@ class Xian(BaseApplication):
             # http://localhost:26657/abci_query?path="/contract_methods/con_some_contract"
             if path_parts[0] == "contract_methods":
                 self.client.raw_driver.clear_pending_state()
-                contract_code = self.client.raw_driver.get_contract(path_parts[1])
-                funcs = parser.methods_for_contract(contract_code)
-                result = {"methods": funcs}
-
-            # http://localhost:26657/abci_query?path="/contract_methods/con_some_contract"
-            if path_parts[0] == "contract_methods":
-                self.client.raw_driver.clear_pending_state()
+                
                 contract_code = self.client.raw_driver.get_contract(path_parts[1])
                 if contract_code is not None:
                     funcs = parser.methods_for_contract(contract_code)

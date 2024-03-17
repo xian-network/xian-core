@@ -227,6 +227,11 @@ def tx_hash_from_tx(tx):
     h.update(encoded_tx)
     return h.hexdigest()
 
+def hash_from_rewards(rewards):
+    h = hashlib.sha3_256()
+    encoded_rewards = encode(rewards).encode()
+    h.update(encoded_rewards)
+    return h.hexdigest()
 
 def check_enough_stamps(
         balance: object,

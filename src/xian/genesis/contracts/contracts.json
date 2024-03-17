@@ -1,5 +1,4 @@
 {
-	"base_directory": "/genesis",
 	"extension": ".s.py",
 	"contracts": [
 		{
@@ -37,6 +36,24 @@
             "name": "dao",
             "owner": "election_house",
             "constructor_args": null
-        }
+        },
+		{
+            "name": "members",
+			"submit_as": "masternodes",
+            "owner": "election_house",
+            "constructor_args": {
+				"initial_members": ["%%masternode_pk%%"],
+				"candidate": "elect_masternodes"
+			}
+		},
+		{
+            "name": "elect_members",
+			"submit_as": "elect_masternodes",
+            "owner": "election_house",
+            "constructor_args": {
+				"policy": "masternodes",
+				"cost": 100000
+			}
+		}
 	]
 }

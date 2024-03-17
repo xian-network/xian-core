@@ -166,7 +166,5 @@ dist
 tendermint
 contracting
 lamden
-contract.py
-wallet.py
-cometbft
 /xian_venv
+cometbft
