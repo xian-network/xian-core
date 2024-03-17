@@ -13,8 +13,6 @@ from cometbft.abci.v1beta1.types_pb2 import (
     ResponseEcho,
 )
 from cometbft.abci.v1beta3.types_pb2 import (
-    RequestPrepareProposal,
-    RequestProcessProposal,
     ResponseInitChain,
     ResponseFinalizeBlock,
     ExecTxResult,    
