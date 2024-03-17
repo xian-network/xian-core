@@ -230,15 +230,14 @@ class Xian(BaseApplication):
            
         reward_hash = hash_from_rewards(reward_writes)
         self.fingerprint_hashes.append(reward_hash)
-        fingerprint_hash = hash_list(self.fingerprint_hashes)
+        self.fingerprint_hash = hash_list(self.fingerprint_hashes)
 
         return ResponseFinalizeBlock(validator_updates=self.validator_handler.build_validator_updates(), tx_results=tx_results, app_hash=fingerprint_hash)
 
 
     def commit(self) -> ResponseCommit:
-        fingerprint_hash = hash_list(self.fingerprint_hashes)
         # commit block to filesystem db
-        set_latest_block_hash(fingerprint_hash, self.driver)
+        set_latest_block_hash(self.fingerprint_hash, self.driver)
         set_latest_block_height(self.current_block_meta["height"], self.driver)
 
         self.driver.hard_apply(str(self.current_block_meta["nanos"]))
@@ -246,6 +245,7 @@ class Xian(BaseApplication):
         # unset current_block_meta & cleanup
         self.current_block_meta = None
         self.fingerprint_hashes = []
+        self.fingerprint_hash = None
         self.current_block_rewards = {}
 
         gc.collect()
