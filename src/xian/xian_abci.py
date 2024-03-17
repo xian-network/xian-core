@@ -1,7 +1,6 @@
 import asyncio
 import json
 import time
-import gc
 import logging
 import os
 
@@ -245,8 +244,6 @@ class Xian(BaseApplication):
         self.fingerprint_hashes = []
         self.fingerprint_hash = None
         self.current_block_rewards = {}
-
-        gc.collect()
 
         return ResponseCommit()
     
