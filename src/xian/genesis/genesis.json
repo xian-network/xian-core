@@ -1,11 +1,12 @@
 {
-  "genesis_time": "2024-03-10T15:58:46.02100712Z",
+  "genesis_time": "2024-03-17T08:42:18.594705976Z",
   "chain_id": "unique-chain-id-goes-here",
   "initial_height": "0",
   "consensus_params": {
     "block": {
       "max_bytes": "22020096",
-      "max_gas": "-1"
+      "max_gas": "-1",
+      "time_iota_ms": "1000"
     },
     "evidence": {
       "max_age_num_blocks": "100000",
@@ -17,12 +18,7 @@
         "ed25519"
       ]
     },
-    "version": {
-      "app": "0"
-    },
-    "abci": {
-      "vote_extensions_enable_height": "0"
-    }
+    "version": {}
   },
   "validators": [
     {

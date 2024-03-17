@@ -168,5 +168,5 @@ contracting
 lamden
 contract.py
 wallet.py
-/cometbft
+cometbft
 /xian_venv
