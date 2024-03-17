@@ -88,14 +88,11 @@ class Xian(BaseApplication):
         self.validator_handler = ValidatorHandler(self)
         self.current_block_meta: dict = None
         self.fingerprint_hashes = []
-        self.chain_id = self.config.get("chain_id", None)
+        self.chain_id = self.genesis.get("chain_id", None)
         self.block_service_mode = self.config.get("block_service_mode", True)
 
         if self.chain_id is None:
-            raise ValueError("No value set for 'chain_id' in Tendermint config")
-
-        if self.genesis.get("chain_id") != self.chain_id:
-            raise ValueError("Value of 'chain_id' in config.toml does not match value in Tendermint genesis.json")
+            raise ValueError("No value set for 'chain_id' in genesis block")
         
         if self.genesis.get("abci_genesis", None) is None:
             raise ValueError("No value set for 'abci_genesis' in Tendermint genesis.json")
