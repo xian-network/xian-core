@@ -232,7 +232,7 @@ class Xian(BaseApplication):
         self.fingerprint_hashes.append(reward_hash)
         self.fingerprint_hash = hash_list(self.fingerprint_hashes)
 
-        return ResponseFinalizeBlock(validator_updates=self.validator_handler.build_validator_updates(), tx_results=tx_results, app_hash=fingerprint_hash)
+        return ResponseFinalizeBlock(validator_updates=self.validator_handler.build_validator_updates(), tx_results=tx_results, app_hash=self.fingerprint_hash)
 
 
     def commit(self) -> ResponseCommit:
