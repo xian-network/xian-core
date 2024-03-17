@@ -9,7 +9,6 @@ os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
 
 from cometbft.abci.v1beta1.types_pb2 import (
     ResponseInfo,
-    ResponseCheckTx,
     ResponseQuery,
     ResponseEcho,
 )
@@ -18,6 +17,7 @@ from cometbft.abci.v1beta3.types_pb2 import (
     ResponseFinalizeBlock,
     ExecTxResult,    
     ResponseCommit,
+    ResponseCheckTx,
 )
 
 from cometbft.abci.v1beta2.types_pb2 import (
