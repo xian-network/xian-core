@@ -187,6 +187,9 @@ class Xian(BaseApplication):
         for tx in req.txs: 
             try:
                 tx = decode_transaction_bytes(tx)
+                sender, signature, payload = unpack_transaction(tx)
+                if not verify(sender, payload, signature):
+                    raise Exception("Invalid Signature") # Not really needed, because check_tx should catch this first, but just in case
                 # Attach metadata to the transaction
                 tx["b_meta"] = self.current_block_meta
                 result = self.xian.tx_processor.process_tx(tx, enabled_fees=self.enable_tx_fee)
