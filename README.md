@@ -1,5 +1,5 @@
 # Xian
-ABCI application to be used with CometBFT
+ABCI application to be used with CometBFT 0.38.6
 
 ## Installation
 ### Ubuntu 22.04
