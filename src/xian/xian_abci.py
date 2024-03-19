@@ -88,6 +88,7 @@ class Xian(BaseApplication):
         self.validator_handler = ValidatorHandler(self)
         self.current_block_meta: dict = None
         self.fingerprint_hashes = []
+        self.fingerprint_hash = None
         self.chain_id = self.genesis.get("chain_id", None)
         self.block_service_mode = self.config.get("block_service_mode", True)
         self.pruning_enabled = self.config.get("pruning_enabled", False) 
@@ -118,7 +119,6 @@ class Xian(BaseApplication):
         self.static_rewards = False
         self.static_rewards_amount_foundation = 1
         self.static_rewards_amount_validators = 1
-
         self.current_block_rewards = {}
     
     def echo(self, req) -> ResponseEcho:
@@ -172,7 +172,6 @@ class Xian(BaseApplication):
 
         CometBFT, ABCI 2.0 coalesces the BeginBlock, DeliverTx and EndBlock messages into a single message called FinalizeBlock.
         """
-
         nanos = get_nanotime_from_block_time(req.time)
         hash = convert_binary_to_hex(req.hash)
         height = req.height
@@ -183,9 +182,8 @@ class Xian(BaseApplication):
             "nanos": nanos,
             "height": height,
             "hash": hash,
-        }
+        }   
 
-        self.fingerprint_hashes.append(hash)        
         for tx in req.txs: 
             try:
                 tx = decode_transaction_bytes(tx)
@@ -240,6 +238,9 @@ class Xian(BaseApplication):
         return ResponseFinalizeBlock(validator_updates=self.validator_handler.build_validator_updates(), tx_results=tx_results, app_hash=self.fingerprint_hash)
 
     def commit(self) -> ResponseCommit:
+        if not self.fingerprint_hash:
+            return ResponseCommit()
+        
         # commit block to filesystem db
         set_latest_block_hash(self.fingerprint_hash, self.driver)
         set_latest_block_height(self.current_block_meta["height"], self.driver)
