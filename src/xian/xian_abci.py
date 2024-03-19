@@ -90,6 +90,8 @@ class Xian(BaseApplication):
         self.fingerprint_hashes = []
         self.chain_id = self.genesis.get("chain_id", None)
         self.block_service_mode = self.config.get("block_service_mode", True)
+        self.pruning_enabled = self.config.get("pruning_enabled", False) 
+        self.blocks_to_keep = self.config.get("blocks_to_keep", 100000) # If pruning is enabled, this is the number of blocks to keep history for
 
         if self.chain_id is None:
             raise ValueError("No value set for 'chain_id' in genesis block")
@@ -250,8 +252,12 @@ class Xian(BaseApplication):
         self.fingerprint_hash = None
         self.current_block_rewards = {}
 
-        # return ResponseCommit(retain_height=block_num) # this would do pruning but we dont want this on nodes that we sync from. Its not deterministic so we can use different values for different nodes
-        return ResponseCommit()
+        retain_height = 0 
+        if self.pruning_enabled:
+            if self.current_block_meta["height"] > self.blocks_to_keep:
+                retain_height = self.current_block_meta["height"] - self.blocks_to_keep
+
+        return ResponseCommit(retain_height=retain_height)
     
     def process_proposal(self, req) -> ResponseProcessProposal:
         response = ResponseProcessProposal()
