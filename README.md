@@ -39,6 +39,7 @@ Set up the environment on Ubuntu 22.04 with the following steps:
     rm cometbft_0.38.6_linux_amd64.tar.gz
     ./cometbft init
     cp src/xian/genesis/genesis.json /root/.cometbft/config/genesis.json
+    cp src/xian/config/config.toml /root/.cometbft/config/config.toml
     rm /root/.cometbft/config/node_key.json
     rm /root/.cometbft/config/priv_validator_key.json
     echo '{"address": "ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9", "pub_key": {"type": "tendermint/PubKeyEd25519", "value": "7gajTPCL9yzlktJtNrkMedq6KCm6ljSZLQNDGBYNSfk="}, "priv_key": {"type": "tendermint/PrivKeyEd25519", "value": "zWzEX/586/CcbGAlV11Qu0LGxwwH4dvFFQqq3JhwXCvuBqNM8Iv3LOWS0m02uQx52rooKbqWNJktA0MYFg1J+Q=="}}' > /root/.cometbft/config/priv_validator_key.json
