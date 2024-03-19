@@ -238,9 +238,6 @@ class Xian(BaseApplication):
         return ResponseFinalizeBlock(validator_updates=self.validator_handler.build_validator_updates(), tx_results=tx_results, app_hash=self.fingerprint_hash)
 
     def commit(self) -> ResponseCommit:
-        if not self.fingerprint_hash:
-            return ResponseCommit()
-        
         # commit block to filesystem db
         set_latest_block_hash(self.fingerprint_hash, self.driver)
         set_latest_block_height(self.current_block_meta["height"], self.driver)
