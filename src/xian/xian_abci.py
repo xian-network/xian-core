@@ -250,6 +250,7 @@ class Xian(BaseApplication):
         self.fingerprint_hash = None
         self.current_block_rewards = {}
 
+        # return ResponseCommit(retain_height=block_num) # this would do pruning but we dont want this on nodes that we sync from
         return ResponseCommit()
     
     def process_proposal(self, req) -> ResponseProcessProposal:
