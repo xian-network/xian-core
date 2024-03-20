@@ -21,7 +21,7 @@ Set up the environment on Ubuntu 22.04 with the following steps:
 3. Clone Xian and related repositories:
     ```
     git clone https://github.com/xian-network/xian-core.git
-    cd xian
+    cd xian-core
     git clone https://github.com/XianChain/contracting.git
     ```
 
@@ -83,7 +83,7 @@ Clone the Xian repository:
 
 ```
 git clone https://github.com/xian-network/xian-core.git
-cd xian
+cd xian-core
 ```
 
 Build and run the Docker container:
