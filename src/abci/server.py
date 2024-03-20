@@ -6,12 +6,15 @@ import signal
 import platform
 from .utils import *
 from io import BytesIO
-from tendermint.abci.types_pb2 import (
+from cometbft.abci.v1beta3.types_pb2 import (
     Request,
     Response,
-    ResponseException,
-    ResponseFlush,
 )
+from cometbft.abci.v1beta1.types_pb2 import (
+    ResponseFlush,
+    ResponseException,
+)
+
 from .application import BaseApplication
 
 DefaultABCIPort = 26658
@@ -38,6 +41,11 @@ class ProtocolHandler:
     def flush(self, req) -> bytes:
         response = Response(flush=ResponseFlush())
         return write_message(response)
+    
+    def echo(self, req) -> bytes:
+        result = self.app.echo(req.echo)
+        response = Response(echo=result)
+        return write_message(response)
 
     def info(self, req) -> bytes:
         result = self.app.info(req.info)
@@ -49,11 +57,6 @@ class ProtocolHandler:
         response = Response(check_tx=result)
         return write_message(response)
 
-    def deliver_tx(self, req) -> bytes:
-        result = self.app.deliver_tx(req.deliver_tx.tx)
-        response = Response(deliver_tx=result)
-        return write_message(response)
-
     def query(self, req) -> bytes:
         result = self.app.query(req.query)
         response = Response(query=result)
@@ -63,15 +66,10 @@ class ProtocolHandler:
         result = self.app.commit()
         response = Response(commit=result)
         return write_message(response)
-
-    def begin_block(self, req) -> bytes:
-        result = self.app.begin_block(req.begin_block)
-        response = Response(begin_block=result)
-        return write_message(response)
-
-    def end_block(self, req) -> bytes:
-        result = self.app.end_block(req.end_block)
-        response = Response(end_block=result)
+    
+    def finalize_block(self, req) -> bytes:
+        result = self.app.finalize_block(req.finalize_block)
+        response = Response(finalize_block=result)
         return write_message(response)
 
     def init_chain(self, req) -> bytes:
@@ -97,6 +95,16 @@ class ProtocolHandler:
     def apply_snapshot_chunk(self, req) -> bytes:
         result = self.app.apply_snapshot_chunk(req.apply_snapshot_chunk)
         response = Response(apply_snapshot_chunk=result)
+        return write_message(response)
+    
+    def process_proposal(self, req) -> bytes:
+        result = self.app.process_proposal(req.process_proposal)
+        response = Response(process_proposal=result)
+        return write_message(response)
+    
+    def prepare_proposal(self, req) -> bytes:
+        result = self.app.prepare_proposal(req.prepare_proposal)
+        response = Response(prepare_proposal=result)
         return write_message(response)
 
     def no_match(self, req) -> bytes:
@@ -173,7 +181,7 @@ class ABCIServer:
             if last_pos == data.tell():
                 data = BytesIO()
                 last_pos = 0
-
+            
             bits = await reader.read(MaxReadInBytes)
             if len(bits) == 0:
                 log.error(" ... tendermint closed connection")

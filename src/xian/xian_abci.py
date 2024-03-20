@@ -1,25 +1,29 @@
 import asyncio
 import json
 import time
-import gc
 import logging
 import os
 
 os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
 
-from tendermint.abci.types_pb2 import (
+from cometbft.abci.v1beta1.types_pb2 import (
     ResponseInfo,
-    ResponseInitChain,
-    ResponseCheckTx,
-    ResponseDeliverTx,
     ResponseQuery,
-    ResponseCommit,
-    RequestBeginBlock,
-    ResponseBeginBlock,
-    RequestEndBlock,
-    ResponseEndBlock,
-    ResponseCommit,
+    ResponseEcho,
 )
+from cometbft.abci.v1beta3.types_pb2 import (
+    ResponseInitChain,
+    ResponseFinalizeBlock,
+    ExecTxResult,    
+    ResponseCommit,
+    ResponseCheckTx,
+)
+
+from cometbft.abci.v1beta2.types_pb2 import (
+    ResponsePrepareProposal,
+    ResponseProcessProposal,
+)
+
 
 from xian.validators import ValidatorHandler
 
@@ -47,7 +51,8 @@ from xian.utils import (
     load_genesis_data,
     hash_from_rewards,
     verify,
-    hash_list
+    hash_list,
+    hash_from_rewards
 )
 
 from xian.storage import NonceStorage
@@ -58,7 +63,6 @@ from contracting.db.driver import (
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 from contracting.compilation import parser
 from xian.node_base import Node
-
 # Logging
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -84,14 +88,14 @@ class Xian(BaseApplication):
         self.validator_handler = ValidatorHandler(self)
         self.current_block_meta: dict = None
         self.fingerprint_hashes = []
-        self.chain_id = self.config.get("chain_id", None)
+        self.fingerprint_hash = None
+        self.chain_id = self.genesis.get("chain_id", None)
         self.block_service_mode = self.config.get("block_service_mode", True)
+        self.pruning_enabled = self.config.get("pruning_enabled", False) 
+        self.blocks_to_keep = self.config.get("blocks_to_keep", 100000) # If pruning is enabled, this is the number of blocks to keep history for
 
         if self.chain_id is None:
-            raise ValueError("No value set for 'chain_id' in Tendermint config")
-
-        if self.genesis.get("chain_id") != self.chain_id:
-            raise ValueError("Value of 'chain_id' in config.toml does not match value in Tendermint genesis.json")
+            raise ValueError("No value set for 'chain_id' in genesis block")
         
         if self.genesis.get("abci_genesis", None) is None:
             raise ValueError("No value set for 'abci_genesis' in Tendermint genesis.json")
@@ -115,28 +119,27 @@ class Xian(BaseApplication):
         self.static_rewards = False
         self.static_rewards_amount_foundation = 1
         self.static_rewards_amount_validators = 1
-
         self.current_block_rewards = {}
+    
+    def echo(self, req) -> ResponseEcho:
+        r = ResponseEcho()
+        r.version = req.version
+        r.last_block_height = get_latest_block_height(self.driver)
+        r.last_block_app_hash = get_latest_block_hash(self.driver)
+        return r
 
     def info(self, req) -> ResponseInfo:
         """
         Called every time the application starts
         """
-
-        r = ResponseInfo()
-        r.version = req.version
-        r.last_block_height = get_latest_block_height(self.driver)
-        r.last_block_app_hash = get_latest_block_hash(self.driver)
-        logger.debug(f"LAST_BLOCK_HEIGHT = {r.last_block_height}")
-        logger.debug(f"LAST_BLOCK_HASH = {r.last_block_app_hash}")
-        logger.debug(f"CHAIN_ID = {self.chain_id}")
-        logger.debug(f"BLOCK_SERVICE_MODE = {self.block_service_mode}")
-        logger.debug(f"BOOTED")
-        return r
+        res = ResponseInfo()
+        res.version = req.version
+        res.last_block_height = get_latest_block_height(self.driver)
+        res.last_block_app_hash = get_latest_block_hash(self.driver)
+        return res
 
     def init_chain(self, req) -> ResponseInitChain:
         """Called the first time the application starts; when block_height is 0"""
-
         abci_genesis_state = self.genesis["abci_genesis"]
         asyncio.ensure_future(self.xian.store_genesis_block(abci_genesis_state))
 
@@ -153,127 +156,93 @@ class Xian(BaseApplication):
             tx = decode_transaction_bytes(raw_tx)
             self.xian.validate_transaction(tx)
             sender, signature, payload = unpack_transaction(tx)
-
-            if not verify(vk=sender, msg=payload, signature=signature):
-                return ResponseCheckTx(code=ErrorCode, info="Invalid Signature")
-                
-            payload = json.loads(payload)
-            if payload.get("chain_id") != self.chain_id:
-                return ResponseCheckTx(code=ErrorCode, info="Invalid Chain ID")
-            
+            if not verify(sender, payload, signature):
+                return ResponseCheckTx(code=ErrorCode)
+            payload_json = json.loads(payload)
+            if payload_json["chain_id"] != self.chain_id:
+                return ResponseCheckTx(code=ErrorCode)
             return ResponseCheckTx(code=OkCode)
         except Exception as e:
             logger.error(e)
             return ResponseCheckTx(code=ErrorCode, info=f"ERROR: {e}")
 
-    def begin_block(self, req: RequestBeginBlock) -> ResponseBeginBlock:
+    def finalize_block(self, req) -> ResponseFinalizeBlock:
         """
         Called during the consensus process.
 
-        You can use this to do ``something`` for each new block.
-        The overall flow of the calls are:
-        begin_block()
-        for each tx:
-        deliver_tx(tx)
-        end_block()
-        commit()
+        CometBFT, ABCI 2.0 coalesces the BeginBlock, DeliverTx and EndBlock messages into a single message called FinalizeBlock.
         """
-
-        nanos = get_nanotime_from_block_time(req.header.time)
+        nanos = get_nanotime_from_block_time(req.time)
         hash = convert_binary_to_hex(req.hash)
-        height = req.header.height
+        height = req.height
+        tx_results = []
+        reward_writes = []
 
         self.current_block_meta = {
             "nanos": nanos,
             "height": height,
             "hash": hash,
-        }
+        }   
 
-        self.fingerprint_hashes.append(hash)
+        for tx in req.txs: 
+            try:
+                tx = decode_transaction_bytes(tx)
+                sender, signature, payload = unpack_transaction(tx)
+                if not verify(sender, payload, signature):
+                    raise Exception("Invalid Signature") # Not really needed, because check_tx should catch this first, but just in case
+                # Attach metadata to the transaction
+                tx["b_meta"] = self.current_block_meta
+                result = self.xian.tx_processor.process_tx(tx, enabled_fees=self.enable_tx_fee)
 
-        return ResponseBeginBlock()
+                if self.enable_tx_fee:
+                    self.current_block_rewards[tx['b_meta']['hash']] = {
+                        "amount": result["stamp_rewards_amount"],
+                        "contract": result["stamp_rewards_contract"]
+                    }
 
-    def deliver_tx(self, tx_raw) -> ResponseDeliverTx:
-        """
-        Process each tx from the block & add to cached state.
-        """
-        try:
-            tx = decode_transaction_bytes(tx_raw)
-
-            # Attach metadata to the transaction
-            tx["b_meta"] = self.current_block_meta
-            result = self.xian.tx_processor.process_tx(tx, enabled_fees=self.enable_tx_fee)
-
-            if self.enable_tx_fee:
-                self.current_block_rewards[tx['b_meta']['hash']] = {
-                    "amount": result["stamp_rewards_amount"],
-                    "contract": result["stamp_rewards_contract"]
-                }
-
-            self.xian.set_nonce(tx)
-            tx_hash = result["tx_result"]["hash"]
-            self.fingerprint_hashes.append(tx_hash)
-            parsed_tx_result = json.dumps(stringify_decimals(result["tx_result"]))
-            logger.debug(f"parsed tx result : {parsed_tx_result}")
-            return ResponseDeliverTx(
-                code=result["tx_result"]["status"],
-                data=encode_str(parsed_tx_result),
-                gas_used=result["stamp_rewards_amount"],
-            )
-        except Exception as err:
-            logger.error(f"DELIVER TX ERROR: {err}")
-            return ResponseDeliverTx(code=ErrorCode, info=f"ERROR: {err}")
-
-    def end_block(self, req: RequestEndBlock) -> ResponseEndBlock:
-        """
-        Called at the end of processing the current block. If this is a stateful application
-        you can use the height from the request to record the last_block_height
-        """
-
-        rewards = []
+                self.xian.set_nonce(tx)
+                tx_hash = result["tx_result"]["hash"]
+                self.fingerprint_hashes.append(tx_hash)
+                parsed_tx_result = json.dumps(stringify_decimals(result["tx_result"]))
+                logger.debug(f"parsed tx result : {parsed_tx_result}")
+                tx_results.append(ExecTxResult(code=result["tx_result"]["status"],data=encode_str(parsed_tx_result),gas_used=result["stamp_rewards_amount"]))
+            except Exception as e:
+                # Normally this cannot happen, but if it does, we need to catch it
+                logger.error(f"Fatal ERROR: {e}")
+                tx_results.append(ExecTxResult(code=ErrorCode, data=encode_str(f"ERROR: {e}"), gas_used=0))
 
         if self.static_rewards:
             try:
-                reward_write = distribute_static_rewards(
+                reward_writes.append(distribute_static_rewards(
                     driver=self.driver,
                     foundation_reward=self.static_rewards_amount_foundation,
                     master_reward=self.static_rewards_amount_validators,
-                )
-                rewards.append(reward_write)
+                ))
             except Exception as e:
-                print(f"REWARD ERROR: {e}, No reward distributed for this block")
+                logger.error(f"STATIC REWARD ERROR: {e} for block")
 
         if self.current_block_rewards:
             for tx_hash, reward in self.current_block_rewards.items():
                 try:
-                    reward_write = distribute_rewards(
+                    reward_writes.append(distribute_rewards(
                         stamp_rewards_amount=reward["amount"],
                         stamp_rewards_contract=reward["contract"],
                         driver=self.driver,
                         client=self.client,
-                    )
-                    rewards.append(reward_write)
+                    ))
+
                 except Exception as e:
-                    print(f"REWARD ERROR: {e}, No reward distributed for {tx_hash}")
+                    logger.error(f"REWARD ERROR: {e} for tx_hash: {tx_hash}")
+           
+        reward_hash = hash_from_rewards(reward_writes)
+        self.fingerprint_hashes.append(reward_hash)
+        self.fingerprint_hash = hash_list(self.fingerprint_hashes)
 
-        self.fingerprint_hashes.append(hash_from_rewards(rewards))
-
-        return ResponseEndBlock(validator_updates=self.validator_handler.build_validator_updates())
+        return ResponseFinalizeBlock(validator_updates=self.validator_handler.build_validator_updates(), tx_results=tx_results, app_hash=self.fingerprint_hash)
 
     def commit(self) -> ResponseCommit:
-        """
-        Called after ``end_block``.  This should return a compact ``fingerprint``
-        of the current state of the application. This is usually the root hash
-        of a merkletree.  The returned data is used as part of the consensus process.
-
-        Save all cached state from the block to filesystem DB
-        """
-
-        # a hash of the previous block's app_hash + each of the tx hashes from this block.
-        fingerprint_hash = hash_list(self.fingerprint_hashes)
-
         # commit block to filesystem db
-        set_latest_block_hash(fingerprint_hash, self.driver)
+        set_latest_block_hash(self.fingerprint_hash, self.driver)
         set_latest_block_height(self.current_block_meta["height"], self.driver)
 
         self.driver.hard_apply(str(self.current_block_meta["nanos"]))
@@ -281,11 +250,24 @@ class Xian(BaseApplication):
         # unset current_block_meta & cleanup
         self.current_block_meta = None
         self.fingerprint_hashes = []
+        self.fingerprint_hash = None
         self.current_block_rewards = {}
 
-        gc.collect()
+        retain_height = 0 
+        if self.pruning_enabled:
+            if self.current_block_meta["height"] > self.blocks_to_keep:
+                retain_height = self.current_block_meta["height"] - self.blocks_to_keep
 
-        return ResponseCommit(data=fingerprint_hash)
+        return ResponseCommit(retain_height=retain_height)
+    
+    def process_proposal(self, req) -> ResponseProcessProposal:
+        response = ResponseProcessProposal()
+        response.status = ResponseProcessProposal.ProposalStatus.ACCEPT
+        return response
+    
+    def prepare_proposal(self, req) -> ResponsePrepareProposal:
+        response = ResponsePrepareProposal(txs=req.txs)
+        return response
 
     # TODO: Probably best to use FastAPI here and add proper error handling
     def query(self, req) -> ResponseQuery:

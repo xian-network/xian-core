@@ -1,5 +1,5 @@
-from tendermint.abci.types_pb2 import ValidatorUpdate
-from tendermint.crypto.keys_pb2 import PublicKey
+from cometbft.abci.v1beta1.types_pb2 import ValidatorUpdate
+from cometbft.crypto.v1.keys_pb2 import PublicKey
 import requests
 import base64
 

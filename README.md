@@ -1,5 +1,5 @@
 # Xian
-ABCI application to be used with CometBFT
+ABCI application to be used with CometBFT 0.38.6
 
 ## Installation
 ### Ubuntu 22.04
@@ -34,10 +34,15 @@ Set up the environment on Ubuntu 22.04 with the following steps:
 
 5. Download, unpack, and initialize CometBFT:
     ```
-    wget https://github.com/cometbft/cometbft/releases/download/v0.34.29/cometbft_0.34.29_linux_amd64.tar.gz
-    tar -xf cometbft_0.34.29_linux_amd64.tar.gz
-    rm cometbft_0.34.29_linux_amd64.tar.gz
+    wget https://github.com/cometbft/cometbft/releases/download/v0.38.6/cometbft_0.38.6_linux_amd64.tar.gz
+    tar -xf cometbft_0.38.6_linux_amd64.tar.gz
+    rm cometbft_0.38.6_linux_amd64.tar.gz
     ./cometbft init
+    cp src/xian/genesis/genesis.json /root/.cometbft/config/genesis.json
+    cp src/xian/config/config.toml /root/.cometbft/config/config.toml
+    rm /root/.cometbft/config/node_key.json
+    rm /root/.cometbft/config/priv_validator_key.json
+    echo '{"address": "ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9", "pub_key": {"type": "tendermint/PubKeyEd25519", "value": "7gajTPCL9yzlktJtNrkMedq6KCm6ljSZLQNDGBYNSfk="}, "priv_key": {"type": "tendermint/PrivKeyEd25519", "value": "zWzEX/586/CcbGAlV11Qu0LGxwwH4dvFFQqq3JhwXCvuBqNM8Iv3LOWS0m02uQx52rooKbqWNJktA0MYFg1J+Q=="}}' > /root/.cometbft/config/priv_validator_key.json
     ./cometbft node --rpc.laddr tcp://0.0.0.0:26657
     ```
 
@@ -66,7 +71,7 @@ make down
 
 ### Docker
 
-Alternatively, you can use Docker to set up and run the application. This method is simpler and doesn't require installing dependencies on your host system.
+This is currently not updated.
 
 #### Prerequisites
 
@@ -133,14 +138,6 @@ This section documents the available API endpoints for querying the application 
    Fetches the next nonce for a given sender.
 
    - **Request Example**: `/abci_query?path="/get_next_nonce/ddd326fddb5d1677595311f298b744a4e9f415b577ac179a6afbf38483dc0791"`
-
-5. **Estimate Stamps**
-
-   Estimates the stamps required for a contract function call.
-
-   - **Request Example**: `/abci_query?path="/estimate_stamps/contract_name/function_name/{\"arg1\":\"value1\",\"arg2\":\"value2\"}"`
-
-     Replace `contract_name`, `function_name`, and the JSON object with your contract name, function name, and arguments, respectively. Note that the JSON object must be URL-encoded.
 
 ### Broadcast Transaction
 
