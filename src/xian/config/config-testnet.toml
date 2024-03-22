@@ -15,7 +15,7 @@
 proxy_app = "tcp://127.0.0.1:26658"
 
 # A custom human readable name for this node
-moniker = "testnet-node"
+moniker = "testnet-node-2"
 
 chain_id = "xian-testnet-1"
 
@@ -211,7 +211,7 @@ laddr = "tcp://0.0.0.0:26656"
 external_address = ""
 
 # Comma separated list of seed nodes to connect to
-seeds = "0cdecece8224d52b95c1ee5102ee33cdee743a8e@65.21.179.142:26656,8e51dd05ec57daf4570f874dd29806c93e9e97f3@65.108.154.248:26656"
+seeds = "a0e7c99b5bbe6376c25e6b2bb6209d5811801a5d@91.108.112.184:26656"
 
 # Comma separated list of nodes to keep persistent connections to
 persistent_peers = ""
