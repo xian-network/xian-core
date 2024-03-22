@@ -2,6 +2,7 @@ from argparse import ArgumentParser
 from nacl.public import PrivateKey
 from base64 import b64encode
 import json
+import hashlib
 
 """
 This is to generate the priv_validator_key.json file for your validator node.
@@ -10,7 +11,6 @@ This is to generate the priv_validator_key.json file for your validator node.
 class ValidatorGen:
     def __init__(self):
         self.parser = ArgumentParser(description='Validator File Generator')
-        self.parser.add_argument('--validator_pubkey', type=str, help='Validator wallet public key 64 characters', required=True)
         self.parser.add_argument('--validator_privkey', type=str, help='Validator wallet private key 64 characters', required=True)
         self.args = self.parser.parse_args()
 
@@ -23,8 +23,12 @@ class ValidatorGen:
         validator_pub_key_b64 = b64encode(validator_pub_key._public_key).decode('utf-8')
         validator_sk_b64 = b64encode(validator_sk._private_key + validator_pub_key._public_key).decode('utf-8')
 
+        validator_pub_key_hash = hashlib.sha256(validator_pub_key._public_key).digest()[:20]
+        validator_address = validator_pub_key_hash.hex().upper()
+
+
         return {
-            'address': self.args.validator_pubkey,
+            'address': validator_address,
             'pub_key': {
                 'type': 'tendermint/PubKeyEd25519',
                 'value': validator_pub_key_b64
@@ -36,9 +40,6 @@ class ValidatorGen:
         }
     
     def main(self):
-        if len(self.args.validator_pubkey) != 64:
-            print('Validator public key must be 64 characters')
-            return
         
         if len(self.args.validator_privkey) != 64:
             print('Validator private key must be 64 characters')
