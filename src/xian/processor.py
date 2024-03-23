@@ -191,7 +191,7 @@ class TxProcessor:
 
         return {
             'block_hash': block_meta["hash"],  # hash nanos - # TODO : review
-            'block_num': nanos,  # hlc to nanos # TODO : review
+            'block_num': block_meta["height"],  # block number
             '__input_hash': self.get_hlc_hash_from_tx(nanos, signature),  # Used for deterministic entropy for random games # TODO - REVIEW
             'now': self.get_now_from_nanos(nanos=nanos),
             'AUXILIARY_SALT': signature
