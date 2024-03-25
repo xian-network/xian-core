@@ -235,10 +235,13 @@ class Xian(BaseApplication):
                     logger.error(f"REWARD ERROR: {e} for tx_hash: {tx_hash}")
            
         reward_hash = hash_from_rewards(reward_writes)
+        validator_updates = self.validator_handler.build_validator_updates()
+        validator_updates_hash = hash_list(validator_updates)
+        self.fingerprint_hashes.append(validator_updates_hash)
         self.fingerprint_hashes.append(reward_hash)
         self.fingerprint_hash = hash_list(self.fingerprint_hashes)
 
-        return ResponseFinalizeBlock(validator_updates=self.validator_handler.build_validator_updates(), tx_results=tx_results, app_hash=self.fingerprint_hash)
+        return ResponseFinalizeBlock(validator_updates=validator_updates, tx_results=tx_results, app_hash=self.fingerprint_hash)
 
     def commit(self) -> ResponseCommit:
         # commit block to filesystem db
