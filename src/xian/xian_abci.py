@@ -20,6 +20,7 @@ from xian.methods.process_proposal import process_proposal
 from xian.methods.prepare_proposal import prepare_proposal
 from xian.methods.query import query
 
+from xian.upgrader import UpgradeHandler
 from xian.validators import ValidatorHandler
 from xian.storage import NonceStorage
 from xian.node_base import Node
@@ -49,6 +50,7 @@ class Xian(BaseApplication):
         self.client = ContractingClient()
         self.driver = ContractDriver()
         self.nonce_storage = NonceStorage()
+        self.upgrader = UpgradeHandler()
         self.xian = Node(self.client, self.driver, self.nonce_storage)
         self.validator_handler = ValidatorHandler(self)
         self.current_block_meta: dict = None
@@ -106,6 +108,7 @@ class Xian(BaseApplication):
         Contains the fields of the newly decided block.
         This method is equivalent to the call sequence BeginBlock, [DeliverTx], and EndBlock in the previous version of ABCI.
         """
+        self.upgrader.check_upgrade(req.height)
         res = finalize_block(self, req)
         return res
 
