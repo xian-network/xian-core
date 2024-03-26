@@ -54,6 +54,12 @@ class UpgradeHandler():
         # if block_height >= 100000 and block_height < 200000 and self.current_version == "v1":
         #     self.upgrade("v2")
         #     self.current_version = "v2"
-        # if block_height >= 200000 and self.current_version == "v2":
+        # if block_height >= 200000 and block_height < 300000 and self.current_version == "v2":
         #     self.upgrade("v3")
         #     self.current_version = "v3"
+
+        # Btw. there is no issue with downgrading either
+        
+        # if block_height >= 300000 and self.current_version == "v3":
+        #     self.upgrade("v2")
+        #     self.current_version = "v2"
