@@ -38,9 +38,9 @@ class UpgradeHandler():
         """
         Check if an upgrade is needed at the given block height.
         """
-        # if block_height >= 100000 and self.current_version == "v1": 
+        # if block_height >= 100000 and block_height < 200000 and self.current_version == "v1":
         #     self.upgrade("v2")
         #     self.current_version = "v2"
-        # elif block_height >= 200000 and self.current_version == "v2":
+        # if block_height >= 200000 and self.current_version == "v2":
         #     self.upgrade("v3")
         #     self.current_version = "v3"
