@@ -2,8 +2,10 @@ from cometbft.abci.v1beta3.types_pb2 import ResponseCheckTx
 from xian.utils import (
     decode_transaction_bytes,
     unpack_transaction,
+    verify
 )
 import json
+from abci.application import ErrorCode, OkCode
 
 def check_tx(self, raw_tx) -> ResponseCheckTx:
     try:
