@@ -17,20 +17,24 @@ class UpgradeHandler():
 
     def upgrade(self, version: str):
         """
-        Crawls the project folder for files ending with the specified version number and dynamically loads the new module.
-        We do not reload external dependencies, as they are not versioned.
+        Recursively crawls the project folder for files ending with the specified version number
+        and dynamically loads the new module.
         """
         try:
-            # Crawling the project folder for files ending with the specified version number
-            for file in os.listdir(os.path.dirname(os.path.realpath(__file__))):
-                if file.endswith(f"_{version}.py"):
-                    # We dont use the version number in the module name. We use the original module name.
-                    original_module_name = file.split("_v")[0]
-                    # Changing the current module to the new one
-                    sys.modules[original_module_name] = importlib.import_module(file.split(".")[0])
-                    # Reloading the module
-                    importlib.reload(sys.modules[original_module_name])
-                    logging.info(f"Upgraded to version {version}")
+            project_dir = os.path.dirname(os.path.realpath(__file__))
+            for root, dirs, files in os.walk(project_dir):
+                for file in files:
+                    if file.endswith(f"_{version}.py"):
+                        # Construct module name based on file path relative to project_dir
+                        # and convert it to a Python module path.
+                        relative_path = os.path.relpath(os.path.join(root, file), start=project_dir)
+                        module_path = relative_path.replace(os.path.sep, '.')[:-3]  # remove '.py' extension
+                        original_module_name = file.split("_v")[0]
+                        # Changing the current module to the new one
+                        sys.modules[original_module_name] = importlib.import_module(module_path)
+                        # Reloading the module
+                        importlib.reload(sys.modules[original_module_name])
+                        logging.info(f"Upgraded to version {version}")
         except Exception as e:
             raise Exception(f"Upgrade failed: {e}")
            
