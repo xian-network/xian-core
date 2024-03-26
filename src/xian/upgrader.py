@@ -2,6 +2,7 @@ import importlib
 import sys
 import logging
 import os
+import gc
 
 
 class UpgradeHandler():
@@ -30,10 +31,18 @@ class UpgradeHandler():
                         relative_path = os.path.relpath(os.path.join(root, file), start=project_dir)
                         module_path = relative_path.replace(os.path.sep, '.')[:-3]  # remove '.py' extension
                         original_module_name = file.split("_v")[0]
-                        # Changing the current module to the new one
+
+                        # Dereference the old module before reloading
+                        if original_module_name in sys.modules:
+                            del sys.modules[original_module_name]
+
+                        # Load and reload the module
                         sys.modules[original_module_name] = importlib.import_module(module_path)
-                        # Reloading the module
                         importlib.reload(sys.modules[original_module_name])
+
+                        # Explicitly collect garbage
+                        gc.collect()
+
                         logging.info(f"Upgraded to version {version}")
         except Exception as e:
             raise Exception(f"Upgrade failed: {e}")
