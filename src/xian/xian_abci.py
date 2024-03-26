@@ -108,7 +108,7 @@ class Xian(BaseApplication):
         Contains the fields of the newly decided block.
         This method is equivalent to the call sequence BeginBlock, [DeliverTx], and EndBlock in the previous version of ABCI.
         """
-        self.upgrader.check_upgrade(req.height)
+        self.upgrader.check_version(req.height)
         res = finalize_block(self, req)
         return res
 

@@ -16,7 +16,7 @@ class UpgradeHandler():
     def __init__(self):
         self.current_version = "v1"
 
-    def upgrade(self, version: str):
+    def change_version(self, version: str):
         """
         Recursively crawls the project folder for files ending with the specified version number
         and dynamically loads the new module.
@@ -43,23 +43,23 @@ class UpgradeHandler():
                         # Explicitly collect garbage
                         gc.collect()
 
-                        logging.info(f"Upgraded to version {version}")
+                        logging.info(f"Changed to version {version}")
         except Exception as e:
             raise Exception(f"Upgrade failed: {e}")
            
-    def check_upgrade(self, block_height: int):
+    def check_version(self, block_height: int):
         """
-        Check if an upgrade is needed at the given block height.
+        Check if a version change is required based on the current block height.
         """
         # if block_height >= 100000 and block_height < 200000 and self.current_version == "v1":
-        #     self.upgrade("v2")
+        #     self.change_version("v2")
         #     self.current_version = "v2"
         # if block_height >= 200000 and block_height < 300000 and self.current_version == "v2":
-        #     self.upgrade("v3")
+        #     self.change_version("v3")
         #     self.current_version = "v3"
 
         # Btw. there is no issue with downgrading either
-        
+
         # if block_height >= 300000 and self.current_version == "v3":
-        #     self.upgrade("v2")
+        #     self.change_version("v2")
         #     self.current_version = "v2"
