@@ -227,6 +227,12 @@ def tx_hash_from_tx(tx):
     h.update(encoded_tx)
     return h.hexdigest()
 
+def hash_from_validator_updates(validator_updates):
+    h = hashlib.sha3_256()
+    encoded_validator_updates = encode(validator_updates).encode()
+    h.update(encoded_validator_updates)
+    return h.hexdigest()
+
 def hash_from_rewards(rewards):
     h = hashlib.sha3_256()
     encoded_rewards = encode(rewards).encode()
