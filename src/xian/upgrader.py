@@ -18,34 +18,44 @@ class UpgradeHandler():
 
     def change_version(self, version: str):
         """
-        Recursively crawls the project folder for files ending with the specified version number
-        and dynamically loads the new module.
+        This function changes the working version of modules by dynamically loading
+        modules based on the specified version. For version 'v1', it looks for files without
+        the '_v' marker. For versions beyond 'v1', it looks for files with the corresponding
+        version marker (e.g., '_v2.py').
         """
         try:
             project_dir = os.path.dirname(os.path.realpath(__file__))
             for root, dirs, files in os.walk(project_dir):
                 for file in files:
-                    if file.endswith(f"_{version}.py"):
-                        # Construct module name based on file path relative to project_dir
-                        # and convert it to a Python module path.
-                        relative_path = os.path.relpath(os.path.join(root, file), start=project_dir)
-                        module_path = relative_path.replace(os.path.sep, '.')[:-3]  # remove '.py' extension
-                        original_module_name = file.split("_v")[0]
-
-                        # Dereference the old module before reloading
-                        if original_module_name in sys.modules:
-                            del sys.modules[original_module_name]
-
-                        # Load and reload the module
-                        sys.modules[original_module_name] = importlib.import_module(module_path)
-                        importlib.reload(sys.modules[original_module_name])
-
-                        # Explicitly collect garbage
-                        gc.collect()
-
-                        logging.info(f"Changed to version {version}")
+                    # For version 'v1', load files without '_v' in their name
+                    if version == "v1" and '_v' not in file and file.endswith(".py"):
+                        self._load_module(file, root, project_dir)
+                    # For other versions, check for the appropriate version marker in the file name
+                    elif f"_{version}.py" in file:
+                        self._load_module(file, root, project_dir)
+            logging.info(f"Changed to version {version}")
         except Exception as e:
             raise Exception(f"Upgrade failed: {e}")
+
+    def _load_module(self, file, root, project_dir):
+        """
+        Helper function to load or reload a module given its filename and directory.
+        """
+        relative_path = os.path.relpath(os.path.join(root, file), start=project_dir)
+        module_path = relative_path.replace(os.path.sep, '.')[:-3]  # remove '.py' extension
+        original_module_name = file.split("_v")[0] if '_v' in file else file[:-3]
+
+        # Dereference the old module before reloading
+        if original_module_name in sys.modules:
+            del sys.modules[original_module_name]
+
+        # Load and reload the module
+        sys.modules[original_module_name] = importlib.import_module(module_path)
+        importlib.reload(sys.modules[original_module_name])
+
+        # Explicitly collect garbage
+        gc.collect()
+
            
     def check_version(self, block_height: int):
         """
