@@ -14,15 +14,15 @@ from contracting.db.driver import (
     ContractDriver,
 )
 
-from xian.methods.init_chain import init_chain
-from xian.methods.echo import echo
-from xian.methods.info import info
-from xian.methods.check_tx import check_tx
-from xian.methods.finalize_block import finalize_block
-from xian.methods.commit import commit
-from xian.methods.process_proposal import process_proposal
-from xian.methods.prepare_proposal import prepare_proposal
-from xian.methods.query import query
+from xian.methods import init_chain
+from xian.methods import echo
+from xian.methods import info
+from xian.methods import check_tx
+from xian.methods import finalize_block
+from xian.methods import commit
+from xian.methods import process_proposal
+from xian.methods import prepare_proposal
+from xian.methods import query
 
 from xian.upgrader import UpgradeHandler
 from xian.validators import ValidatorHandler
@@ -91,6 +91,7 @@ class Xian(BaseApplication):
                     continue
                 setattr(original_module, name, getattr(module, name))
             sys.modules[original_module_path] = original_module
+            del sys.modules[module_path]
             gc.collect()
             logging.info(f"Loaded module {module_path}")
         except Exception as e:
@@ -100,7 +101,7 @@ class Xian(BaseApplication):
         """
         Echo a string to test an ABCI client/server implementation
         """
-        res = echo(self, req)
+        res = echo.echo(self, req)
         return res
 
     def info(self, req):
@@ -108,12 +109,12 @@ class Xian(BaseApplication):
         Called every time the application starts
         Return information about the application state.
         """
-        res = info(self, req)
+        res = info.info(self, req)
         return res
 
     def init_chain(self, req):
         """Called once upon genesis."""
-        resp = init_chain(self, req)
+        resp = init_chain.init_chain(self, req)
         return resp
 
     def check_tx(self, raw_tx):
@@ -122,7 +123,7 @@ class Xian(BaseApplication):
         Guardian of the mempool: every node runs CheckTx before letting a transaction into its local mempool.
         The transaction may come from an external user or another node
         """
-        res = check_tx(self, raw_tx)
+        res = check_tx.check_tx(self, raw_tx)
         return res
 
     def finalize_block(self, req):
@@ -131,28 +132,28 @@ class Xian(BaseApplication):
         This method is equivalent to the call sequence BeginBlock, [DeliverTx], and EndBlock in the previous version of ABCI.
         """
         self.upgrader.check_version(req.height)
-        res = finalize_block(self, req)
+        res = finalize_block.finalize_block(self, req)
         return res
 
     def commit(self):
         """
         Signal the Application to persist the application state. Application is expected to persist its state at the end of this call, before calling ResponseCommit.
         """
-        res = commit(self)
+        res = commit.commit(self)
         return res
     
     def process_proposal(self, req):
         """
         Contains all information on the proposed block needed to fully execute it.
         """
-        res = process_proposal(self, req)
+        res = process_proposal.process_proposal(self, req)
         return res
     
     def prepare_proposal(self, req):
         """
         RequestPrepareProposal contains a preliminary set of transactions txs that CometBFT retrieved from the mempool, called raw proposal. The Application can modify this set and return a modified set of transactions via ResponsePrepareProposal.txs .
         """
-        res = prepare_proposal(self, req)
+        res = prepare_proposal.prepare_proposal(self, req)
         return res
     
     def query(self, req):
@@ -160,7 +161,7 @@ class Xian(BaseApplication):
         Query the application state
         Request Ex. http://localhost:26657/abci_query?path="path"
         """
-        res = query(self, req)
+        res = query.query(self, req)
         return res
 
 
