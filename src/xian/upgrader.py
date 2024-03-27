@@ -60,9 +60,9 @@ class UpgradeHandler():
         """
         Check if a version change is required based on the current block height.
         """
-        if block_height >= 1 and self.current_version == "v1":
-            self.change_version("v2")
-            self.current_version = "v2"
+        # if block_height >= 1 and self.current_version == "v1":
+        #     self.change_version("v2")
+        #     self.current_version = "v2"
         # if block_height >= 200000 and block_height < 300000 and self.current_version == "v2":
         #     self.change_version("v3")
         #     self.current_version = "v3"
