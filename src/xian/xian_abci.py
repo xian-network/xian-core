@@ -1,5 +1,8 @@
 import logging
 import os
+import importlib
+import sys
+
 os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
 
 from abci.server import ABCIServer
@@ -50,7 +53,7 @@ class Xian(BaseApplication):
         self.client = ContractingClient()
         self.driver = ContractDriver()
         self.nonce_storage = NonceStorage()
-        self.upgrader = UpgradeHandler()
+        self.upgrader = UpgradeHandler(self)
         self.xian = Node(self.client, self.driver, self.nonce_storage)
         self.validator_handler = ValidatorHandler(self)
         self.current_block_meta: dict = None
@@ -73,6 +76,23 @@ class Xian(BaseApplication):
         self.static_rewards_amount_foundation = 1
         self.static_rewards_amount_validators = 1
         self.current_block_rewards = {}
+
+    def _load_module(self, module_path, original_module_path):
+        """
+        Inplace replace of a module with a new one and taking its name.
+        """
+        try:
+            if module_path in sys.modules:
+                del sys.modules[module_path]
+            module = importlib.import_module(module_path)
+            # We usually import functions from the module
+            # so we need to copy them to the original module
+            for attr in dir(module):
+                setattr(sys.modules[original_module_path], attr, getattr(module, attr))
+
+            logging.info(f"Loaded module {module_path}")
+        except Exception as e:
+            raise Exception(f"Failed to load module {module_path}: {e}")
     
     def echo(self, req):
         """

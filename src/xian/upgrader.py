@@ -13,8 +13,9 @@ class UpgradeHandler():
     It leverages the importlib library for dynamic loading and unloading of modules (ex. finalize_block_v1.py, finalize_block_v2.py, etc.), 
     facilitating live updates to logic without network downtime or manual module replacement.
     """
-    def __init__(self):
+    def __init__(self, app):
         self.current_version = "v1"
+        self.app = app
 
     def change_version(self, version: str):
         """
@@ -43,15 +44,13 @@ class UpgradeHandler():
         """
         relative_path = os.path.relpath(os.path.join(root, file), start=project_dir)
         module_path = relative_path.replace(os.path.sep, '.')[:-3]  # remove '.py' extension
-        original_module_name = file.split("_v")[0] if '_v' in file else file[:-3]
+        original_module_path = module_path.replace(f"_v{self.current_version}", "") if self.current_version != "v1" else module_path.split('_v')[0]
 
-        # Dereference the old module before reloading
-        if original_module_name in sys.modules:
-            del sys.modules[original_module_name]
+        # Prepend xian.
+        module_path = f"xian.{module_path}"
+        original_module_path = f"xian.{original_module_path}"
 
-        # Load and reload the module
-        sys.modules[original_module_name] = importlib.import_module(module_path)
-        importlib.reload(sys.modules[original_module_name])
+        self.app._load_module(module_path, original_module_path)
 
         # Explicitly collect garbage
         gc.collect()
@@ -61,9 +60,9 @@ class UpgradeHandler():
         """
         Check if a version change is required based on the current block height.
         """
-        # if block_height >= 100000 and block_height < 200000 and self.current_version == "v1":
-        #     self.change_version("v2")
-        #     self.current_version = "v2"
+        if block_height >= 1 and self.current_version == "v1":
+            self.change_version("v2")
+            self.current_version = "v2"
         # if block_height >= 200000 and block_height < 300000 and self.current_version == "v2":
         #     self.change_version("v3")
         #     self.current_version = "v3"
