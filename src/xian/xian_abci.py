@@ -85,12 +85,12 @@ class Xian(BaseApplication):
         try:
             # Replace all functions in the original module with the new modules functions
             module = importlib.import_module(module_path)
-            original_module = importlib.import_module(original_module_path)
+            modified_original_module = importlib.import_module(original_module_path)
             for name in dir(module):
                 if name.startswith("__"):
                     continue
-                setattr(original_module, name, getattr(module, name))
-            sys.modules[original_module_path] = original_module
+                setattr(modified_original_module, name, getattr(module, name))
+            sys.modules[original_module_path] = modified_original_module
             del sys.modules[module_path]
             gc.collect()
             logging.info(f"Loaded module {module_path}")
