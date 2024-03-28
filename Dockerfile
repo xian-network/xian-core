@@ -1,6 +1,8 @@
 # Use Ubuntu 22.04 as base image
 FROM ubuntu:22.04
 
+ARG VALIDATOR_PRIVKEY
+
 # Install necessary packages
 RUN apt-get update && \
     apt-get install -y pkg-config python3.11 python3.11-dev python3.11-venv libhdf5-dev build-essential git wget && \
@@ -13,8 +15,7 @@ RUN git clone https://github.com/xian-network/xian-core.git /xian && \
 
 # Set up Python virtual environment and dependencies
 RUN python3.11 -m venv /xian_venv && \
-    . /xian_venv/bin/activate && \
-    pip install -e /xian/contracting/ -e /xian/
+    /xian_venv/bin/pip install -e /xian/contracting/ -e /xian/
 
 # Set the working directory
 WORKDIR /xian
@@ -25,9 +26,10 @@ RUN wget https://github.com/cometbft/cometbft/releases/download/v0.38.6/cometbft
     rm cometbft_0.38.6_linux_amd64.tar.gz && \
     mv cometbft /usr/local/bin && \
     cometbft init && \
-    cp /xian/config/genesis.json /root/.cometbft/config/genesis.json && \
-    python3.11 /xian/src/xian/tools/validator_file_gen.py --validator_privkey ${VALIDATOR_PRIVKEY} && \
-    cp /xian/tools/priv_validator_key.json /root/.cometbft/config/priv_validator_key.json
+    cp /xian/src/xian/genesis/genesis.json /root/.cometbft/config/genesis.json && \
+    cp /xian/src/xian/config/config.toml /root/.cometbft/config/config.toml && \
+    /xian_venv/bin/python3.11 /xian/src/xian/tools/validator_file_gen.py --validator_privkey ${VALIDATOR_PRIVKEY} && \
+    cp priv_validator_key.json /root/.cometbft/config/priv_validator_key.json
 
 # Expose the CometBFT RPC port
 EXPOSE 26657
@@ -38,5 +40,5 @@ COPY start_node.sh /start_node.sh
 # Make the script executable
 RUN chmod +x /start_node.sh
 
-# Run the script when the container starts
+# Run the script
 CMD ["/start_node.sh"]
