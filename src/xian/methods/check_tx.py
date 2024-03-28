@@ -19,4 +19,4 @@ def check_tx(self, raw_tx) -> ResponseCheckTx:
             return ResponseCheckTx(code=ErrorCode)
         return ResponseCheckTx(code=OkCode)
     except Exception as e:
-        return ResponseCheckTx(code=ErrorCode, info=f"ERROR: {e}")
+        return ResponseCheckTx(code=ErrorCode, log=f"ERROR: {e}")
