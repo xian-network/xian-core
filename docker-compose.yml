@@ -6,3 +6,5 @@ services:
       dockerfile: Dockerfile
     ports:
       - "26657:26657"
+    environment:
+      - VALIDATOR_PRIVKEY=${VALIDATOR_PRIVKEY}
