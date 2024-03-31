@@ -20,8 +20,7 @@ class ValidatorGen:
         # Convert hex private key to bytes and generate signing key object
         signing_key = SigningKey(pk_hex, encoder=HexEncoder)
 
-        # Encode private key in Base64 for the output
-        private_key_hex = signing_key.encode(encoder=HexEncoder).decode('utf-8')
+        private_key_b64 = signing_key.encode(encoder=Base64Encoder).decode('utf-8')
 
         # Obtain the verify key (public key) from the signing key
         verify_key = signing_key.verify_key
@@ -41,11 +40,11 @@ class ValidatorGen:
             },
             'priv_key': {
                 'type': 'tendermint/PrivKeyEd25519',
-                'value': private_key_hex
+                'value': private_key_b64
             }
         }
         return output
-        
+
     def main(self):
         
         if len(self.args.validator_privkey) != 64:
