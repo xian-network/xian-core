@@ -229,7 +229,7 @@ def tx_hash_from_tx(tx):
 
 def hash_from_validator_updates(validator_updates):
     h = hashlib.sha3_256()
-    encoded_validator_updates = encode(validator_updates).encode()
+    encoded_validator_updates = str(validator_updates).encode()
     h.update(encoded_validator_updates)
     return h.hexdigest()
 
