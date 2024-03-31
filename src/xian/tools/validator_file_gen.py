@@ -17,13 +17,18 @@ class ValidatorGen:
     def generate_keys(self):
         pk_hex = self.args.validator_privkey
 
+        
         # Convert hex private key to bytes and generate signing key object
         signing_key = SigningKey(pk_hex, encoder=HexEncoder)
 
-        private_key_b64 = signing_key.encode(encoder=Base64Encoder).decode('utf-8')
-
         # Obtain the verify key (public key) from the signing key
         verify_key = signing_key.verify_key
+
+        # Concatenate private and public key bytes
+        priv_key_with_pub = signing_key.encode() + verify_key.encode()
+
+        # Encode concatenated private and public keys in Base64 for the output
+        priv_key_with_pub_b64 = Base64Encoder.encode(priv_key_with_pub).decode('utf-8')
 
         # Encode public key in Base64 for the output
         public_key_b64 = verify_key.encode(encoder=Base64Encoder).decode('utf-8')
@@ -40,7 +45,7 @@ class ValidatorGen:
             },
             'priv_key': {
                 'type': 'tendermint/PrivKeyEd25519',
-                'value': private_key_b64
+                'value': priv_key_with_pub_b64
             }
         }
         return output
