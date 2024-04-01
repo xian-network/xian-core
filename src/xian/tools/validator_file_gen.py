@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
-from nacl.public import PrivateKey
-from base64 import b64encode
+from nacl.signing import SigningKey
+from nacl.encoding import HexEncoder, Base64Encoder
 import json
 import hashlib
 
@@ -15,30 +15,41 @@ class ValidatorGen:
         self.args = self.parser.parse_args()
 
     def generate_keys(self):
-        validator_sk_hex = bytes.fromhex(self.args.validator_privkey)
-        validator_sk = PrivateKey(validator_sk_hex)
+        pk_hex = self.args.validator_privkey
 
-        validator_pub_key = validator_sk.public_key
+        
+        # Convert hex private key to bytes and generate signing key object
+        signing_key = SigningKey(pk_hex, encoder=HexEncoder)
 
-        validator_pub_key_b64 = b64encode(validator_pub_key._public_key).decode('utf-8')
-        validator_sk_b64 = b64encode(validator_sk._private_key + validator_pub_key._public_key).decode('utf-8')
+        # Obtain the verify key (public key) from the signing key
+        verify_key = signing_key.verify_key
 
-        validator_pub_key_hash = hashlib.sha256(validator_pub_key._public_key).digest()[:20]
-        validator_address = validator_pub_key_hash.hex().upper()
+        # Concatenate private and public key bytes
+        priv_key_with_pub = signing_key.encode() + verify_key.encode()
 
+        # Encode concatenated private and public keys in Base64 for the output
+        priv_key_with_pub_b64 = Base64Encoder.encode(priv_key_with_pub).decode('utf-8')
 
-        return {
-            'address': validator_address,
-            'pub_key': {
-                'type': 'tendermint/PubKeyEd25519',
-                'value': validator_pub_key_b64
+        # Encode public key in Base64 for the output
+        public_key_b64 = verify_key.encode(encoder=Base64Encoder).decode('utf-8')
+
+        # Hash the public key using SHA-256 and take the first 20 bytes for the address
+        address_bytes = hashlib.sha256(verify_key.encode()).digest()[:20]
+        address = address_bytes.hex().upper()
+
+        output = {
+            "address": address,
+            "pub_key": {
+                "type": "tendermint/PubKeyEd25519",
+                "value": public_key_b64
             },
             'priv_key': {
                 'type': 'tendermint/PrivKeyEd25519',
-                'value': validator_sk_b64
+                'value': priv_key_with_pub_b64
             }
         }
-    
+        return output
+
     def main(self):
         
         if len(self.args.validator_privkey) != 64:
