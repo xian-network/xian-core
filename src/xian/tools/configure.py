@@ -70,7 +70,7 @@ class Configure:
 
         if self.args.snapshot_url:
             # Download the snapshot
-            Configure.download_and_extract(self.args.snapshot_url, os.path.join(os.path.expanduser('~'), '.cometbft'))
+            self.download_and_extract(self.args.snapshot_url, os.path.join(os.path.expanduser('~'), '.cometbft'))
 
 
         with open(self.config_path, 'w') as f:
