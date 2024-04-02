@@ -154,7 +154,7 @@ def unpack_transaction(tx):
 def get_nanotime_from_block_time(timeobj) -> int:
     seconds = timeobj.seconds
     nanos = timeobj.nanos
-    return int(str(seconds) + str(nanos))
+    return (seconds * 1_000_000_000) + nanos
 
 
 def convert_binary_to_hex(binary_data):
