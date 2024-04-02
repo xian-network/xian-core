@@ -18,6 +18,8 @@ class Configure:
         self.parser.add_argument('--allow-cors', type=bool, help='Allow CORS', required=False)
         self.parser.add_argument('--snapshot-url', type=str, help='URL of the snapshot', required=False)
         self.parser.add_argument('--copy-genesis', type=bool, help='Copy genesis file', required=False)
+        self.parser.add_argument('--genesis-file-name', type=str, help='Genesis file name if copy-genesis is True', required=False)
+        self.parser.add_argument('--validator-privkey', type=str, help='Validator wallet private key 64 characters', required=False)
         # Chain ID is not neeeded anymore, bcz in Genesis block, we have chain_id
         # Snapshot should be a tar.gz file containing the data directory and xian directory
         # the priv_validator_state.json file that is in the snapshot should have
@@ -78,10 +80,18 @@ class Configure:
             self.download_and_extract(self.args.snapshot_url, os.path.join(os.path.expanduser('~'), '.cometbft'))
 
         if self.args.copy_genesis:
+            if not self.args.genesis_file_name:
+                print('Genesis file name is required')
+                return
             # Copy the genesis file
-            genesis_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'genesis', 'genesis.json')
+            genesis_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'genesis', self.args.genesis_file_name)
             target_path = os.path.join(os.path.expanduser('~'), '.cometbft', 'config', 'genesis.json')
             os.system(f'cp {genesis_path} {target_path}')
+
+        if self.args.validator_privkey:
+            os.system(f'python3 validator_file_gen.py --validator_privkey {self.args.validator_privkey}')
+            # Copy the priv_validator_key.json file
+            os.system(f'cp priv_validator_key.json {os.path.join(os.path.expanduser('~'), ".cometbft", "config")}')
 
         with open(self.config_path, 'w') as f:
             f.write(toml.dumps(config))
