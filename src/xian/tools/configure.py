@@ -16,7 +16,7 @@ class Configure:
         self.parser.add_argument('--seed-node', type=str, help='IP of the Seed Node e.g. 91.108.112.184 (without port, but 26657 and 26656 needs to be open)', required=False)
         self.parser.add_argument('--moniker', type=str, help='Moniker/Name of your node', required=True)
         self.parser.add_argument('--allow-cors', type=bool, help='Allow CORS', required=False, default=True)
-        self.parser.add_argument('--snapshot-url', type=str, help='URL of the snapshot (tar.gz file)', required=False)
+        self.parser.add_argument('--snapshot-url', type=str, help='URL of the snapshot e.g. https://github.com/xian-network/snapshots/raw/main/testnet-2024-04-02.tar (tar.gz file)', required=True, default="https://github.com/xian-network/snapshots/raw/main/testnet-2024-04-02.tar")
         self.parser.add_argument('--copy-genesis', type=bool, help='Copy genesis file', required=False)
         self.parser.add_argument('--genesis-file-name', type=str, help='Genesis file name if copy-genesis is True e.g. genesis-testnet.json', required=False)
         self.parser.add_argument('--validator-privkey', type=str, help='Validator wallet private key 64 characters', required=True)
