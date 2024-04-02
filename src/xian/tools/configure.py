@@ -18,7 +18,7 @@ class Configure:
         self.parser.add_argument('--allow-cors', type=bool, help='Allow CORS', required=False, default=True)
         self.parser.add_argument('--snapshot-url', type=str, help='URL of the snapshot e.g. https://github.com/xian-network/snapshots/raw/main/testnet-2024-04-02.tar (tar.gz file)', required=True, default="https://github.com/xian-network/snapshots/raw/main/testnet-2024-04-02.tar")
         self.parser.add_argument('--copy-genesis', type=bool, help='Copy genesis file', required=True, default=True)
-        self.parser.add_argument('--genesis-file-name', type=str, help='Genesis file name if copy-genesis is True e.g. genesis-testnet.json', required=True)
+        self.parser.add_argument('--genesis-file-name', type=str, help='Genesis file name if copy-genesis is True e.g. genesis-testnet.json', required=True, default="genesis-testnet.json")
         self.parser.add_argument('--validator-privkey', type=str, help='Validator wallet private key 64 characters', required=True)
         # Chain ID is not neeeded anymore, bcz in Genesis block, we have chain_id
         # Snapshot should be a tar.gz file containing the data directory and xian directory
