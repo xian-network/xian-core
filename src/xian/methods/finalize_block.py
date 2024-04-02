@@ -59,7 +59,7 @@ def finalize_block(self, req) -> ResponseFinalizeBlock:
             self.fingerprint_hashes.append(tx_hash)
             parsed_tx_result = json.dumps(stringify_decimals(result["tx_result"]))
             logger.debug(f"parsed tx result : {parsed_tx_result}")
-            tx_results.append(ExecTxResult(code=result["tx_result"]["status"],data=encode_str(parsed_tx_result),gas_used=result["stamp_rewards_amount"]))
+            tx_results.append(ExecTxResult(code=result["tx_result"]["status"],data=encode_str(parsed_tx_result),gas_used=0))
         except Exception as e:
             # Normally this cannot happen, but if it does, we need to catch it
             logger.error(f"Fatal ERROR: {e}")
