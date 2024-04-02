@@ -79,6 +79,14 @@ class Configure:
             config['rpc']['cors_allowed_origins'] = ['*']
 
         if self.args.snapshot_url:
+            # If data directory exists, delete it
+            data_dir = os.path.join(os.path.expanduser('~'), '.cometbft', 'data')
+            if os.path.exists(data_dir):
+                os.system(f'rm -rf {data_dir}')
+            # If xian directory exists, delete it
+            xian_dir = os.path.join(os.path.expanduser('~'), '.cometbft', 'xian')
+            if os.path.exists(xian_dir):
+                os.system(f'rm -rf {xian_dir}')
             # Download the snapshot
             self.download_and_extract(self.args.snapshot_url, os.path.join(os.path.expanduser('~'), '.cometbft'))
 
