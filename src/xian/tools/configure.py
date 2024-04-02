@@ -54,6 +54,9 @@ class Configure:
         os.remove(tar_path)
 
     def main(self):
+        # Make sure this is run in the tools directory
+        os.chdir(os.path.dirname(os.path.abspath(__file__)))
+        
         if not os.path.exists(self.config_path):
             print('Initialize cometbft first')
             return
