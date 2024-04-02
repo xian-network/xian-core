@@ -105,6 +105,10 @@ class Configure:
             file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'priv_validator_key.json')
             target_path = os.path.join(os.path.expanduser('~'), '.cometbft', 'config', 'priv_validator_key.json')
             os.system(f'cp {file_path} {target_path}')
+            # Remove node_key.json file
+            path = os.path.join(os.path.expanduser('~'), '.cometbft', 'config', 'node_key.json')
+            if os.path.exists(path):
+                os.system(f'rm {path}')
 
         with open(self.config_path, 'w') as f:
             f.write(toml.dumps(config))
