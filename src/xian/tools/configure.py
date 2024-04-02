@@ -17,6 +17,7 @@ class Configure:
         self.parser.add_argument('--moniker', type=str, help='Moniker/Name of your node', required=False)
         self.parser.add_argument('--allow-cors', type=bool, help='Allow CORS', required=False)
         self.parser.add_argument('--snapshot-url', type=str, help='URL of the snapshot', required=False)
+        self.parser.add_argument('--copy-genesis', type=bool, help='Copy genesis file', required=False)
         # Chain ID is not neeeded anymore, bcz in Genesis block, we have chain_id
         # Snapshot should be a tar.gz file containing the data directory and xian directory
         # the priv_validator_state.json file that is in the snapshot should have
@@ -51,6 +52,10 @@ class Configure:
         os.remove(tar_path)
 
     def main(self):
+        if not os.path.exists(self.config_path):
+            print('Initialize cometbft first')
+            return
+
         with open(self.config_path, 'r') as f:
             config = toml.load(f)
 
@@ -72,6 +77,11 @@ class Configure:
             # Download the snapshot
             self.download_and_extract(self.args.snapshot_url, os.path.join(os.path.expanduser('~'), '.cometbft'))
 
+        if self.args.copy_genesis:
+            # Copy the genesis file
+            genesis_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'genesis', 'genesis.json')
+            target_path = os.path.join(os.path.expanduser('~'), '.cometbft', 'config', 'genesis.json')
+            os.system(f'cp {genesis_path} {target_path}')
 
         with open(self.config_path, 'w') as f:
             f.write(toml.dumps(config))
