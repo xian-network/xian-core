@@ -16,7 +16,7 @@ class Configure:
         self.parser.add_argument('--seed-node', type=str, help='IP of the Seed Node e.g. 91.108.112.184 (without port, but 26657 and 26656 needs to be open)', required=False)
         self.parser.add_argument('--moniker', type=str, help='Moniker/Name of your node', required=True)
         self.parser.add_argument('--allow-cors', type=bool, help='Allow CORS', required=False, default=True)
-        self.parser.add_argument('--snapshot-url', type=str, help='URL of the snapshot e.g. https://github.com/xian-network/snapshots/raw/main/testnet-2024-04-02.tar (tar.gz file)', required=False, default="https://github.com/xian-network/snapshots/raw/main/testnet-2024-04-02.tar")
+        self.parser.add_argument('--snapshot-url', type=str, help='URL of the snapshot e.g. https://github.com/xian-network/snapshots/raw/main/testnet-2024-04-02.tar (tar.gz file)', required=False)
         self.parser.add_argument('--copy-genesis', type=bool, help='Copy genesis file', required=True, default=True)
         self.parser.add_argument('--genesis-file-name', type=str, help='Genesis file name if copy-genesis is True e.g. genesis-testnet.json', required=True, default="genesis-testnet.json")
         self.parser.add_argument('--validator-privkey', type=str, help='Validator wallet private key 64 characters', required=True)
@@ -28,7 +28,7 @@ class Configure:
         self.args = self.parser.parse_args()
 
     
-    def download_and_extract(url, target_path):
+    def download_and_extract(self, url, target_path):
         # Download the file from the URL
         response = requests.get(url)
         filename = url.split('/')[-1]  # Assumes the URL ends with the filename
@@ -94,15 +94,15 @@ class Configure:
             if not self.args.genesis_file_name:
                 print('Genesis file name is required')
                 return
-            # Copy the genesis file
-            genesis_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'genesis', self.args.genesis_file_name)
+            # Go up one directory to get to the genesis file
+            genesis_path = os.path.normpath(os.path.join('..', 'genesis', self.args.genesis_file_name))
             target_path = os.path.join(os.path.expanduser('~'), '.cometbft', 'config', 'genesis.json')
             os.system(f'cp {genesis_path} {target_path}')
 
         if self.args.validator_privkey:
             os.system(f'python3 validator_file_gen.py --validator_privkey {self.args.validator_privkey}')
             # Copy the priv_validator_key.json file
-            file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'priv_validator_key.json')
+            file_path = os.path.normpath(os.path.join('priv_validator_key.json'))
             target_path = os.path.join(os.path.expanduser('~'), '.cometbft', 'config', 'priv_validator_key.json')
             os.system(f'cp {file_path} {target_path}')
             # Remove node_key.json file
@@ -112,6 +112,7 @@ class Configure:
 
         with open(self.config_path, 'w') as f:
             f.write(toml.dumps(config))
+            print('Configuration updated')
 
 if __name__ == '__main__':
     configure = Configure()
