@@ -66,9 +66,6 @@ class Configure:
 
         if self.args.seed_node:
             info = requests.get(f'http://{self.args.seed_node}:26657/status')
-            if info.status_code != 200:
-                print('Seed node is not accessible')
-                return
             id = info.json()['result']['node_info']['id']
             config['p2p']['seeds'] = f'{id}@{self.args.seed_node}:26656'
 
