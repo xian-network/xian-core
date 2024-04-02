@@ -64,6 +64,8 @@ class Configure:
         with open(self.config_path, 'r') as f:
             config = toml.load(f)
 
+        config['consensus']['create_empty_blocks'] = False
+
         if self.args.seed_node:
             info = requests.get(f'http://{self.args.seed_node}:26657/status')
             id = info.json()['result']['node_info']['id']
