@@ -22,7 +22,7 @@ Set up the environment on Ubuntu 22.04 with the following steps:
     ```
     git clone https://github.com/xian-network/xian-core.git
     cd xian-core
-    git clone https://github.com/XianChain/contracting.git
+    git clone https://github.com/xian-network/contracting.git
     ```
 
 4. Set up Python virtual environment and dependencies:
