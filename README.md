@@ -39,7 +39,7 @@ Set up the environment on Ubuntu 22.04 with the following steps:
     rm cometbft_0.38.6_linux_amd64.tar.gz
     ./cometbft init
     ---- LOCAL ----
-    python src/xian/tools/configure.py --moniker "Node" --copy-genesis True --genesis-file-name genesis.json --validator_privkey "cd6cc45ffe7cebf09c6c6025575d50bb42c6c70c07e1dbc5150aaadc98705c2b"
+    python src/xian/tools/configure.py --moniker "Node" --copy-genesis True --genesis-file-name genesis.json --validatorprivkey "cd6cc45ffe7cebf09c6c6025575d50bb42c6c70c07e1dbc5150aaadc98705c2b"
     ---- JOIN TESTNET ----
     python src/xian/tools/configure.py --moniker "Node" --copy-genesis True --genesis-file-name genesis-testnet.json --seed-node "91.108.112.184" --validator-privkey "7d53884dcc7aa3095aa594c905752698f8323f91848556725f642a7e86589d5a"
     ./cometbft node --rpc.laddr tcp://0.0.0.0:26657
