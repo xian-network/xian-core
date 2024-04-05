@@ -1,76 +1,96 @@
 # Xian
+
 ABCI application to be used with CometBFT 0.38.6
 
 ## Installation
+
 ### Ubuntu 22.04
 
-Set up the environment on Ubuntu 22.04 with the following steps:
+Follow these steps to set up the environment on Ubuntu 22.04:
 
-1. Update and prepare the system:
-    ```
-    sudo apt-get update
-    sudo add-apt-repository ppa:deadsnakes/ppa -y
-    sudo apt-get update
-    ```
+1. **Update and prepare the system:**
 
-2. Install necessary packages:
-    ```
-    sudo apt-get install pkg-config python3.11 python3.11-dev python3.11-venv libhdf5-dev build-essential
-    ```
+   ```bash
+   sudo apt-get update
+   sudo add-apt-repository ppa:deadsnakes/ppa -y
+   sudo apt-get update
+   ```
 
-3. Clone Xian and related repositories:
-    ```
-    git clone https://github.com/xian-network/xian-core.git
-    cd xian-core
-    git clone https://github.com/xian-network/contracting.git
-    ```
+2. **Install necessary packages:**
 
-4. Set up Python virtual environment and dependencies:
-    ```
-    python3.11 -m venv xian_venv
-    source xian_venv/bin/activate
-    pip install -e contracting/ -e .
-    ```
+   ```bash
+   sudo apt-get install pkg-config python3.11 python3.11-dev python3.11-venv libhdf5-dev build-essential
+   ```
 
-5. Download, unpack, and initialize CometBFT:
-    ```
-    wget https://github.com/cometbft/cometbft/releases/download/v0.38.6/cometbft_0.38.6_linux_amd64.tar.gz
-    tar -xf cometbft_0.38.6_linux_amd64.tar.gz
-    rm cometbft_0.38.6_linux_amd64.tar.gz
-    ./cometbft init
-    ---- LOCAL ----
-    python src/xian/tools/configure.py --moniker "Node" --copy-genesis True --genesis-file-name genesis.json --validator-privkey "cd6cc45ffe7cebf09c6c6025575d50bb42c6c70c07e1dbc5150aaadc98705c2b"
-    ---- JOIN TESTNET ----
-    python src/xian/tools/configure.py --moniker "Node" --copy-genesis True --genesis-file-name genesis-testnet.json --seed-node "91.108.112.184" --validator-privkey "ENTER YOUR WALLET PRIVATE KEY HERE"
-    ./cometbft node --rpc.laddr tcp://0.0.0.0:26657
-    ```
+3. **Clone Xian and related repositories:**
 
-6. Run Xian:
-    ```
-   (If in a separate terminal session, don't forget to use: "source xian_venv/bin/activate" again)
-    python src/xian/xian_abci.py
-    ```
+   ```bash
+   git clone https://github.com/xian-network/xian-core.git
+   cd xian-core
+   git clone https://github.com/xian-network/contracting.git
+   ```
 
-Either run step 5 and 6 in separate sessions and let the applications run in the background with the help of the `screen` command or install PM2 with:
-```
-sudo apt-get install npm
-npm install pm2 -g
-```
+4. **Set up Python virtual environment and dependencies:**
 
+   ```bash
+   python3.11 -m venv xian_venv
+   source xian_venv/bin/activate
+   pip install -e contracting/ -e .
+   ```
 
-Then start cometbft node and xian_acbi with:
-```
-make up
-```
+5. **Download, unpack, and initialize CometBFT:**
 
-And stop cometbft node and xian_acbi with:
-```
-make down
-```
+   ```bash
+   wget https://github.com/cometbft/cometbft/releases/download/v0.38.6/cometbft_0.38.6_linux_amd64.tar.gz
+   tar -xf cometbft_0.38.6_linux_amd64.tar.gz
+   rm cometbft_0.38.6_linux_amd64.tar.gz
+   ./cometbft init
+   ```
+
+6. **Configuring your node:**
+
+   - **For starting your own local network:**
+
+     ```bash
+     python src/xian/tools/configure.py --moniker "Node" --copy-genesis True --genesis-file-name genesis.json --validator-privkey "cd6cc45ffe7cebf09c6c6025575d50bb42c6c70c07e1dbc5150aaadc98705c2b"
+     ```
+
+     The `--validator-privkey` flag should be set to your validator's private key. The example above uses a key from the genesis file for testing purposes so you can start developing directly. `--moniker` is the node name in the CometBFT network.
+
+   - **For joining an existing network:**
+
+     ```bash
+     python src/xian/tools/configure.py --moniker "Node" --copy-genesis True --genesis-file-name genesis-testnet.json --seed-node "91.108.112.184" --validator-privkey "ENTER YOUR WALLET PRIVATE KEY HERE"
+     ```
+
+     Use `--seed-node` to specify the seed node's IP address you want to connect to. `--validator-privkey` is your validator wallet's private key. Ensure ports 26657 (REST API), 26656 (Node Communication), and 26660 (Prometheus Metrics) are open on your firewall.
+
+7. **Run CometBFT and Xian:**
+
+   Run CometBFT:
+
+   ```bash
+   ./cometbft node --rpc.laddr tcp://0.0.0.0:26657
+   ```
+
+   In a new terminal session (remember to activate the environment again with `source xian_venv/bin/activate`), run Xian:
+
+   ```bash
+   python src/xian/xian_abci.py
+   ```
+
+   Alternatively, use `screen` or install PM2 to manage processes:
+
+   ```bash
+   sudo apt-get install npm
+   npm install pm2 -g
+   make up # To start
+   make down # To stop
+   ```
 
 ### Docker
 
-This is currently not updated.
+Feel free to use the provided Dockerfile to run Xian in a containerized environment. The Dockerfile contains the necessary steps to build the image and run the application in a local network.
 
 #### Prerequisites
 
@@ -116,7 +136,7 @@ This section documents the available API endpoints for querying the application 
 
    - **Request Example**: `/abci_query?path="path"`
 
-     Replace `"path"` with the actual path you want to query. 
+     Replace `"path"` with the actual path you want to query.
 
 2. **Get Value of a Key**
 
@@ -147,7 +167,7 @@ This section documents the available API endpoints for querying the application 
 
 #### Broadcast Transaction Example
 
-   - **Request Example**: 
+- **Request Example**:
 
      ```
      POST /broadcast_tx_commit?tx="{payload}"
@@ -164,7 +184,7 @@ This section documents the available API endpoints for querying the application 
 
 #### Get Transaction Example
 
-   - **Request Example**: 
+- **Request Example**:
 
      ```
      GET /tx?hash=0x{tx_hash}
