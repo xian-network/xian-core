@@ -26,10 +26,7 @@ RUN wget https://github.com/cometbft/cometbft/releases/download/v0.38.6/cometbft
     rm cometbft_0.38.6_linux_amd64.tar.gz && \
     mv cometbft /usr/local/bin && \
     cometbft init && \
-    cp /xian/src/xian/genesis/genesis.json /root/.cometbft/config/genesis.json && \
-    cp /xian/src/xian/config/config.toml /root/.cometbft/config/config.toml && \
-    /xian_venv/bin/python3.11 /xian/src/xian/tools/validator_file_gen.py --validator_privkey ${VALIDATOR_PRIVKEY} && \
-    cp priv_validator_key.json /root/.cometbft/config/priv_validator_key.json
+    /xian_venv/bin/python3.11 /xian/src/xian/tools/configure.py --moniker "Node" --copy-genesis True --genesis-file-name genesis.json --validator-privkey ${VALIDATOR_PRIVKEY}
 
 # Expose the CometBFT RPC port
 EXPOSE 26657
