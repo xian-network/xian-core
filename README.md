@@ -87,33 +87,7 @@ Follow these steps to set up the environment on Ubuntu 22.04:
    make up # To start
    make down # To stop
    ```
-
-### Docker
-
-Feel free to use the provided Dockerfile to run Xian in a containerized environment. The Dockerfile contains the necessary steps to build the image and run the application in a local network.
-
-#### Prerequisites
-
-Docker and Docker Compose must be installed on your system. See [Docker documentation](https://docs.docker.com/get-docker/) for instructions.
-
-#### Steps
-
-Clone the Xian repository:
-
-```
-git clone https://github.com/xian-network/xian-core.git
-cd xian-core
-```
-
-Build and run the Docker container:
-
-```
-export VALIDATOR_PRIVKEY="cd6cc45ffe7cebf09c6c6025575d50bb42c6c70c07e1dbc5150aaadc98705c2b"
-docker-compose up --build
-```
-
-This command builds the Docker image according to the Dockerfile in the repository and starts the container. The CometBFT node and Xian application will run inside this container.
-
+   
 #### Accessing the Application
 
 CometBFT RPC is exposed on `localhost:26657`.
