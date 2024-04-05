@@ -20,6 +20,7 @@ class Configure:
         self.parser.add_argument('--copy-genesis', type=bool, help='Copy genesis file', required=True, default=True)
         self.parser.add_argument('--genesis-file-name', type=str, help='Genesis file name if copy-genesis is True e.g. genesis-testnet.json', required=True, default="genesis-testnet.json")
         self.parser.add_argument('--validator-privkey', type=str, help='Validator wallet private key 64 characters', required=True)
+        self.parser.add_argument('--prometheus', type=bool, help='Enable Prometheus', required=False, default=True)
         # Chain ID is not neeeded anymore, bcz in Genesis block, we have chain_id
         # Snapshot should be a tar.gz file containing the data directory and xian directory
         # the priv_validator_state.json file that is in the snapshot should have
@@ -104,6 +105,8 @@ class Configure:
         if self.args.allow_cors:
             config['rpc']['cors_allowed_origins'] = ['*']
 
+        config['consensus']['create_empty_blocks'] = False
+
         if self.args.snapshot_url:
             # If data directory exists, delete it
             data_dir = os.path.join(os.path.expanduser('~'), '.cometbft', 'data')
@@ -135,6 +138,12 @@ class Configure:
             path = os.path.join(os.path.expanduser('~'), '.cometbft', 'config', 'node_key.json')
             if os.path.exists(path):
                 os.system(f'rm {path}')
+
+        if self.args.prometheus:
+            config['instrumentation']['prometheus'] = True
+            print('Make sure that port 26660 is open for Prometheus')
+        print('Make sure that port 26657 is open for the REST API')
+        print('Make sure that port 26656 is open for P2P Node communication')
 
         with open(self.config_path, 'w') as f:
             f.write(toml.dumps(config))
