@@ -108,6 +108,7 @@ cd xian-core
 Build and run the Docker container:
 
 ```
+export VALIDATOR_PRIVKEY="cd6cc45ffe7cebf09c6c6025575d50bb42c6c70c07e1dbc5150aaadc98705c2b"
 docker-compose up --build
 ```
 
