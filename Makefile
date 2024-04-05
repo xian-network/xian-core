@@ -9,11 +9,11 @@ clean:
 	@rm -Rf dist/
 
 wipe:
-	rm -rf ~/.tendermint/xian
-	./tendermint unsafe-reset-all
+	rm -rf ~/.cometbft/xian
+	./cometbft unsafe-reset-all
 
 up:
-	cd ./src/xian && CONFIG_PATH=config/config-testnet.toml pm2 start xian_abci.py
+	cd ./src/xian && pm2 start xian_abci.py
 	pm2 start "./cometbft node --rpc.laddr tcp://0.0.0.0:26657" --name cometbft
 	pm2 logs --lines 1000
 
