@@ -141,6 +141,9 @@ class Configure:
 
         if self.args.prometheus:
             config['instrumentation']['prometheus'] = True
+            print('Make sure that port 26660 is open for Prometheus')
+        print('Make sure that port 26657 is open for the REST API')
+        print('Make sure that port 26656 is open for P2P Node communication')
 
         with open(self.config_path, 'w') as f:
             f.write(toml.dumps(config))
