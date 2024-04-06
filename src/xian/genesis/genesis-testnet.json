@@ -20,19 +20,28 @@
   },
   "validators": [
     {
-      "address": "8ABB2DE01AE15C5F4EBD0D4455C6BCD9047B7CBB",
+      "address": "C4A6FEEBE0268951E230414119E4C07FCC69AB2B",
       "pub_key": {
         "type": "tendermint/PubKeyEd25519",
-        "value": "7gajTPCL9yzlktJtNrkMedq6KCm6ljSZLQNDGBYNSfk="
+        "value": "9/bwPMW+TtPEPUQOpUAZoMDRucHYHi68RZUrP1M4uEU="
       },
       "power": "10",
       "name": ""
     },
     {
-      "address": "8C3F0CE00712A4CB40EDFA2110DDFE9B977E6B10",
+      "address": "15E64AD0CB64EBFFEE25C84293286ED9A0B1852B",
       "pub_key": {
         "type": "tendermint/PubKeyEd25519",
-        "value": "aPxPNa8lbEDAFUe5ZojO/ptoPSynhW6HchYzQWihmEs="
+        "value": "8bAyU4m3D26vlRWBLQXIc/fyL46zyrYOfij2qIU32yo="
+      },
+      "power": "10",
+      "name": ""
+    },
+    {
+      "address": "27CE2FC78BEDA6F1042282892E152A94318AF3B8",
+      "pub_key": {
+        "type": "tendermint/PubKeyEd25519",
+        "value": "2J4mtXSFyutnlni26FjFhkWvZ84y/mFxuY+GvPo4F54="
       },
       "power": "10",
       "name": ""
@@ -61,8 +70,8 @@
         "value": { "__time__": [2023, 9, 2, 13, 7, 0, 0] }
       },
       {
-        "key": "currency.balances:ddd326fddb5d1677595311f298b744a4e9f415b577ac179a6afbf38483dc0791",
-        "value": 300000000
+        "key": "currency.balances:f7f6f03cc5be4ed3c43d440ea54019a0c0d1b9c1d81e2ebc45952b3f5338b845",
+        "value": 111111111
       },
       { "key": "dao.S:motion_delay", "value": { "__delta__": [1, 0] } },
       { "key": "dao.S:motion_period", "value": { "__delta__": [1, 0] } },
@@ -144,8 +153,9 @@
       {
         "key": "masternodes.S:members",
         "value": [
-          "ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9",
-          "68fc4f35af256c40c01547b96688cefe9b683d2ca7856e877216334168a1984b"
+          "f7f6f03cc5be4ed3c43d440ea54019a0c0d1b9c1d81e2ebc45952b3f5338b845",
+          "f1b0325389b70f6eaf9515812d05c873f7f22f8eb3cab60e7e28f6a88537db2a",
+          "d89e26b57485caeb679678b6e858c58645af67ce32fe6171b98f86bcfa38179e"
         ]
       },
       {
