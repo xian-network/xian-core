@@ -3,7 +3,8 @@ from cometbft.crypto.v1.keys_pb2 import PublicKey
 import requests
 import base64
 
-class ValidatorHandler():
+
+class ValidatorHandler:
     def __init__(self, app):
         self.driver = app.driver
         self.app = app
