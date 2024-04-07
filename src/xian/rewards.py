@@ -1,6 +1,9 @@
 import decimal
-from xian.driver_api import DUST_EXPONENT
+
+import xian.constants as c
+
 from collections import defaultdict
+
 
 def calculate_participant_reward(
         participant_ratio, number_of_participants, total_stamps_to_split
@@ -11,8 +14,9 @@ def calculate_participant_reward(
         reward = (
             decimal.Decimal(str(participant_ratio)) / number_of_participants
         ) * decimal.Decimal(str(total_stamps_to_split))
-        rounded_reward = round(reward, DUST_EXPONENT)
+        rounded_reward = round(reward, c.DUST_EXPONENT)
         return rounded_reward
+
 
 def find_developer_and_reward(
         total_stamps_to_split, contract: str, developer_ratio, client
@@ -27,6 +31,7 @@ def find_developer_and_reward(
         send_map[recipient] /= len(send_map)
 
         return send_map
+
 
 def calculate_tx_output_rewards(
         total_stamps_to_split, contract, client
@@ -68,6 +73,7 @@ def calculate_tx_output_rewards(
 
         return master_reward, foundation_reward, developer_mapping
 
+
 def distribute_rewards(stamp_rewards_amount, stamp_rewards_contract, driver, client):
     if stamp_rewards_amount > 0:
         (
@@ -89,43 +95,48 @@ def distribute_rewards(stamp_rewards_amount, stamp_rewards_contract, driver, cli
 
         for m in driver.get("masternodes.S:members"):
             m_balance = driver.get(f"currency.balances:{m}") or 0
-            m_balance_after = round((m_balance + master_reward), DUST_EXPONENT)
+            m_balance_after = round((m_balance + master_reward), c.DUST_EXPONENT)
             rewards.append(
                 driver.set(f"currency.balances:{m}", m_balance_after)
             )
 
         foundation_wallet = driver.get("foundation.owner")
         foundation_balance = driver.get(f"currency.balances:{foundation_wallet}") or 0
-        foundation_balance_after = round((foundation_balance + foundation_reward), DUST_EXPONENT)
+        foundation_balance_after = round((foundation_balance + foundation_reward), c.DUST_EXPONENT)
         rewards.append(
             driver.set(f"currency.balances:{foundation_wallet}", foundation_balance_after)
         )
 
         # Send rewards to each developer calculated from the block
         for recipient, amount in developer_mapping.items():
-            if recipient == "sys" or recipient == None: # That is genesis contracts or the submission contract
+            # That is genesis contracts or the submission contract
+            if recipient == "sys" or recipient is None:
                 recipient = driver.get("foundation.owner")
-            dev_reward = round((amount / stamp_cost), DUST_EXPONENT)
+            dev_reward = round((amount / stamp_cost), c.DUST_EXPONENT)
             recipient_balance = driver.get(f"currency.balances:{recipient}") or 0
-            recipient_balance_after = round((recipient_balance + dev_reward), DUST_EXPONENT)
+            recipient_balance_after = round((recipient_balance + dev_reward), c.DUST_EXPONENT)
             rewards.append(
                 driver.set(f"currency.balances:{recipient}", recipient_balance_after)
             )
+
     return rewards
+
 
 def distribute_static_rewards(driver, master_reward=None, foundation_reward=None):
     rewards = []
+
     for m in driver.get("masternodes.S:members"):
         m_balance = driver.get(f"currency.balances:{m}") or 0
-        m_balance_after = round((m_balance + master_reward), DUST_EXPONENT)
+        m_balance_after = round((m_balance + master_reward), c.DUST_EXPONENT)
         rewards.append(
             driver.set(f"currency.balances:{m}", m_balance_after)
         )
 
     foundation_wallet = driver.get("foundation.owner")
     foundation_balance = driver.get(f"currency.balances:{foundation_wallet}") or 0
-    foundation_balance_after = round((foundation_balance + foundation_reward), DUST_EXPONENT)
+    foundation_balance_after = round((foundation_balance + foundation_reward), c.DUST_EXPONENT)
     rewards.append(
         driver.set(f"currency.balances:{foundation_wallet}", foundation_balance_after)
     )
+
     return rewards
