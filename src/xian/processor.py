@@ -1,19 +1,15 @@
 import math
 import hashlib
-import logging
 
 from datetime import datetime
-
+from abci.utils import get_logger
 from xian.utils import format_dictionary, tx_hash_from_tx
 from contracting.execution.executor import Executor
 from contracting.db.encoder import convert_dict, safe_repr
 from contracting.stdlib.bridge.time import Datetime
 
 # Logging
-logging.basicConfig(
-    format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO
-)
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class TxProcessor:
@@ -186,13 +182,17 @@ class TxProcessor:
         # print(f'signature : {signature}')
 
         # Nanos is set at the time of block being processed, and is shared between all txns in a block.
-        # it's a deterministic value which is the average of times from validators who voted for this block TODO : confirm this w/ CometBFT docs.
+        # TODO : confirm this w/ CometBFT docs.
+        # it's a deterministic value which is the average of times from validators who voted for this block
         # it's set during the consensus agreement & voting for block between all validators.
 
         return {
-            'block_hash': block_meta["hash"],  # hash nanos - # TODO : review
+            # TODO: review
+            'block_hash': block_meta["hash"],  # hash nanos
             'block_num': block_meta["height"],  # block number
-            '__input_hash': self.get_hlc_hash_from_tx(nanos, signature),  # Used for deterministic entropy for random games # TODO - REVIEW
+            # TODO: review
+            # Used for deterministic entropy for random games
+            '__input_hash': self.get_hlc_hash_from_tx(nanos, signature),
             'now': self.get_now_from_nanos(nanos=nanos),
             'AUXILIARY_SALT': signature
         }

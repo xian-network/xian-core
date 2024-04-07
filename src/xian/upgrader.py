@@ -1,11 +1,13 @@
-import importlib
-import sys
-import logging
 import os
 import gc
 
+from abci.utils import get_logger
 
-class UpgradeHandler():
+# Logging
+logger = get_logger(__name__)
+
+
+class UpgradeHandler:
     """
     This class enables seamless blockchain upgrades, avoiding hard forks by allowing dynamic switching between method versions at specific block heights. 
     It ensures synchronization and transaction replay with consistent hash results across blockchain versions. 
@@ -34,7 +36,7 @@ class UpgradeHandler():
                     # For other versions, check for the appropriate version marker in the file name
                     elif f"_{version}.py" in file:
                         self._load_module(file, root, project_dir)
-            logging.info(f"Changed to version {version}")
+            logger.info(f"Changed to version {version}")
         except Exception as e:
             raise Exception(f"Upgrade failed: {e}")
 
@@ -50,11 +52,10 @@ class UpgradeHandler():
         module_path = f"xian.{module_path}"
         original_module_path = f"xian.{original_module_path}"
 
-        self.app._load_module(module_path, original_module_path)
+        self.app.load_module(module_path, original_module_path)
 
         # Explicitly collect garbage
         gc.collect()
-
            
     def check_version(self, block_height: int):
         """

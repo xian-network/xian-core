@@ -4,6 +4,7 @@ from xian.driver_api import (
     set_latest_block_height
 )
 
+
 def commit(self) -> ResponseCommit:
     # commit block to filesystem db
     set_latest_block_hash(self.fingerprint_hash, self.driver)

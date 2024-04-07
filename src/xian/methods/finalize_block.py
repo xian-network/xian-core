@@ -1,3 +1,5 @@
+import json
+
 from cometbft.abci.v1beta3.types_pb2 import (
     ResponseFinalizeBlock,
     ExecTxResult
@@ -9,7 +11,6 @@ from xian.utils import (
     get_nanotime_from_block_time,
     convert_binary_to_hex,
     stringify_decimals,
-    hash_from_rewards,
     verify,
     hash_list,
     hash_from_rewards,
@@ -20,10 +21,10 @@ from xian.rewards import (
     distribute_static_rewards
 )
 from abci.application import ErrorCode
-import json
-import logging
+from abci.utils import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
+
 
 def finalize_block(self, req) -> ResponseFinalizeBlock:
     nanos = get_nanotime_from_block_time(req.time)

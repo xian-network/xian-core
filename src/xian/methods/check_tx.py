@@ -7,6 +7,7 @@ from xian.utils import (
 import json
 from abci.application import ErrorCode, OkCode
 
+
 def check_tx(self, raw_tx) -> ResponseCheckTx:
     try:
         tx = decode_transaction_bytes(raw_tx)

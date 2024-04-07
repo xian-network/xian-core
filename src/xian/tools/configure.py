@@ -1,12 +1,15 @@
-from argparse import ArgumentParser
-import toml
-import os
 import requests
 import tarfile
+import toml
+import os
+
+from time import sleep
+from argparse import ArgumentParser
 
 """
 This is to configure the CometBFT node.
 """
+
 
 class Configure:
     config_path = os.path.join(os.path.expanduser('~'), '.cometbft', 'config', 'config.toml')
@@ -27,7 +30,6 @@ class Configure:
         # round and step set to 0
         # and signature, signbytes removed
         self.args = self.parser.parse_args()
-
     
     def download_and_extract(self, url, target_path):
         # Download the file from the URL
@@ -77,13 +79,12 @@ class Configure:
 
         return None  # or raise an Exception indicating the request ultimately failed
 
-
     def main(self):
         # Make sure this is run in the tools directory
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
         
         if not os.path.exists(self.config_path):
-            print('Initialize cometbft first')
+            print('Initialize CometBFT first')
             return
 
         with open(self.config_path, 'r') as f:
@@ -148,6 +149,7 @@ class Configure:
         with open(self.config_path, 'w') as f:
             f.write(toml.dumps(config))
             print('Configuration updated')
+
 
 if __name__ == '__main__':
     configure = Configure()

@@ -1,3 +1,5 @@
+import json
+
 from cometbft.abci.v1beta1.types_pb2 import ResponseQuery
 from xian.driver_api import (
     get_value_of_key,
@@ -10,10 +12,10 @@ from abci.application import (
 )
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 from contracting.compilation import parser
-import logging
-import json
+from abci.utils import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
+
 
 def query(self, req) -> ResponseQuery:
     """
@@ -23,7 +25,6 @@ def query(self, req) -> ResponseQuery:
     """
 
     result = None
-    type_of_data = "None"
     key = ""
 
     try:
