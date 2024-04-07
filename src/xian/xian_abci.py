@@ -1,4 +1,3 @@
-import logging
 import os
 import importlib
 import sys
@@ -6,40 +5,58 @@ import gc
 
 os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
 
+from abci.utils import get_logger
 from abci.server import ABCIServer
 from abci.application import BaseApplication
 
 from contracting.client import ContractingClient
-from contracting.db.driver import (
-    ContractDriver,
+from contracting.db.driver import ContractDriver
+
+from xian.methods import (
+    init_chain,
+    echo,
+    info,
+    check_tx,
+    finalize_block,
+    commit,
+    process_proposal,
+    prepare_proposal,
+    query
 )
-
-from xian.methods import init_chain
-from xian.methods import echo
-from xian.methods import info
-from xian.methods import check_tx
-from xian.methods import finalize_block
-from xian.methods import commit
-from xian.methods import process_proposal
-from xian.methods import prepare_proposal
-from xian.methods import query
-
 from xian.upgrader import UpgradeHandler
 from xian.validators import ValidatorHandler
 from xian.storage import NonceStorage
 from xian.node_base import Node
+
 from xian.utils import (
     load_tendermint_config,
     load_genesis_data,
 )
 
-# Logging
-logging.basicConfig(
-    format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO
-)
-logger = logging.getLogger(__name__)
-logging.getLogger("requests").setLevel(logging.WARNING)
-logging.getLogger("urllib3").setLevel(logging.WARNING)
+# Logging (30 = WARNING)
+get_logger("requests").setLevel(30)
+get_logger("urllib3").setLevel(30)
+logger = get_logger(__name__)
+
+
+def load_module(module_path, original_module_path):
+    """
+    Inplace replace of a module with a new one and taking its name.
+    """
+    try:
+        # Replace all functions in the original module with the new modules functions
+        module = importlib.import_module(module_path)
+        modified_original_module = importlib.import_module(original_module_path)
+        for name in dir(module):
+            if name.startswith("__"):
+                continue
+            setattr(modified_original_module, name, getattr(module, name))
+        sys.modules[original_module_path] = modified_original_module
+        del sys.modules[module_path]
+        gc.collect()
+        logger.info(f"Loaded module {module_path}")
+    except Exception as e:
+        raise Exception(f"Failed to load module {module_path}: {e}")
 
 
 class Xian(BaseApplication):
@@ -62,8 +79,9 @@ class Xian(BaseApplication):
         self.fingerprint_hash = None
         self.chain_id = self.genesis.get("chain_id", None)
         self.block_service_mode = self.config.get("block_service_mode", True)
-        self.pruning_enabled = self.config.get("pruning_enabled", False) 
-        self.blocks_to_keep = self.config.get("blocks_to_keep", 100000) # If pruning is enabled, this is the number of blocks to keep history for
+        self.pruning_enabled = self.config.get("pruning_enabled", False)
+        # If pruning is enabled, this is the number of blocks to keep history for
+        self.blocks_to_keep = self.config.get("blocks_to_keep", 100000)
         self.app_version = 1
 
         if self.chain_id is None:
@@ -78,25 +96,6 @@ class Xian(BaseApplication):
         self.static_rewards_amount_validators = 1
         self.current_block_rewards = {}
 
-    def _load_module(self, module_path, original_module_path):
-        """
-        Inplace replace of a module with a new one and taking its name.
-        """
-        try:
-            # Replace all functions in the original module with the new modules functions
-            module = importlib.import_module(module_path)
-            modified_original_module = importlib.import_module(original_module_path)
-            for name in dir(module):
-                if name.startswith("__"):
-                    continue
-                setattr(modified_original_module, name, getattr(module, name))
-            sys.modules[original_module_path] = modified_original_module
-            del sys.modules[module_path]
-            gc.collect()
-            logging.info(f"Loaded module {module_path}")
-        except Exception as e:
-            raise Exception(f"Failed to load module {module_path}: {e}")
-    
     def echo(self, req):
         """
         Echo a string to test an ABCI client/server implementation
