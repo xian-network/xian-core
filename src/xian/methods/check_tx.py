@@ -14,10 +14,10 @@ def check_tx(self, raw_tx) -> ResponseCheckTx:
         self.xian.validate_transaction(tx)
         sender, signature, payload = unpack_transaction(tx)
         if not verify(sender, payload, signature):
-            return ResponseCheckTx(code=ErrorCode)
+            return ResponseCheckTx(code=ErrorCode, log="Bad signature")
         payload_json = json.loads(payload)
         if payload_json["chain_id"] != self.chain_id:
-            return ResponseCheckTx(code=ErrorCode)
+            return ResponseCheckTx(code=ErrorCode, log="Wrong chain_id")
         return ResponseCheckTx(code=OkCode)
     except Exception as e:
-        return ResponseCheckTx(code=ErrorCode, log=f"ERROR: {e}")
+        return ResponseCheckTx(code=ErrorCode, log=f"{type(e).__name__}: {e}")
