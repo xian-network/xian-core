@@ -1,7 +1,7 @@
-import toml
-import os
 import requests
 import tarfile
+import toml
+import os
 
 from time import sleep
 from argparse import ArgumentParser
