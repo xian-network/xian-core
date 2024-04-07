@@ -8,6 +8,7 @@ import hashlib
 This is to generate the priv_validator_key.json file for your validator node.
 """
 
+
 class ValidatorGen:
     def __init__(self):
         self.parser = ArgumentParser(description='Validator File Generator')
@@ -17,7 +18,6 @@ class ValidatorGen:
     def generate_keys(self):
         pk_hex = self.args.validator_privkey
 
-        
         # Convert hex private key to bytes and generate signing key object
         signing_key = SigningKey(pk_hex, encoder=HexEncoder)
 
@@ -60,6 +60,7 @@ class ValidatorGen:
 
         with open('priv_validator_key.json', 'w') as f:
             f.write(json.dumps(keys, indent=2))
+
 
 if __name__ == '__main__':
     validator_gen = ValidatorGen()
