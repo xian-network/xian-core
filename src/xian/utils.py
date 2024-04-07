@@ -1,7 +1,6 @@
 import binascii
 import json
 import struct
-import logging
 import toml
 import nacl
 import nacl.encoding
@@ -14,6 +13,7 @@ from contracting.stdlib.bridge.decimal import ContractingDecimal
 from contracting.stdlib.bridge.time import Datetime
 from contracting.db.encoder import encode, decode
 from xian.exceptions import TransactionException
+from abci.utils import get_logger
 
 
 # Z85CHARS is the base 85 symbol table
@@ -24,10 +24,7 @@ Z85MAP = {c: idx for idx, c in enumerate(Z85CHARS)}
 _85s = [85**i for i in range(5)][::-1]
 
 # Logging
-logging.basicConfig(
-    format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO
-)
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def z85_encode(rawbytes):
@@ -87,6 +84,7 @@ def hash_list(obj: list) -> bytes:
     encoded_tx = encode(str).encode()
     h.update(encoded_tx)
     return h.hexdigest().encode("utf-8")
+
 
 def hash_from_rewards(rewards):
     h = hashlib.sha3_256()
@@ -169,7 +167,6 @@ def convert_binary_to_hex(binary_data):
 
 
 def load_tendermint_config():
-    # TODO: Why do we never run into this error even if we start without this folder?
     if not (c.TENDERMINT_HOME.exists() and c.TENDERMINT_HOME.is_dir()):
         raise FileNotFoundError("You must initialize Tendermint first")
     if not (c.TENDERMINT_CONFIG.exists() and c.TENDERMINT_CONFIG.is_file()):
@@ -204,7 +201,7 @@ def stringify_decimals(obj):
                 return str(obj)
         else:
             return obj
-    except Exception as e:
+    except:
         return ""
     
 
@@ -227,6 +224,7 @@ def tx_hash_from_tx(tx):
     h.update(encoded_tx)
     return h.hexdigest()
 
+
 def hash_from_validator_updates(validator_updates):
     h = hashlib.sha3_256()
     # Sort the list of validator updates to ensure that the hash is consistent
@@ -235,11 +233,13 @@ def hash_from_validator_updates(validator_updates):
     h.update(encoded_validator_updates)
     return h.hexdigest()
 
+
 def hash_from_rewards(rewards):
     h = hashlib.sha3_256()
     encoded_rewards = encode(rewards).encode()
     h.update(encoded_rewards)
     return h.hexdigest()
+
 
 def check_enough_stamps(
         balance: object,
