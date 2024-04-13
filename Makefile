@@ -29,6 +29,16 @@ reset-testnet-create:
 	./cometbft init
 	python3.11 src/xian/tools/configure.py --moniker "${moniker}" --copy-genesis True --genesis-file-name genesis-testnet.json --validator-privkey "${private_key}"
 
+reset-mainnet-join:
+	rm -rf ~/.cometbft
+	./cometbft init
+	python3.11 src/xian/tools/configure.py --moniker "${moniker}" --copy-genesis True --genesis-file-name genesis-mainnet.json --validator-privkey "${private_key}" --seed-node "mainnet.xian.org"
+
+reset-mainnet-create:
+	rm -rf ~/.cometbft
+	./cometbft init
+	python3.11 src/xian/tools/configure.py --moniker "${moniker}" --copy-genesis True --genesis-file-name genesis-mainnet.json --validator-privkey "${private_key}"
+
 pull:
 	cd contracting && git pull && cd ../..
 	git pull
