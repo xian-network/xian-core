@@ -1,6 +1,3 @@
-wipe:
-	rm -rf ~/.cometbft
-
 up:
 	make pull
 	pm2 start src/xian/xian_abci.py
@@ -14,7 +11,7 @@ restart:
 	make down
 	make up
 
-reset-local:
+reset-local install wipe:
 	rm -rf ~/.cometbft
 	./cometbft init
 	python3.11 src/xian/tools/configure.py --moniker "${moniker}" --copy-genesis True --genesis-file-name genesis.json --validator-privkey "cd6cc45ffe7cebf09c6c6025575d50bb42c6c70c07e1dbc5150aaadc98705c2b"
