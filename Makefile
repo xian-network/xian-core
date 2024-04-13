@@ -1,5 +1,4 @@
 up:
-	make pull
 	pm2 start src/xian/xian_abci.py
 	pm2 start "./cometbft node --rpc.laddr tcp://0.0.0.0:26657"
 	pm2 logs --lines 1000
