@@ -7,6 +7,7 @@ from xian.utils import format_dictionary, tx_hash_from_tx
 from contracting.execution.executor import Executor
 from contracting.db.encoder import convert_dict, safe_repr
 from contracting.stdlib.bridge.time import Datetime
+from xian.query_eth import ETHQuery
 
 # Logging
 logger = get_logger(__name__)
@@ -17,6 +18,7 @@ class TxProcessor:
         self.client = client
         self.driver = driver
         self.executor = Executor(driver=self.driver, metering=metering)
+        self.eth_query = ETHQuery()
 
     def process_tx(self, tx, enabled_fees=False):
         # TODO better error handling of anything in here
@@ -181,17 +183,11 @@ class TxProcessor:
         signature = tx['metadata']['signature']
         # print(f'signature : {signature}')
 
-        # Nanos is set at the time of block being processed, and is shared between all txns in a block.
-        # TODO : confirm this w/ CometBFT docs.
-        # it's a deterministic value which is the average of times from validators who voted for this block
-        # it's set during the consensus agreement & voting for block between all validators.
 
         return {
-            # TODO: review
+            # Here we can add any other environment variables we want to pass to the contract
             'block_hash': block_meta["hash"],  # hash nanos
             'block_num': block_meta["height"],  # block number
-            # TODO: review
-            # Used for deterministic entropy for random games
             '__input_hash': self.get_hlc_hash_from_tx(nanos, signature),
             'now': self.get_now_from_nanos(nanos=nanos),
             'AUXILIARY_SALT': signature
