@@ -3,8 +3,11 @@ from web3 import Web3, exceptions
 
 class ETHQuery:
 
-    def __init__(self, eth_rpc="https://cloudflare-eth.com"):
+    def __init__(self, eth_rpc="https://cloudflare-eth.com", contract_address="0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43", abi_path="eth_abi/btcusd.json"):
         self.web3 = Web3(Web3.HTTPProvider(eth_rpc))
+        self.contract_address = contract_address
+        with open(abi_path, "r") as f:
+            self.abi = f.read()
         if not self.web3.is_connected():
             raise ConnectionError("Failed to connect to Ethereum node.")
 
@@ -26,36 +29,8 @@ class ETHQuery:
             time.sleep(delay)
         return None, last_exception  # Only return None and the last exception after all retries fail
 
-    def call_contract(self, abi, contract_address, data):
-        func = lambda: self.web3.eth.contract(address=contract_address, abi=abi).functions[data].call()
-        result, exception = self.retry_logic(func)
-        if exception:
-            return None # After all retries fail, return None
-        return result
-
-    def get_block(self, block_number):
-        func = lambda: self.web3.eth.get_block(block_number, full_transactions=True)
-        result, exception = self.retry_logic(func)
-        if exception:
-            return None # After all retries fail, return None
-        return result
-
-    def get_block_by_hash(self, block_hash):
-        func = lambda: self.web3.eth.get_block(block_hash, full_transactions=True)
-        result, exception = self.retry_logic(func)
-        if exception:
-            return None # After all retries fail, return None
-        return result
-
-    def get_transaction(self, tx_hash):
-        func = lambda: self.web3.eth.get_transaction(tx_hash)
-        result, exception = self.retry_logic(func)
-        if exception:
-            return None # After all retries fail, return None
-        return result
-
-    def get_receipt(self, tx_hash):
-        func = lambda: self.web3.eth.get_transaction_receipt(tx_hash)
+    def call_contract(self, function_name):
+        func = lambda: self.web3.eth.contract(address=self.contract_address, abi=self.abi).functions[function_name]().call()
         result, exception = self.retry_logic(func)
         if exception:
             return None # After all retries fail, return None
