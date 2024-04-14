@@ -13,7 +13,8 @@ class ETHQuery:
         last_exception = None
         for attempt in range(retries):
             try:
-                return func(*args)
+                result = func(*args)  # Attempt to call the function
+                return result, None  # Return the result and None for exception if successful
             except exceptions.ContractLogicError as e:
                 last_exception = e
                 print(f"Contract logic error on attempt {attempt+1}: {e}")
@@ -23,40 +24,40 @@ class ETHQuery:
             except Exception as e:
                 last_exception = e
                 print(f"Unexpected error on attempt {attempt+1}: {e}")
-            time.sleep(delay) 
-        return None, last_exception  # Returns None and the last exception on failure
+            time.sleep(delay * (2 ** attempt))  # Exponential back-off
+        return None, last_exception  # Only return None and the last exception after all retries fail
 
     def call_contract(self, abi, contract_address, data):
         func = lambda: self.web3.eth.contract(address=contract_address, abi=abi).functions[data].call()
         result, exception = self.retry_logic(func)
         if exception:
-            return f"Error after final attempt: {exception}"
+            return None # After all retries fail, return None
         return result
 
     def get_block(self, block_number):
         func = lambda: self.web3.eth.get_block(block_number, full_transactions=True)
         result, exception = self.retry_logic(func)
         if exception:
-            return f"Error after final attempt: {exception}"
+            return None # After all retries fail, return None
         return result
 
     def get_block_by_hash(self, block_hash):
         func = lambda: self.web3.eth.get_block(block_hash, full_transactions=True)
         result, exception = self.retry_logic(func)
         if exception:
-            return f"Error after final attempt: {exception}"
+            return None # After all retries fail, return None
         return result
 
     def get_transaction(self, tx_hash):
         func = lambda: self.web3.eth.get_transaction(tx_hash)
         result, exception = self.retry_logic(func)
         if exception:
-            return f"Error after final attempt: {exception}"
+            return None # After all retries fail, return None
         return result
 
     def get_receipt(self, tx_hash):
         func = lambda: self.web3.eth.get_transaction_receipt(tx_hash)
         result, exception = self.retry_logic(func)
         if exception:
-            return f"Error after final attempt: {exception}"
+            return None # After all retries fail, return None
         return result
