@@ -181,11 +181,11 @@ class TxProcessor:
         block_meta = tx["b_meta"]
         nanos = block_meta["nanos"]
         signature = tx['metadata']['signature']
-        btc_usd_latest_round = self.btc_usd_query.call_contract('latestRoundData')
+        btc_usd_latest_round = self.btc_usd_query.call_contract('latestAnswer')
         if btc_usd_latest_round is None:
             btc_usd = None
-        btc_usd = btc_usd_latest_round['answer']
-        btc_usd = decimal.Decimal(btc_usd) / 1e8
+        else:
+            btc_usd = decimal.Decimal(btc_usd_latest_round) / 1e8
 
 
         return {
