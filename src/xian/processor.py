@@ -1,6 +1,6 @@
 import math
 import hashlib
-
+import decimal
 from datetime import datetime
 from abci.utils import get_logger
 from xian.utils import format_dictionary, tx_hash_from_tx
@@ -182,8 +182,10 @@ class TxProcessor:
         nanos = block_meta["nanos"]
         signature = tx['metadata']['signature']
         btc_usd_latest_round = self.btc_usd_query.call_contract('latestRoundData')
+        if btc_usd_latest_round is None:
+            btc_usd = None
         btc_usd = btc_usd_latest_round['answer']
-        # print(f'signature : {signature}')
+        btc_usd = decimal.Decimal(btc_usd) / 1e8
 
 
         return {
