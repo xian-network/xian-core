@@ -2,10 +2,9 @@ import time
 from web3 import Web3, exceptions
 
 class ETHQuery:
-    ETH_RPC = "https://cloudflare-eth.com"
 
-    def __init__(self):
-        self.web3 = Web3(Web3.HTTPProvider(self.ETH_RPC))
+    def __init__(self, eth_rpc="https://cloudflare-eth.com"):
+        self.web3 = Web3(Web3.HTTPProvider(eth_rpc))
         if not self.web3.is_connected():
             raise ConnectionError("Failed to connect to Ethereum node.")
 
