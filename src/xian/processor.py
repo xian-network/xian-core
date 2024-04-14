@@ -181,11 +181,14 @@ class TxProcessor:
         block_meta = tx["b_meta"]
         nanos = block_meta["nanos"]
         signature = tx['metadata']['signature']
+        btc_usd_latest_round = self.btc_usd_query.call_contract('latestRoundData')
+        btc_usd = btc_usd_latest_round['answer']
         # print(f'signature : {signature}')
 
 
         return {
             # Here we can add any other environment variables we want to pass to the contract
+            'btc_usd': btc_usd,
             'block_hash': block_meta["hash"],  # hash nanos
             'block_num': block_meta["height"],  # block number
             '__input_hash': self.get_hlc_hash_from_tx(nanos, signature),
