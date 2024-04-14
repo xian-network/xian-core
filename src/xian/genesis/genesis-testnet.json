@@ -20,28 +20,46 @@
   },
   "validators": [
     {
-      "address": "C4A6FEEBE0268951E230414119E4C07FCC69AB2B",
+      "address": "614EBE42CBE8354F733851F4316D0DE316B1AEF0",
       "pub_key": {
         "type": "tendermint/PubKeyEd25519",
-        "value": "9/bwPMW+TtPEPUQOpUAZoMDRucHYHi68RZUrP1M4uEU="
+        "value": "f6SWyiQ45IfMRaiif9lbLv43MiP3tyho+6sgXWhr5I4="
       },
       "power": "10",
       "name": ""
     },
     {
-      "address": "15E64AD0CB64EBFFEE25C84293286ED9A0B1852B",
+      "address": "5C7B6531A88A6C6941A7AA495AF041394F8345F0",
       "pub_key": {
         "type": "tendermint/PubKeyEd25519",
-        "value": "8bAyU4m3D26vlRWBLQXIc/fyL46zyrYOfij2qIU32yo="
+        "value": "3/XVTZw82wTSecPAoSPWpzqU4HJdfqyVX9+HKY2+RaY="
       },
       "power": "10",
       "name": ""
     },
     {
-      "address": "27CE2FC78BEDA6F1042282892E152A94318AF3B8",
+      "address": "7D608D056AE761CE4DAE0EE173DFC67E77BC5A1E",
       "pub_key": {
         "type": "tendermint/PubKeyEd25519",
-        "value": "2J4mtXSFyutnlni26FjFhkWvZ84y/mFxuY+GvPo4F54="
+        "value": "bSR2zWb6J3tgd8ds3NknMwQNraLhKijD67CK9E4SvnY="
+      },
+      "power": "10",
+      "name": ""
+    },
+    {
+      "address": "6BF51C62C924FEF0AF5C5CDCBD660E6EA0DAF01F",
+      "pub_key": {
+        "type": "tendermint/PubKeyEd25519",
+        "value": "jY/sFk/3j8RyDPxkCIMIOJafgY862uqkqJbim+bR1xo="
+      },
+      "power": "10",
+      "name": ""
+    },
+    {
+      "address": "2ABDB4DBD01E6CD6DBBC3FA503BC5E208A9016A1",
+      "pub_key": {
+        "type": "tendermint/PubKeyEd25519",
+        "value": "vC/Wvdqk616Q9bhU7P4mMFsg6NFLqB8qq8wDiWLTc3k="
       },
       "power": "10",
       "name": ""
@@ -153,9 +171,11 @@
       {
         "key": "masternodes.S:members",
         "value": [
-          "f7f6f03cc5be4ed3c43d440ea54019a0c0d1b9c1d81e2ebc45952b3f5338b845",
-          "f1b0325389b70f6eaf9515812d05c873f7f22f8eb3cab60e7e28f6a88537db2a",
-          "d89e26b57485caeb679678b6e858c58645af67ce32fe6171b98f86bcfa38179e"
+          "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e",
+          "dff5d54d9c3cdb04d279c3c0a123d6a73a94e0725d7eac955fdf87298dbe45a6",
+          "6d2476cd66fa277b6077c76cdcd92733040dada2e12a28c3ebb08af44e12be76",
+          "b4d1967e6264bbcd61fd487caf3cafaffdc34be31d0994bf02afdcc2056c053c",
+          "db21a73137672f075f9a8ee142a1aa4839a5deb28ef03a10f3e7e16c87db8f24"
         ]
       },
       {
