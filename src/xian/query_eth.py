@@ -7,7 +7,7 @@ class ETHQuery:
         self.web3 = Web3(Web3.HTTPProvider(eth_rpc))
         self.contract_address = contract_address
         with open(abi_path, "r") as f:
-            self.abi = f.read()
+            self.abi = json.load(f)  # Load ABI as a Python object
         if not self.web3.is_connected():
             raise ConnectionError("Failed to connect to Ethereum node.")
 
