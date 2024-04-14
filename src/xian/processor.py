@@ -18,7 +18,7 @@ class TxProcessor:
         self.client = client
         self.driver = driver
         self.executor = Executor(driver=self.driver, metering=metering)
-        self.btc_usd_query = ETHQuery(contract_address="0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43", abi_path="eth_abi/btcusd.json")
+        self.btc_usd_query = ETHQuery(contract_address="0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c", abi_path="eth_abi/btcusd.json")
 
     def process_tx(self, tx, enabled_fees=False):
         # TODO better error handling of anything in here

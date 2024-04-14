@@ -4,7 +4,7 @@ import json
 
 class ETHQuery:
 
-    def __init__(self, eth_rpc="https://cloudflare-eth.com", contract_address="0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43", abi_path="eth_abi/btcusd.json"):
+    def __init__(self, eth_rpc="https://cloudflare-eth.com", contract_address="0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c", abi_path="eth_abi/btcusd.json"):
         self.web3 = Web3(Web3.HTTPProvider(eth_rpc))
         self.contract_address = contract_address
         with open(abi_path, "r") as f:
