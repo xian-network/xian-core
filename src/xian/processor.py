@@ -185,7 +185,7 @@ class TxProcessor:
         if btc_usd_latest_round is None:
             btc_usd = None
         else:
-            btc_usd = decimal.Decimal(btc_usd_latest_round) / 1e8
+            btc_usd = decimal.Decimal(btc_usd_latest_round) / decimal.Decimal('1e8')
 
 
         return {
