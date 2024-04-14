@@ -23,7 +23,7 @@ class ETHQuery:
             except Exception as e:
                 last_exception = e
                 print(f"Unexpected error on attempt {attempt+1}: {e}")
-            time.sleep(delay * (2 ** attempt))  # Exponential back-off
+            time.sleep(delay) 
         return None, last_exception  # Returns None and the last exception on failure
 
     def call_contract(self, abi, contract_address, data):
