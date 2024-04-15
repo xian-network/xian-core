@@ -4,39 +4,91 @@ import toml
 import os
 
 from time import sleep
+from pathlib import Path
 from argparse import ArgumentParser
 
 """
-This is to configure the CometBFT node.
+Configure CometBFT node
 """
 
 
+# TODO: Set chain_id through this too
+# TODO: Trigger genesis_gen.py in here to generate genesis block, then copy block into genesis file
 class Configure:
-    config_path = os.path.join(os.path.expanduser('~'), '.cometbft', 'config', 'config.toml')
+    """
+    Snapshot should be a tar.gz file containing
+    the data directory and xian directory
+
+    File priv_validator_state.json from snapshot should have
+    round and step set to 0 and signature, signbytes removed
+    """
+
+    COMET_HOME = Path.home() / '.cometbft'
+    CONFIG_PATH = COMET_HOME / 'config' / 'config.toml'
 
     def __init__(self):
-        self.parser = ArgumentParser(description='Configure')
-        self.parser.add_argument('--seed-node', type=str, help='IP of the Seed Node e.g. 91.108.112.184 (without port, but 26657 and 26656 needs to be open)', required=False)
-        self.parser.add_argument('--moniker', type=str, help='Moniker/Name of your node', required=True)
-        self.parser.add_argument('--allow-cors', type=bool, help='Allow CORS', required=False, default=True)
-        self.parser.add_argument('--snapshot-url', type=str, help='URL of the snapshot e.g. https://github.com/xian-network/snapshots/raw/main/testnet-2024-04-02.tar (tar.gz file)', required=False)
-        self.parser.add_argument('--copy-genesis', type=bool, help='Copy genesis file', required=True, default=True)
-        self.parser.add_argument('--genesis-file-name', type=str, help='Genesis file name if copy-genesis is True e.g. genesis-testnet.json', required=True, default="genesis-testnet.json")
-        self.parser.add_argument('--validator-privkey', type=str, help='Validator wallet private key 64 characters', required=True)
-        self.parser.add_argument('--prometheus', type=bool, help='Enable Prometheus', required=False, default=True)
-        # Chain ID is not neeeded anymore, bcz in Genesis block, we have chain_id
-        # Snapshot should be a tar.gz file containing the data directory and xian directory
-        # the priv_validator_state.json file that is in the snapshot should have
-        # round and step set to 0
-        # and signature, signbytes removed
+        self.parser = ArgumentParser(description='Configure CometBFT')
+
+        self.parser.add_argument(
+            '--seed-node',
+            type=str,
+            help='IP of Seed Node e.g. 91.108.112.184 (without port, but 26657 & 26656 need to be open)',
+            required=False
+        )
+        self.parser.add_argument(
+            '--moniker',
+            type=str,
+            help='Name of your node',
+            required=True
+        )
+        self.parser.add_argument(
+            '--allow-cors',
+            type=bool,
+            help='Allow CORS',
+            required=False,
+            default=True
+        )
+        self.parser.add_argument(
+            '--snapshot-url',
+            type=str,
+            help='URL of snapshot in tar.gz format',
+            required=False)
+        self.parser.add_argument(
+            '--copy-genesis',
+            type=bool,
+            help='Copy genesis file',
+            required=True,
+            default=True
+        )
+        self.parser.add_argument(
+            '--genesis-file-name',
+            type=str,
+            help='Genesis filename if copy-genesis is True e.g. genesis-testnet.json',
+            required=True,
+            default="genesis-testnet.json"
+        )
+        self.parser.add_argument(
+            '--validator-privkey',
+            type=str,
+            help='Validator wallet private key 64 characters',
+            required=True
+        )
+        self.parser.add_argument(
+            '--prometheus',
+            type=bool,
+            help='Enable Prometheus',
+            required=False,
+            default=True
+        )
+
         self.args = self.parser.parse_args()
     
     def download_and_extract(self, url, target_path):
         # Download the file from the URL
         response = requests.get(url)
-        filename = url.split('/')[-1]  # Assumes the URL ends with the filename
-        tar_path = os.path.join(target_path, filename)
-        
+        # Assumes the URL ends with the filename
+        filename = url.split('/')[-1]
+        tar_path = target_path / filename
         # Ensure the target directory exists
         os.makedirs(target_path, exist_ok=True)
         
@@ -83,17 +135,18 @@ class Configure:
         # Make sure this is run in the tools directory
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
         
-        if not os.path.exists(self.config_path):
+        if not os.path.exists(self.CONFIG_PATH):
             print('Initialize CometBFT first')
             return
 
-        with open(self.config_path, 'r') as f:
+        with open(self.CONFIG_PATH, 'r') as f:
             config = toml.load(f)
 
         config['consensus']['create_empty_blocks'] = False
 
         if self.args.seed_node:
             info = self.get_node_info(self.args.seed_node)
+
             if info:
                 id = info['result']['node_info']['id']
                 config['p2p']['seeds'] = f'{id}@{self.args.seed_node}:26656'
@@ -108,27 +161,30 @@ class Configure:
 
         if self.args.snapshot_url:
             # If data directory exists, delete it
-            data_dir = os.path.join(os.path.expanduser('~'), '.cometbft', 'data')
+            data_dir = self.COMET_HOME / 'data'
             if os.path.exists(data_dir):
                 os.system(f'rm -rf {data_dir}')
             # If xian directory exists, delete it
-            xian_dir = os.path.join(os.path.expanduser('~'), '.cometbft', 'xian')
+            xian_dir = self.COMET_HOME / 'xian'
             if os.path.exists(xian_dir):
                 os.system(f'rm -rf {xian_dir}')
-            # Download the snapshot
-            self.download_and_extract(self.args.snapshot_url, os.path.join(os.path.expanduser('~'), '.cometbft'))
+
+            # Download snapshot
+            self.download_and_extract(self.args.snapshot_url, self.COMET_HOME)
 
         if self.args.copy_genesis:
             if not self.args.genesis_file_name:
                 print('Genesis file name is required')
                 return
+
+            # REWORK to PATH
             # Go up one directory to get to the genesis file
             genesis_path = os.path.normpath(os.path.join('..', 'genesis', self.args.genesis_file_name))
             target_path = os.path.join(os.path.expanduser('~'), '.cometbft', 'config', 'genesis.json')
             os.system(f'cp {genesis_path} {target_path}')
 
         if self.args.validator_privkey:
-            os.system(f'python3 validator_file_gen.py --validator_privkey {self.args.validator_privkey}')
+            os.system(f'python3 validator_gen.py --validator_privkey {self.args.validator_privkey}')
             # Copy the priv_validator_key.json file
             file_path = os.path.normpath(os.path.join('priv_validator_key.json'))
             target_path = os.path.join(os.path.expanduser('~'), '.cometbft', 'config', 'priv_validator_key.json')
@@ -144,11 +200,10 @@ class Configure:
         print('Make sure that port 26657 is open for the REST API')
         print('Make sure that port 26656 is open for P2P Node communication')
 
-        with open(self.config_path, 'w') as f:
+        with open(self.CONFIG_PATH, 'w') as f:
             f.write(toml.dumps(config))
             print('Configuration updated')
 
 
 if __name__ == '__main__':
-    configure = Configure()
-    configure.main()
+    Configure().main()

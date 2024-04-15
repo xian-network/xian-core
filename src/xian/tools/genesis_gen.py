@@ -9,7 +9,7 @@ import json
 import re
 
 
-CONTRACT_DIR = Path.cwd() / 'contracts'
+CONTRACT_DIR = Path.cwd() / 'src' / 'xian' / 'genesis' / 'contracts'
 
 
 def hash_block_data(hlc_timestamp: str, block_number: str, previous_block_hash: str) -> str:
@@ -37,7 +37,7 @@ def replace_arg(arg: str, values: dict):
 
 def build_genesis_block(founder_sk: str, masternode_pk: str):
     contracting = ContractingClient(driver=ContractDriver(FSDriver(root='/tmp/tmp_state')))
-    contracting.set_submission_contract(filename=CONTRACT_DIR / 'submission.s.py', commit=False)
+    contracting.set_submission_contract(commit=False)
 
     con_cfg_path = CONTRACT_DIR / 'contracts.json'
 
@@ -49,7 +49,6 @@ def build_genesis_block(founder_sk: str, masternode_pk: str):
     # Process contracts in contracts.json
     for contract in con_cfg['contracts']:
         con_name = contract['name']
-
         con_path = CONTRACT_DIR / (con_name + con_ext)
 
         with open(con_path) as f:
@@ -114,6 +113,7 @@ def build_genesis_block(founder_sk: str, masternode_pk: str):
 
     state_changes = {}
     state_changes.update(contracting.raw_driver.pending_writes)
+
     contracting.raw_driver.flush()
     
     data = {k: v for k, v in state_changes.items() if v is not None}
@@ -169,7 +169,7 @@ if __name__ == '__main__':
         '--output-path',
         type=Path,
         default=None,
-        help="The path to save the genesis block"
+        help="Path to save the genesis file"
     )
     args = parser.parse_args()
 

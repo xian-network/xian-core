@@ -49,7 +49,7 @@
 		{
             "name": "elect_members",
 			"submit_as": "elect_masternodes",
-            "owner": "election_house",
+            "owner": null,
             "constructor_args": {
 				"policy": "masternodes",
 				"cost": 100000
