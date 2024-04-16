@@ -10,7 +10,7 @@ from abci.server import ABCIServer
 from abci.application import BaseApplication
 
 from contracting.client import ContractingClient
-from contracting.db.driver import ContractDriver
+from contracting.db.driver import Driver
 
 from xian.methods import (
     init_chain,
@@ -69,8 +69,8 @@ class Xian(BaseApplication):
             raise SystemExit()
 
         self.client = ContractingClient()
-        self.driver = ContractDriver()
-        self.nonce_storage = NonceStorage()
+        self.driver = Driver()
+        self.nonce_storage = NonceStorage(driver=self.driver)
         self.upgrader = UpgradeHandler(self)
         self.xian = Node(self.client, self.driver, self.nonce_storage)
         self.validator_handler = ValidatorHandler(self)
