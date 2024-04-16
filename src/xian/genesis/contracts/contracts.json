@@ -42,7 +42,7 @@
 			"submit_as": "masternodes",
             "owner": "election_house",
             "constructor_args": {
-				"initial_members": ["%%masternode_pk%%"],
+				"initial_members": ["%%validator_pubkey%%"],
 				"candidate": "elect_masternodes"
 			}
 		},
