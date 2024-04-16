@@ -186,7 +186,7 @@ class Node:
         state_changes = block.get('genesis', [])
         rewards = block.get('rewards', [])
 
-        hlc_timestamp = block.get('hlc_timestamp')
+        nanos = block.get('hlc_timestamp')
 
         for i, s in enumerate(state_changes):
             parts = s["key"].split(".")
@@ -207,26 +207,8 @@ class Node:
 
             self.driver.set(s['key'], s['value'])
 
-        self.driver.hard_apply(hlc=hlc_timestamp)
-
-    def hard_apply_store_block(self, block: dict):
-        encoded_block = encode(block)
-        encoded_block = json.loads(encoded_block)
-
-    def hard_apply_block_finish(self, block: dict):
-        gc.collect()
-
-        async def stop():
-            pass
-
-        # # check to see if we need to process any missing blocks.
-        asyncio.ensure_future(stop())
-        # pass
+        self.driver.hard_apply(nanos)
 
     async def store_genesis_block(self, genesis_block: dict):
         if genesis_block is not None:
             self.apply_state_changes_from_block(genesis_block)
-            # TODO: This function doesn't save / return anything
-            self.hard_apply_store_block(block=genesis_block)
-            # TODO: Do we need this? What does it do?
-            self.hard_apply_block_finish(block=genesis_block)
