@@ -1,11 +1,13 @@
 import requests
 import tarfile
 import toml
+import json
 import os
 
 from time import sleep
 from pathlib import Path
 from argparse import ArgumentParser
+from nacl.signing import SigningKey
 
 """
 Configure CometBFT node
@@ -183,6 +185,7 @@ class Configure:
             # Download snapshot
             self.download_and_extract(self.args.snapshot_url, self.COMET_HOME)
 
+        # Generate genesis
         if self.args.generate_genesis:
             if not self.args.validator_privkey:
                 print('Validator private key is required')
@@ -191,14 +194,31 @@ class Configure:
                 print('Founder private key is required')
                 return
 
-            # TODO: Generate validator_pubkey from validator_privkey
-            validator_pubkey = ""
+            # Generate validator_pubkey from validator_privkey
+            seed = bytes.fromhex(self.args.validator_privkey)
+            sk = SigningKey(seed=seed)
+            vk = sk.verify_key
+
+            validator_pubkey = vk.encode().hex()
 
             os.system(f'python3 genesis_gen.py '
                       f'--validator-pubkey {validator_pubkey} '
                       f'--founder-privkey {self.args.founder_privkey}')
 
-            # TODO: Integrate generated block into '--genesis-file-name'
+            # Get generated genesis block JSON
+            with open(Path('genesis') / 'genesis_block.json') as first_file:
+                genesis_block = json.load(first_file)
+
+            gen_full_path = Path('genesis') / self.args.genesis_file_name
+
+            # Get base genesis content JSON
+            with open(gen_full_path) as second_file:
+                genesis = json.load(second_file)
+
+            genesis['abci_genesis'] = genesis_block
+
+            with open(gen_full_path, 'w+') as gen_file:
+                json.dump(genesis, gen_file)
 
         if self.args.copy_genesis:
             if not self.args.genesis_file_name:
@@ -206,8 +226,7 @@ class Configure:
                 return
 
             # REWORK to PATH
-            # Go up one directory to get to the genesis file
-            genesis_path = os.path.normpath(os.path.join('..', 'genesis', self.args.genesis_file_name))
+            genesis_path = os.path.normpath(os.path.join('genesis', self.args.genesis_file_name))
             target_path = os.path.join(os.path.expanduser('~'), '.cometbft', 'config', 'genesis.json')
             os.system(f'cp {genesis_path} {target_path}')
 

@@ -14,7 +14,7 @@ Generate genesis_block.json file for CometBFT genesis.json
 
 
 class GenesisGen:
-    CONTRACT_DIR = Path.cwd() / 'src' / 'xian' / 'genesis' / 'contracts'
+    CONTRACT_DIR = Path.cwd() / 'genesis' / 'contracts'
 
     def __init__(self):
         parser = ArgumentParser(description='Genesis File Generator')
@@ -158,11 +158,10 @@ class GenesisGen:
         return genesis_block
 
     def main(self):
-        output_path = Path(self.args.output_path) if self.args.output_path else Path.cwd()
+        output_path = self.args.output_path if self.args.output_path else (Path.cwd() / 'genesis')
         output_file = output_path / Path('genesis_block.json')
 
         genesis = self.build_genesis(self.args.founder_privkey, self.args.validator_pubkey)
-        print(f'Saving genesis block to {output_file}')
 
         with open(output_file, 'w') as f:
             f.write(encode(genesis))
