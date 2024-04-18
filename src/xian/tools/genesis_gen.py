@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 from contracting.client import ContractingClient
-from contracting.db.driver import FSDriver, ContractDriver
+from contracting.db.driver import Driver
 from contracting.db.encoder import encode
 from xian_py.wallet import Wallet
 from pathlib import Path
@@ -59,7 +59,7 @@ class GenesisGen:
             return arg
 
     def build_genesis(self, founder_privkey: str, validator_pubkey: str):
-        contracting = ContractingClient(driver=ContractDriver(FSDriver(root='/tmp/tmp_state')))
+        contracting = ContractingClient(driver=Driver())
         contracting.set_submission_contract(commit=False)
 
         con_cfg_path = self.CONTRACT_DIR / 'contracts.json'
@@ -136,8 +136,6 @@ class GenesisGen:
 
         state_changes = {}
         state_changes.update(contracting.raw_driver.pending_writes)
-
-        contracting.raw_driver.flush()
 
         data = {k: v for k, v in state_changes.items() if v is not None}
 

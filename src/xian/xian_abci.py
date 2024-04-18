@@ -10,7 +10,7 @@ from abci.server import ABCIServer
 from abci.application import BaseApplication
 
 from contracting.client import ContractingClient
-from contracting.db.driver import ContractDriver
+from contracting.db.driver import Driver
 
 from xian.methods import (
     init_chain,
@@ -69,8 +69,8 @@ class Xian(BaseApplication):
             raise SystemExit()
 
         self.client = ContractingClient()
-        self.driver = ContractDriver()
-        self.nonce_storage = NonceStorage()
+        self.driver = Driver()
+        self.nonce_storage = NonceStorage(driver=self.driver)
         self.upgrader = UpgradeHandler(self)
         self.xian = Node(self.client, self.driver, self.nonce_storage)
         self.validator_handler = ValidatorHandler(self)
@@ -86,7 +86,7 @@ class Xian(BaseApplication):
 
         if self.chain_id is None:
             raise ValueError("No value set for 'chain_id' in genesis block")
-        
+
         if self.genesis.get("abci_genesis", None) is None:
             raise ValueError("No value set for 'abci_genesis' in Tendermint genesis.json")
 
@@ -140,21 +140,21 @@ class Xian(BaseApplication):
         """
         res = commit.commit(self)
         return res
-    
+
     def process_proposal(self, req):
         """
         Contains all information on the proposed block needed to fully execute it.
         """
         res = process_proposal.process_proposal(self, req)
         return res
-    
+
     def prepare_proposal(self, req):
         """
         RequestPrepareProposal contains a preliminary set of transactions txs that CometBFT retrieved from the mempool, called raw proposal. The Application can modify this set and return a modified set of transactions via ResponsePrepareProposal.txs .
         """
         res = prepare_proposal.prepare_proposal(self, req)
         return res
-    
+
     def query(self, req):
         """
         Query the application state
