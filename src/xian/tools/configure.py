@@ -177,7 +177,7 @@ class Configure:
         if self.args.validator_privkey:
             target_path = os.path.join(os.path.expanduser('~'), '.cometbft', 'config', 'priv_validator_key_1.json')
 
-            keys = self.generate_keys()
+            keys = self.generate_keys(self)
 
             with open(target_path, 'w') as f:
                 f.write(json.dumps(keys, indent=2))
