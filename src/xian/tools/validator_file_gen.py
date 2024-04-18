@@ -12,7 +12,7 @@ This is to generate the priv_validator_key.json file for your validator node.
 class ValidatorGen:
     def __init__(self):
         self.parser = ArgumentParser(description='Validator File Generator')
-        self.parser.add_argument('--validator_privkey', type=str, help='Validator wallet private key 64 characters', required=True)
+        self.parser.add_argument('--validator-privkey', type=str, help='Validator wallet private key 64 characters', required=True)
         self.args = self.parser.parse_args()
 
     def generate_keys(self):
