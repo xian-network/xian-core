@@ -6,6 +6,8 @@ import json
 
 from time import sleep
 from argparse import ArgumentParser
+from nacl.signing import SigningKey
+from nacl.encoding import HexEncoder, Base64Encoder
 
 """
 This is to configure the CometBFT node.
