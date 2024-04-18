@@ -38,7 +38,7 @@ class ValidatorGen:
         address = address_bytes.hex().upper()
 
         output = {
-            "address": "address",
+            "address": address,
             "pub_key": {
                 "type": "tendermint/PubKeyEd25519",
                 "value": public_key_b64
