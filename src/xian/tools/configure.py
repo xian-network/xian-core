@@ -2,6 +2,7 @@ import requests
 import tarfile
 import toml
 import os
+import json
 
 from time import sleep
 from argparse import ArgumentParser
@@ -79,6 +80,41 @@ class Configure:
             sleep(1)  # wait 1 second before trying again
 
         return None  # or raise an Exception indicating the request ultimately failed
+    
+    def generate_keys(self):
+        pk_hex = self.args.validator_privkey
+
+        # Convert hex private key to bytes and generate signing key object
+        signing_key = SigningKey(pk_hex, encoder=HexEncoder)
+
+        # Obtain the verify key (public key) from the signing key
+        verify_key = signing_key.verify_key
+
+        # Concatenate private and public key bytes
+        priv_key_with_pub = signing_key.encode() + verify_key.encode()
+
+        # Encode concatenated private and public keys in Base64 for the output
+        priv_key_with_pub_b64 = Base64Encoder.encode(priv_key_with_pub).decode('utf-8')
+
+        # Encode public key in Base64 for the output
+        public_key_b64 = verify_key.encode(encoder=Base64Encoder).decode('utf-8')
+
+        # Hash the public key using SHA-256 and take the first 20 bytes for the address
+        address_bytes = hashlib.sha256(verify_key.encode()).digest()[:20]
+        address = address_bytes.hex().upper()
+
+        output = {
+            "address": address,
+            "pub_key": {
+                "type": "tendermint/PubKeyEd25519",
+                "value": public_key_b64
+            },
+            'priv_key': {
+                'type': 'tendermint/PrivKeyEd25519',
+                'value': priv_key_with_pub_b64
+            }
+        }
+        return output
 
     def main(self):
         # Make sure this is run in the tools directory
@@ -135,18 +171,13 @@ class Configure:
             os.system(f'cp {genesis_path} {target_path}')
 
         if self.args.validator_privkey:
-            # os.system(f'python3 validator_file_gen.py --validator-privkey {self.args.validator_privkey}')
-            # Copy the priv_validator_key.json file
-            validator_script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'validator_file_gen.py')
-            command = f'python3 {validator_script_path} --validator-privkey {self.args.validator_privkey}'
-            os.system(command)
-            file_path = os.path.normpath(os.path.join('priv_validator_key.json'))
-            target_path = os.path.join(os.path.expanduser('~'), '.cometbft', 'config', 'priv_validator_key.json')
-            os.system(f'cp {file_path} {target_path}')
-            # Remove node_key.json file
-            path = os.path.join(os.path.expanduser('~'), '.cometbft', 'config', 'node_key.json')
-            if os.path.exists(path):
-                os.system(f'rm {path}')
+            target_path = os.path.join(os.path.expanduser('~'), '.cometbft', 'config', 'priv_validator_key_1.json')
+
+            keys = self.generate_keys()
+
+            with open(target_path, 'w') as f:
+                f.write(json.dumps(keys, indent=2))
+
 
         if self.args.prometheus:
             config['instrumentation']['prometheus'] = True
