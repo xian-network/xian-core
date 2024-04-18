@@ -3,6 +3,8 @@ import tarfile
 import toml
 import os
 import json
+import hashlib
+
 
 from time import sleep
 from argparse import ArgumentParser
