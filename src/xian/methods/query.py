@@ -41,7 +41,7 @@ def query(self, req) -> ResponseQuery:
             if path_parts[0] == "keys":
                 result = get_keys(self.driver, path_parts[1])
             if path_parts[0] == "contracts":
-                result = self.driver.get_contracts()
+                result = self.driver.get_contract_files()
 
         # http://localhost:26657/abci_query?path="/health"
         if path_parts[0] == "health":
