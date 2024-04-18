@@ -85,8 +85,8 @@ class Configure:
 
         return None  # or raise an Exception indicating the request ultimately failed
     
-    def generate_keys(validator_privkey):
-        pk_hex = validator_privkey
+    def generate_keys(self):
+        pk_hex = self.args.validator_privkey
 
         # Convert hex private key to bytes and generate signing key object
         signing_key = SigningKey(pk_hex, encoder=HexEncoder)
