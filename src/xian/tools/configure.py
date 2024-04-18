@@ -93,13 +93,7 @@ class Configure:
         config['consensus']['create_empty_blocks'] = False
 
         if self.args.seed_node:
-            info = self.get_node_info(self.args.seed_node)
-            if info:
-                id = info['result']['node_info']['id']
-                config['p2p']['seeds'] = f'{id}@{self.args.seed_node}:26656'
-            else:
-                print("Failed to get node information after 10 attempts.")
-
+            config['p2p']['seeds'] = f'some_id@{self.args.seed_node}:26656'
         if self.args.moniker:
             config['moniker'] = self.args.moniker
 
