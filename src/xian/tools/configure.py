@@ -17,6 +17,7 @@ class Configure:
     def __init__(self):
         self.parser = ArgumentParser(description='Configure')
         self.parser.add_argument('--seed-node', type=str, help='IP of the Seed Node e.g. 91.108.112.184 (without port, but 26657 and 26656 needs to be open)', required=False)
+        self.parser.add_argument('--seed-node-address', type=str, help='If the full seed node address is provided w/o port e.g. ', required=False)
         self.parser.add_argument('--moniker', type=str, help='Moniker/Name of your node', required=True)
         self.parser.add_argument('--allow-cors', type=bool, help='Allow CORS', required=False, default=True)
         self.parser.add_argument('--snapshot-url', type=str, help='URL of the snapshot e.g. https://github.com/xian-network/snapshots/raw/main/testnet-2024-04-02.tar (tar.gz file)', required=False)
@@ -92,13 +93,21 @@ class Configure:
 
         config['consensus']['create_empty_blocks'] = False
 
+        if self.args.seed_node_address:
+            config['p2p']['seeds'] = f'{self.args.seed_node_address}:26656'
         if self.args.seed_node:
-            config['p2p']['seeds'] = "IS THIS UPDATING ????"
+            info = self.get_node_info(self.args.seed_node)
+            if info:
+                id = info['result']['node_info']['id']
+                config['p2p']['seeds'] = f'{id}@{self.args.seed_node}:26656'
+            else:
+                print("Failed to get node information after 10 attempts.")
+
         if self.args.moniker:
             config['moniker'] = self.args.moniker
 
         if self.args.allow_cors:
-            config['rpc']['cors_allowed_origins'] = ['HELLO?']
+            config['rpc']['cors_allowed_origins'] = ['*']
 
         config['consensus']['create_empty_blocks'] = False
 
@@ -124,7 +133,7 @@ class Configure:
             os.system(f'cp {genesis_path} {target_path}')
 
         if self.args.validator_privkey:
-            os.system(f'python3 validator_file_gen.py --validator_privkey {self.args.validator_privkey}')
+            os.system(f'python3 validator_file_gen.py --validator-privkey {self.args.validator_privkey}')
             # Copy the priv_validator_key.json file
             file_path = os.path.normpath(os.path.join('priv_validator_key.json'))
             target_path = os.path.join(os.path.expanduser('~'), '.cometbft', 'config', 'priv_validator_key.json')
