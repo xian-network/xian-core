@@ -3,6 +3,7 @@ from nacl.signing import SigningKey
 from nacl.encoding import HexEncoder, Base64Encoder
 import json
 import hashlib
+import os
 
 """
 This is to generate the priv_validator_key.json file for your validator node.
@@ -57,8 +58,9 @@ class ValidatorGen:
             return
         
         keys = self.generate_keys()
+        file_path = os.path.join(os.path.expanduser('~'), '.cometbft', 'config', 'priv_validator_key.json')
 
-        with open('priv_validator_key.json', 'w') as f:
+        with open(file_path, 'w') as f:
             f.write(json.dumps(keys, indent=2))
 
 

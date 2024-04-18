@@ -133,11 +133,8 @@ class Configure:
             os.system(f'cp {genesis_path} {target_path}')
 
         if self.args.validator_privkey:
-            # os.system(f'python3 validator_file_gen.py --validator-privkey {self.args.validator_privkey}')
+            os.system(f'python3 validator_file_gen.py --validator-privkey {self.args.validator_privkey}')
             # Copy the priv_validator_key.json file
-            validator_script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'validator_file_gen.py')
-            command = f'python3 {validator_script_path} --validator-privkey {self.args.validator_privkey}'
-            os.system(command)
             file_path = os.path.normpath(os.path.join('priv_validator_key.json'))
             target_path = os.path.join(os.path.expanduser('~'), '.cometbft', 'config', 'priv_validator_key.json')
             os.system(f'cp {file_path} {target_path}')
