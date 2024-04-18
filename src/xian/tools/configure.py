@@ -175,7 +175,7 @@ class Configure:
             os.system(f'cp {genesis_path} {target_path}')
 
         if self.args.validator_privkey:
-            target_path = os.path.join(os.path.expanduser('~'), '.cometbft', 'config', 'priv_validator_key_2.json')
+            target_path = os.path.join(os.path.expanduser('~'), '.cometbft', 'config', 'priv_validator_key.json')
 
             keys = self.generate_keys()
 
