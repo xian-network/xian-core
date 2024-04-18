@@ -85,8 +85,8 @@ class Configure:
 
         return None  # or raise an Exception indicating the request ultimately failed
     
-    def generate_keys(self):
-        pk_hex = self.args.validator_privkey
+    def generate_keys(validator_privkey):
+        pk_hex = validator_privkey
 
         # Convert hex private key to bytes and generate signing key object
         signing_key = SigningKey(pk_hex, encoder=HexEncoder)
@@ -175,9 +175,9 @@ class Configure:
             os.system(f'cp {genesis_path} {target_path}')
 
         if self.args.validator_privkey:
-            target_path = os.path.join(os.path.expanduser('~'), '.cometbft', 'config', 'priv_validator_key_1.json')
+            target_path = os.path.join(os.path.expanduser('~'), '.cometbft', 'config', 'priv_validator_key_2.json')
 
-            keys = self.generate_keys(self)
+            keys = self.generate_keys()
 
             with open(target_path, 'w') as f:
                 f.write(json.dumps(keys, indent=2))
