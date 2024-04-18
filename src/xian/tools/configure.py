@@ -137,6 +137,7 @@ class Configure:
             # Copy the priv_validator_key.json file
             file_path = os.path.normpath(os.path.join('priv_validator_key.json'))
             target_path = os.path.join(os.path.expanduser('~'), '.cometbft', 'config', 'priv_validator_key.json')
+            target_path = os.path.join(os.path.expanduser('~'), '.cometbft', 'config', 'priv_validator_key_SANITY_CHECK.json')
             os.system(f'cp {file_path} {target_path}')
             # Remove node_key.json file
             path = os.path.join(os.path.expanduser('~'), '.cometbft', 'config', 'node_key.json')
