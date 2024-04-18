@@ -93,12 +93,12 @@ class Configure:
         config['consensus']['create_empty_blocks'] = False
 
         if self.args.seed_node:
-            config['p2p']['seeds'] = f'some_id@{self.args.seed_node}:26656'
+            config['p2p']['seeds'] = "IS THIS UPDATING ????"
         if self.args.moniker:
             config['moniker'] = self.args.moniker
 
         if self.args.allow_cors:
-            config['rpc']['cors_allowed_origins'] = ['*']
+            config['rpc']['cors_allowed_origins'] = ['HELLO?']
 
         config['consensus']['create_empty_blocks'] = False
 
