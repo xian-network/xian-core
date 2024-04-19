@@ -1,13 +1,12 @@
 import xian.constants as c
 
 from contracting import config
-from contracting.db.driver import FSDriver
 
 
 class NonceStorage:
-    def __init__(self, root=None):
+    def __init__(self, root=None, driver=None):
         root = root if root is not None else c.STORAGE_HOME
-        self.driver = FSDriver(root=root)
+        self.driver = driver
 
     # Move this to transaction.py
     def get_nonce(self, sender):
