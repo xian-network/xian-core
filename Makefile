@@ -7,6 +7,9 @@ up:
 	pm2 start "./cometbft node --rpc.laddr tcp://0.0.0.0:26657" --name cometbft -f
 	pm2 logs --lines 1000
 
+logs:
+	pm2 logs --lines 1000
+
 down:
 	pm2 delete all
 
