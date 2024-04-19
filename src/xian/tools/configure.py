@@ -151,8 +151,6 @@ class Configure:
         if self.args.allow_cors:
             config['rpc']['cors_allowed_origins'] = ['*']
 
-        config['consensus']['create_empty_blocks'] = False
-
         if self.args.snapshot_url:
             # If data directory exists, delete it
             data_dir = os.path.join(os.path.expanduser('~'), '.cometbft', 'data')

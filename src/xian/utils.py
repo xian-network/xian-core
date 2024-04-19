@@ -228,6 +228,7 @@ def tx_hash_from_tx(tx):
 def hash_from_validator_updates(validator_updates):
     h = hashlib.sha3_256()
     # Sort the list of validator updates to ensure that the hash is consistent
+    print(validator_updates)
     validator_updates = sorted(validator_updates)
     # print(validator_updates)
     logger.info(f"Validator updates: {validator_updates}")
