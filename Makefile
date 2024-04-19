@@ -8,7 +8,7 @@ up:
 	pm2 logs --lines 1000
 
 down:
-	pm2 delete cometbft xian
+	pm2 delete all
 
 restart:
 	make down
