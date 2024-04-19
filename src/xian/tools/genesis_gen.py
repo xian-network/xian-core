@@ -1,7 +1,7 @@
 from argparse import ArgumentParser
 from contracting.client import ContractingClient
-from contracting.db.driver import Driver
-from contracting.db.encoder import encode
+from contracting.storage.driver import Driver
+from contracting.storage.encoder import encode
 from xian_py.wallet import Wallet
 from pathlib import Path
 import hashlib
