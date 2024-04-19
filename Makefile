@@ -3,8 +3,8 @@ wipe:
 	./cometbft unsafe-reset-all
 
 up:
-	cd ./src/xian && pm2 start xian_abci.py --name xian
-	pm2 start "./cometbft node --rpc.laddr tcp://0.0.0.0:26657" --name cometbft
+	cd ./src/xian && pm2 start xian_abci.py --name xian -f
+	pm2 start "./cometbft node --rpc.laddr tcp://0.0.0.0:26657" --name cometbft -f
 	pm2 logs --lines 1000
 
 down:
