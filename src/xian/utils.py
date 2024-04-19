@@ -11,7 +11,7 @@ import xian.constants as c
 
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 from contracting.stdlib.bridge.time import Datetime
-from contracting.db.encoder import encode, decode
+from contracting.storage.encoder import encode, decode
 from xian.exceptions import TransactionException
 from abci.utils import get_logger
 

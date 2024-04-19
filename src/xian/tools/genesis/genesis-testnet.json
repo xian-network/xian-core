@@ -1,0 +1,80 @@
+{
+    "genesis_time": "2024-02-08T00:17:23.342520258Z",
+    "chain_id": "xian-testnet-1",
+    "initial_height": "0",
+    "consensus_params":
+    {
+        "block":
+        {
+            "max_bytes": "22020096",
+            "max_gas": "-1",
+            "time_iota_ms": "1000"
+        },
+        "evidence":
+        {
+            "max_age_num_blocks": "100000",
+            "max_age_duration": "172800000000000",
+            "max_bytes": "1048576"
+        },
+        "validator":
+        {
+            "pub_key_types": ["ed25519"]
+        },
+        "version":
+        {}
+    },
+    "validators": [
+    {
+        "address": "614EBE42CBE8354F733851F4316D0DE316B1AEF0",
+        "pub_key":
+        {
+            "type": "tendermint/PubKeyEd25519",
+            "value": "f6SWyiQ45IfMRaiif9lbLv43MiP3tyho+6sgXWhr5I4="
+        },
+        "power": "10",
+        "name": ""
+    },
+    {
+        "address": "5C7B6531A88A6C6941A7AA495AF041394F8345F0",
+        "pub_key":
+        {
+            "type": "tendermint/PubKeyEd25519",
+            "value": "3/XVTZw82wTSecPAoSPWpzqU4HJdfqyVX9+HKY2+RaY="
+        },
+        "power": "10",
+        "name": ""
+    },
+    {
+        "address": "7D608D056AE761CE4DAE0EE173DFC67E77BC5A1E",
+        "pub_key":
+        {
+            "type": "tendermint/PubKeyEd25519",
+            "value": "bSR2zWb6J3tgd8ds3NknMwQNraLhKijD67CK9E4SvnY="
+        },
+        "power": "10",
+        "name": ""
+    },
+    {
+        "address": "6BF51C62C924FEF0AF5C5CDCBD660E6EA0DAF01F",
+        "pub_key":
+        {
+            "type": "tendermint/PubKeyEd25519",
+            "value": "jY/sFk/3j8RyDPxkCIMIOJafgY862uqkqJbim+bR1xo="
+        },
+        "power": "10",
+        "name": ""
+    },
+    {
+        "address": "2ABDB4DBD01E6CD6DBBC3FA503BC5E208A9016A1",
+        "pub_key":
+        {
+            "type": "tendermint/PubKeyEd25519",
+            "value": "vC/Wvdqk616Q9bhU7P4mMFsg6NFLqB8qq8wDiWLTc3k="
+        },
+        "power": "10",
+        "name": ""
+    }],
+    "app_hash": "",
+    "abci_genesis":
+    {}
+}
