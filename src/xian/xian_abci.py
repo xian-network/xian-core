@@ -109,13 +109,11 @@ class Xian(BaseApplication):
         Return information about the application state.
         """
         res = info.info(self, req)
-        logger.info("Info completed")
         return res
 
     def init_chain(self, req):
         """Called once upon genesis."""
         resp = init_chain.init_chain(self, req)
-        logger.info("Init chain completed")
         return resp
 
     def check_tx(self, raw_tx):
