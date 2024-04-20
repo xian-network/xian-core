@@ -88,7 +88,7 @@
         "value": { "__time__": [2023, 9, 2, 13, 7, 0, 0] }
       },
       {
-        "key": "currency.balances:f7f6f03cc5be4ed3c43d440ea54019a0c0d1b9c1d81e2ebc45952b3f5338b845",
+        "key": "currency.balances:7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e",
         "value": 111111111
       },
       { "key": "dao.S:motion_delay", "value": { "__delta__": [1, 0] } },
