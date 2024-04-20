@@ -1,9 +1,9 @@
-from contracting.db.encoder import encode
+from contracting.storage.encoder import encode
 from xian.utils import verify, check_enough_stamps
 from xian.exceptions import TransactionException
 from xian.processor import TxProcessor
 from xian.formatting import TRANSACTION_PAYLOAD_RULES, TRANSACTION_RULES, contract_name_is_formatted
-from contracting.db.encoder import convert_dict
+from contracting.storage.encoder import convert_dict
 import gc
 import asyncio
 import json
@@ -20,7 +20,7 @@ class Node:
             client=self.client,
             driver=self.driver
         )
-        
+
     def validate_transaction(self, tx):
         # Check transaction formatting
         self.check_tx_formatting(tx)
@@ -95,11 +95,11 @@ class Node:
             sender=tx['payload']['sender'],
             value=tx['payload']['nonce']
         )
-        
+
     def dict_has_keys(self, d: dict, keys: set):
         key_set = set(d.keys())
         return len(keys ^ key_set) == 0
-        
+
     def recurse_rules(self, d: dict, rule: dict):
         if callable(rule):
             return rule(d)
@@ -129,7 +129,7 @@ class Node:
             raise TransactionException("Transaction has unexpected or missing keys")
         if not self.recurse_rules(d, rule):
             raise TransactionException("Transaction has wrongly formatted dictionary")
-        
+
     def check_tx_keys(self, tx):
         metadata = tx.get("metadata")
 
@@ -164,7 +164,7 @@ class Node:
         self.check_format(tx, TRANSACTION_RULES)
 
         if not verify(
-            tx["payload"]["sender"], encode(tx["payload"]), tx["metadata"]["signature"]
+                tx["payload"]["sender"], encode(tx["payload"]), tx["metadata"]["signature"]
         ):
             raise TransactionException('Transaction is not signed by the sender')
 
@@ -172,7 +172,7 @@ class Node:
         tx_nonce = tx["payload"]["nonce"]
         tx_sender = tx["payload"]["sender"]
         current_nonce = self.nonces.get_nonce(sender=tx_sender)
-        
+
         if not (current_nonce is None or tx_nonce > current_nonce):
             raise TransactionException('Transaction nonce is invalid')
 
@@ -195,7 +195,7 @@ class Node:
                 contract_key = f"{parts[0]}.__compiled__"
                 print(f"processing {contract_key}")
                 # the encoded contract data from genesis was invalid, so we recompile it.
-                state_changes[i+1]["value"]["__bytes__"] = self.recompile_contract_from_source(s)
+                state_changes[i + 1]["value"]["__bytes__"] = self.recompile_contract_from_source(s)
             if type(s['value']) is dict:
                 s['value'] = convert_dict(s['value'])
 
