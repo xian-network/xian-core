@@ -5,7 +5,7 @@ from datetime import datetime
 from abci.utils import get_logger
 from xian.utils import format_dictionary, tx_hash_from_tx
 from contracting.execution.executor import Executor
-from contracting.db.encoder import convert_dict, safe_repr
+from contracting.storage.encoder import convert_dict, safe_repr
 from contracting.stdlib.bridge.time import Datetime
 
 # Logging

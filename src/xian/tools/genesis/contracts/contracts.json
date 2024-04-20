@@ -42,14 +42,14 @@
 			"submit_as": "masternodes",
             "owner": "election_house",
             "constructor_args": {
-				"initial_members": ["%%masternode_pk%%"],
+				"initial_members": ["%%validator_pubkey%%"],
 				"candidate": "elect_masternodes"
 			}
 		},
 		{
             "name": "elect_members",
 			"submit_as": "elect_masternodes",
-            "owner": "election_house",
+            "owner": null,
             "constructor_args": {
 				"policy": "masternodes",
 				"cost": 100000

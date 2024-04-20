@@ -1,8 +1,6 @@
 import xian.constants as c
 
-from contracting.db.driver import (
-    Driver,
-)
+from contracting.storage.driver import Driver
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 
 
