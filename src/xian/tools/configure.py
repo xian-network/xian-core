@@ -97,7 +97,7 @@ class Configure:
             required=False,
             default=True
         )
-        self.parser.add_argument('--seed-node-address', type=str, help='If the full seed node address is provided w/o port e.g. ', required=False)
+        parser.add_argument('--seed-node-address', type=str, help='If the full seed node address is provided w/o port e.g. ', required=False)
 
         self.args = parser.parse_args()
     
