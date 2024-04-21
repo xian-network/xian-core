@@ -53,12 +53,12 @@ def query(self, req) -> ResponseQuery:
 
         # http://localhost:26657/abci_query?path="/contract/con_some_contract"
         if path_parts[0] == "contract":
-            self.client.raw_driver.clear_pending_state()
+            self.client.raw_driver.flush_cache()
             result = self.client.raw_driver.get_contract(path_parts[1])
 
         # http://localhost:26657/abci_query?path="/contract_methods/con_some_contract"
         if path_parts[0] == "contract_methods":
-            self.client.raw_driver.clear_pending_state()
+            self.client.raw_driver.flush_cache()
             
             contract_code = self.client.raw_driver.get_contract(path_parts[1])
             if contract_code is not None:
@@ -67,7 +67,7 @@ def query(self, req) -> ResponseQuery:
 
         # http://localhost:26657/abci_query?path="/contract_vars/con_some_contract"
         if path_parts[0] == "contract_vars":
-            self.client.raw_driver.clear_pending_state()
+            self.client.raw_driver.flush_cache()
 
             contract_code = self.client.raw_driver.get_contract(path_parts[1])
             if contract_code is not None:
