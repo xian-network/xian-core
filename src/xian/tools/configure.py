@@ -3,11 +3,15 @@ import tarfile
 import toml
 import json
 import os
+import json
+import hashlib
+
 
 from time import sleep
 from pathlib import Path
 from argparse import ArgumentParser
 from nacl.signing import SigningKey
+from nacl.encoding import HexEncoder, Base64Encoder
 
 """
 Configure CometBFT node
@@ -93,6 +97,7 @@ class Configure:
             required=False,
             default=True
         )
+        parser.add_argument('--seed-node-address', type=str, help='If the full seed node address is provided w/o port e.g. ', required=False)
 
         self.args = parser.parse_args()
     
@@ -143,6 +148,41 @@ class Configure:
             sleep(1)  # wait 1 second before trying again
 
         return None  # or raise an Exception indicating the request ultimately failed
+    
+    def generate_keys(self):
+        pk_hex = self.args.validator_privkey
+
+        # Convert hex private key to bytes and generate signing key object
+        signing_key = SigningKey(pk_hex, encoder=HexEncoder)
+
+        # Obtain the verify key (public key) from the signing key
+        verify_key = signing_key.verify_key
+
+        # Concatenate private and public key bytes
+        priv_key_with_pub = signing_key.encode() + verify_key.encode()
+
+        # Encode concatenated private and public keys in Base64 for the output
+        priv_key_with_pub_b64 = Base64Encoder.encode(priv_key_with_pub).decode('utf-8')
+
+        # Encode public key in Base64 for the output
+        public_key_b64 = verify_key.encode(encoder=Base64Encoder).decode('utf-8')
+
+        # Hash the public key using SHA-256 and take the first 20 bytes for the address
+        address_bytes = hashlib.sha256(verify_key.encode()).digest()[:20]
+        address = address_bytes.hex().upper()
+
+        output = {
+            "address": address,
+            "pub_key": {
+                "type": "tendermint/PubKeyEd25519",
+                "value": public_key_b64
+            },
+            'priv_key': {
+                'type': 'tendermint/PrivKeyEd25519',
+                'value': priv_key_with_pub_b64
+            }
+        }
+        return output
 
     def main(self):
         # Make sure this is run in the tools directory
@@ -157,6 +197,10 @@ class Configure:
 
         config['consensus']['create_empty_blocks'] = False
 
+        # If seed node address is provided, use it
+        if self.args.seed_node_address:
+            config['p2p']['seeds'] = f'{self.args.seed_node_address}:26656'
+        # Otherwise construct the seed node address from the IP
         if self.args.seed_node:
             info = self.get_node_info(self.args.seed_node)
 
@@ -231,15 +275,13 @@ class Configure:
             os.system(f'cp {genesis_path} {target_path}')
 
         if self.args.validator_privkey:
-            os.system(f'python3 validator_gen.py --validator_privkey {self.args.validator_privkey}')
-            # Copy priv_validator_key.json file to CometBFT's config folder
-            file_path = os.path.normpath(os.path.join('priv_validator_key.json'))
             target_path = os.path.join(os.path.expanduser('~'), '.cometbft', 'config', 'priv_validator_key.json')
-            os.system(f'cp {file_path} {target_path}')
-            # Remove node_key.json file
-            path = os.path.join(os.path.expanduser('~'), '.cometbft', 'config', 'node_key.json')
-            if os.path.exists(path):
-                os.system(f'rm {path}')
+
+            keys = self.generate_keys()
+
+            with open(target_path, 'w') as f:
+                f.write(json.dumps(keys, indent=2))
+
 
         if self.args.prometheus:
             config['instrumentation']['prometheus'] = True
