@@ -38,11 +38,11 @@ def fetch_filebased_state():
     return contract_state, run_state
 
 
-def build_genesis_block(genesis_file_path: str, founder_sk: str, contract_state: dict, run_state: dict):
+def build_genesis_block(founder_sk: str, contract_state: dict, run_state: dict):
     genesis_block = {
-        'hash': "0000000000000000000000000000000000000000000000000000000000000000",
+        'hash': "0" * 64,
         'number': "0",
-        'previous': "0000000000000000000000000000000000000000000000000000000000000000",
+        'previous': "0" * 64,
         'origin': {
             'signature': '',
             'sender': ''
@@ -79,7 +79,7 @@ def main(
 
     contract_state, run_state = fetch_filebased_state()
 
-    genesis_block = build_genesis_block(output_path, founder_sk, contract_state, run_state)
+    genesis_block = build_genesis_block(founder_sk, contract_state, run_state)
 
     print(f'Saving genesis block to "{output_path}"...')
     with open(output_path, 'w') as f:
