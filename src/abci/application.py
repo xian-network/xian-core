@@ -36,7 +36,7 @@ from cometbft.abci.v1beta1.types_pb2 import (
     ResponseEcho,
 )
 from cometbft.abci.v1beta2.types_pb2 import (
-   ResponsePrepareProposal,
+    ResponsePrepareProposal,
     ResponseProcessProposal,
 )
 
@@ -49,13 +49,11 @@ OkCode = 0
 ErrorCode = 1
 
 
-
 class BaseApplication:
     """
     Base ABCI Application. Extend this and override what's needed for your app
     """
         
-
     def init_chain(self, req: RequestInitChain) -> ResponseInitChain:
         """
         Called once, after ``info()`` during startup, when block height is 0  
@@ -101,7 +99,6 @@ class BaseApplication:
         A non-zero 'code' in the response is used to indicate an error.
         """
         return ResponseQuery(code=OkCode)
-
 
     def commit(self) -> ResponseCommit:
         """
