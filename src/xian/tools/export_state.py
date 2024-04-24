@@ -11,7 +11,6 @@ def hash_genesis_block_state_changes(state_changes: list) -> str:
     # Convert all non-serializable objects in state_changes to a serializable format
     def serialize(obj):
         if isinstance(obj, bytes):
-            print(obj)
             return obj.hex()  # Convert bytes to hex string
         # return str(obj)  # Fallback: convert other types to string
 
