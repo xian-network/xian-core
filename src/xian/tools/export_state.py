@@ -11,7 +11,6 @@ def hash_genesis_block_state_changes(state_changes: list) -> str:
     # Convert all non-serializable objects in state_changes to a serializable format
     def serialize(obj):
         if isinstance(obj, bytes):
-            print(obj)
             return obj.hex()  # Convert bytes to hex string
         # return str(obj)  # Fallback: convert other types to string
 
@@ -51,7 +50,7 @@ def build_genesis_block(founder_sk: str, contract_state: dict, run_state: dict):
     }
 
     print("Populating run state...")
-    genesis_block["hash"] = run_state["__latest_block.hash"].decode("utf-8")
+    genesis_block["hash"] = run_state["__latest_block.hash"].hex()
     genesis_block["number"] = run_state["__latest_block.height"]
 
     print('Populating genesis block...')
