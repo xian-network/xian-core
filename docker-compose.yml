@@ -4,5 +4,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - VALIDATOR_PRIVKEY=${VALIDATOR_PRIVKEY}
     ports:
       - "26657:26657"

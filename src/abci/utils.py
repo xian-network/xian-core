@@ -40,10 +40,8 @@ def get_logger(name: str) -> logging.Logger:
 
 def encode_varint(number: int) -> bytes:
     """
-    Encode varint into bytes
+    Encode varint (as uint64) into bytes
     """
-    # Shift to int64
-    number = number << 1
     buf = b""
     while True:
         towrite = number & 0x7F
@@ -98,13 +96,13 @@ def read_messages(reader: BytesIO, message: Message) -> Message:
     """
     while True:
         try:
-            length = decode_varint(reader) >> 1
+            length = decode_varint(reader)
         except EOFError:
             return
         data = reader.read(length)
         if len(data) < length:
+            print(f"Expected {length} bytes, but got only {len(data)}. End of stream or data corruption.")
             return
         m = message()
         m.ParseFromString(data)
-
         yield m
