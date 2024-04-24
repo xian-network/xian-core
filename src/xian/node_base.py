@@ -1,12 +1,15 @@
 from contracting.storage.encoder import encode
+from contracting.storage.encoder import convert_dict
+
 from xian.utils import verify, check_enough_stamps
 from xian.exceptions import TransactionException
 from xian.processor import TxProcessor
-from xian.formatting import TRANSACTION_PAYLOAD_RULES, TRANSACTION_RULES, contract_name_is_formatted
-from contracting.storage.encoder import convert_dict
-import gc
-import asyncio
-import json
+from xian.formatting import (
+    TRANSACTION_PAYLOAD_RULES,
+    TRANSACTION_RULES,
+    contract_name_is_formatted
+)
+
 import marshal
 import binascii
 

@@ -3,9 +3,7 @@ import tarfile
 import toml
 import json
 import os
-import json
 import hashlib
-
 
 from time import sleep
 from pathlib import Path

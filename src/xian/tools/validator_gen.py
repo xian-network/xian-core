@@ -2,6 +2,7 @@ from argparse import ArgumentParser
 from nacl.signing import SigningKey
 from nacl.encoding import HexEncoder, Base64Encoder
 from pathlib import Path
+
 import hashlib
 import json
 
