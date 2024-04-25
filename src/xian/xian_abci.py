@@ -10,7 +10,6 @@ from abci.server import ABCIServer
 from abci.application import BaseApplication
 
 from contracting.client import ContractingClient
-from contracting.storage.driver import Driver
 
 from xian.methods import (
     init_chain,
