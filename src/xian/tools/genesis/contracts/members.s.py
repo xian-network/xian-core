@@ -9,6 +9,7 @@ ADD_SEAT = 2
 REMOVE_SEAT = 3
 
 VOTING_PERIOD = datetime.DAYS * 1
+UNBONDING_PERIOD = datetime.DAYS * 7
 
 S = Hash()
 minimum_nodes = Variable()
@@ -17,6 +18,7 @@ candidate_contract = Variable()
 @construct
 def seed(initial_members: list, minimum: int=1, candidate: str='elect_members'):
     S['members'] = initial_members
+    S['scheduled_for_removal'] = {}
     minimum_nodes.set(minimum)
     candidate_contract.set(candidate)
 
@@ -38,6 +40,21 @@ def quorum_min():
 def current_value():
     return S['members']
 
+@export
+def check_unbonding():
+    for vk, time in S['scheduled_for_removal'].items():
+        if now - time >= UNBONDING_PERIOD:
+            members = S['members']
+            members.remove(vk)
+            S['members'] = members
+
+@export
+def i_quit():
+    assert ctx.caller in S['members'], 'Not a member.'
+    assert len(S['members']) > minimum_nodes.get(), 'Cannot drop below current quorum.'
+    scheduled_for_removal = S['scheduled_for_removal']
+    scheduled_for_removal[ctx.caller] = now
+    S['scheduled_for_removal'] = scheduled_for_removal
 
 @export
 def vote(vk: str, obj: list):
@@ -137,7 +154,9 @@ def pass_current_motion():
 
         # Remove them from the list and pop them from deprecating
         if old_mem is not None:
-            members.remove(old_mem)
+            scheduled_for_removal = S['scheduled_for_removal']
+            scheduled_for_removal[old_mem] = now
+            S['scheduled_for_removal'] = scheduled_for_removal
             member_candidates.pop_last()
 
     S['members'] = members
