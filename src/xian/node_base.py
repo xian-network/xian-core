@@ -29,7 +29,6 @@ class Node:
         # Check if nonce is greater than the current nonce
         self.check_nonce(tx)
 
-        # TODO: is this giving up to date value ? or is value only updated after hard_apply ?
         # Get the senders balance and the current stamp rate
         try:
             balance = self.client.get_var(
