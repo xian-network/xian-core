@@ -11,10 +11,16 @@ def calculate_participant_reward(
         number_of_participants = (
             number_of_participants if number_of_participants != 0 else 1
         )
-        reward = (
-            decimal.Decimal(str(participant_ratio)) / number_of_participants
-        ) * decimal.Decimal(str(total_stamps_to_split))
-        rounded_reward = round(reward, c.DUST_EXPONENT)
+        try:
+            if type(participant_ratio) == dict:
+                participant_ratio = participant_ratio["__fixed__"]
+            reward = (
+                decimal.Decimal(str(participant_ratio)) / number_of_participants
+            ) * decimal.Decimal(str(total_stamps_to_split))
+            rounded_reward = round(reward, c.DUST_EXPONENT)
+        except:
+            print("Error in calculating reward")
+            rounded_reward = 0
         return rounded_reward
 
 
@@ -23,6 +29,10 @@ def find_developer_and_reward(
     ):
         # Find all transactions and the developer of the contract.
         # Count all stamps used by people and multiply it by the developer ratio
+        if type(developer_ratio) == dict:
+            developer_ratio = developer_ratio["__fixed__"]
+        if type(developer_ratio) != decimal.Decimal:
+            developer_ratio = decimal.Decimal(str(developer_ratio))
         send_map = defaultdict(lambda: 0)
 
         recipient = client.get_var(contract=contract, variable="__developer__")
@@ -74,8 +84,9 @@ def calculate_tx_output_rewards(
         return master_reward, foundation_reward, developer_mapping
 
 
-def distribute_rewards(stamp_rewards_amount, stamp_rewards_contract, driver, client):
+def distribute_rewards(stamp_rewards_amount, stamp_rewards_contract, client):
     if stamp_rewards_amount > 0:
+        driver = client.raw_driver
         (
             master_reward,
             foundation_reward,
@@ -85,7 +96,6 @@ def distribute_rewards(stamp_rewards_amount, stamp_rewards_contract, driver, cli
             contract=stamp_rewards_contract,
             client=client,
         )
-
         stamp_cost = driver.get("stamp_cost.S:value")
 
         master_reward /= stamp_cost
@@ -122,8 +132,9 @@ def distribute_rewards(stamp_rewards_amount, stamp_rewards_contract, driver, cli
     return rewards
 
 
-def distribute_static_rewards(driver, master_reward=None, foundation_reward=None):
+def distribute_static_rewards(client, master_reward=None, foundation_reward=None):
     rewards = []
+    driver = client.raw_driver
 
     for m in driver.get("masternodes.S:members"):
         m_balance = driver.get(f"currency.balances:{m}") or 0

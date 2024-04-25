@@ -10,7 +10,6 @@ from abci.server import ABCIServer
 from abci.application import BaseApplication
 
 from contracting.client import ContractingClient
-from contracting.storage.driver import Driver
 
 from xian.methods import (
     init_chain,
@@ -69,10 +68,9 @@ class Xian(BaseApplication):
             raise SystemExit()
 
         self.client = ContractingClient()
-        self.driver = Driver()
-        self.nonce_storage = NonceStorage(driver=self.driver)
+        self.nonce_storage = NonceStorage(self.client)
         self.upgrader = UpgradeHandler(self)
-        self.xian = Node(self.client, self.driver, self.nonce_storage)
+        self.xian = Node(self.client, self.nonce_storage)
         self.validator_handler = ValidatorHandler(self)
         self.current_block_meta: dict = None
         self.fingerprint_hashes = []

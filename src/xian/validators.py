@@ -6,11 +6,10 @@ import base64
 
 class ValidatorHandler:
     def __init__(self, app):
-        self.driver = app.driver
-        self.app = app
+        self.client = app.client
        
     def get_validators_from_state(self) -> list[str]:
-        validators = self.driver.get("masternodes.S:members")
+        validators = self.client.raw_driver.get("masternodes.S:members")
         return validators
     
     def get_tendermint_validators(self) -> list[str]:
