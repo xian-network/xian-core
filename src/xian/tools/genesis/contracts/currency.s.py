@@ -2,7 +2,11 @@ balances = Hash(default_value=0)
 
 @construct
 def seed(vk: str):
-    balances[vk] = 111_111_111
+    balances[vk] = 5555555.55 # 5% Team Tokens
+    balances["team_lock"] = 16666666.65 # 15% Team Tokens 5 Year Release, Directly minted into Lock contract
+    balances["dao"] = 33333333.3 # 30% DAO Tokens, Directly minted into DAO contract
+    balances[vk] += 49999999.95 # 45% Second batch of public tokens, to be sent out after mint
+    balances[vk] += 5555555.55 # 5% First batch of public tokens, to be sent out after mint
 
 @export
 def transfer(amount: float, to: str):
