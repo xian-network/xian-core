@@ -5,7 +5,7 @@ from xian.driver_api import (
     get_value_of_key,
     get_keys,
 )
-from xian.utils import encode_str
+from xian.utils import encode_str, decode_transaction_bytes
 from abci.application import (
     OkCode, 
     ErrorCode
@@ -42,6 +42,15 @@ def query(self, req) -> ResponseQuery:
                 result = get_keys(self.driver, path_parts[1])
             if path_parts[0] == "contracts":
                 result = self.driver.get_contract_files()
+
+        # http://localhost:26657/abci_query?path="/estimate_stamps/<encoded_txn>" BLOCK SERVICE MODE ONLY
+        if self.block_service_mode:
+            if path_parts[0] == "estimate_stamps":
+                raw_tx = path_parts[1]
+                byte_data = bytes.fromhex(raw_tx)
+                tx_hex = byte_data.decode("utf-8")
+                tx = json.loads(tx_hex)
+                result = self.stamp_estimator.execute(tx)
 
         # http://localhost:26657/abci_query?path="/health"
         if path_parts[0] == "health":
