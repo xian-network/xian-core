@@ -74,8 +74,9 @@ def calculate_tx_output_rewards(
         return master_reward, foundation_reward, developer_mapping
 
 
-def distribute_rewards(stamp_rewards_amount, stamp_rewards_contract, driver, client):
+def distribute_rewards(stamp_rewards_amount, stamp_rewards_contract, client):
     if stamp_rewards_amount > 0:
+        driver = client.raw_driver
         (
             master_reward,
             foundation_reward,
@@ -122,8 +123,9 @@ def distribute_rewards(stamp_rewards_amount, stamp_rewards_contract, driver, cli
     return rewards
 
 
-def distribute_static_rewards(driver, master_reward=None, foundation_reward=None):
+def distribute_static_rewards(client, master_reward=None, foundation_reward=None):
     rewards = []
+    driver = client.raw_driver
 
     for m in driver.get("masternodes.S:members"):
         m_balance = driver.get(f"currency.balances:{m}") or 0

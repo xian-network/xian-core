@@ -13,10 +13,9 @@ logger = get_logger(__name__)
 
 
 class TxProcessor:
-    def __init__(self, client, driver, metering=False):
+    def __init__(self, client, metering=False):
         self.client = client
-        self.driver = driver
-        self.executor = Executor(driver=self.driver, metering=metering)
+        self.executor = Executor(driver=self.client.raw_driver, metering=metering)
 
     def process_tx(self, tx, enabled_fees=False):
         # TODO better error handling of anything in here
@@ -124,7 +123,7 @@ class TxProcessor:
         )
 
         for write in writes:
-            self.driver.set(key=write['key'], value=write['value'])
+            self.client.raw_driver.set(key=write['key'], value=write['value'])
 
         tx_output = {
             'hash': tx_hash,
