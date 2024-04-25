@@ -7,10 +7,10 @@ from xian.driver_api import (
 
 def commit(self) -> ResponseCommit:
     # commit block to filesystem db
-    set_latest_block_hash(self.fingerprint_hash, self.driver)
-    set_latest_block_height(self.current_block_meta["height"], self.driver)
+    set_latest_block_hash(self.fingerprint_hash, self.client.raw_driver)
+    set_latest_block_height(self.current_block_meta["height"], self.client.raw_driver)
 
-    self.driver.hard_apply(str(self.current_block_meta["nanos"]))
+    self.client.raw_driver.hard_apply(str(self.current_block_meta["nanos"]))
 
     # unset current_block_meta & cleanup
     self.current_block_meta = None

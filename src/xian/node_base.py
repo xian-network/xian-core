@@ -15,13 +15,11 @@ import binascii
 
 
 class Node:
-    def __init__(self, client, driver, nonce_storage):
-        self.driver = driver
+    def __init__(self, client, nonce_storage):
         self.nonces = nonce_storage
         self.client = client
         self.tx_processor = TxProcessor(
-            client=self.client,
-            driver=self.driver
+            client=self.client
         )
 
     def validate_transaction(self, tx):
@@ -202,15 +200,15 @@ class Node:
             if type(s['value']) is dict:
                 s['value'] = convert_dict(s['value'])
 
-            self.driver.set(s['key'], s['value'])
+            self.client.raw_driver.set(s['key'], s['value'])
 
         for s in rewards:
             if type(s['value']) is dict:
                 s['value'] = convert_dict(s['value'])
 
-            self.driver.set(s['key'], s['value'])
+            self.client.raw_driver.set(s['key'], s['value'])
 
-        self.driver.hard_apply(nanos)
+        self.client.raw_driver.hard_apply(nanos)
 
     async def store_genesis_block(self, genesis_block: dict):
         if genesis_block is not None:

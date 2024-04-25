@@ -69,7 +69,7 @@ def finalize_block(self, req) -> ResponseFinalizeBlock:
     if self.static_rewards:
         try:
             reward_writes.append(distribute_static_rewards(
-                driver=self.driver,
+                client=self.client,
                 foundation_reward=self.static_rewards_amount_foundation,
                 master_reward=self.static_rewards_amount_validators,
             ))
@@ -78,16 +78,12 @@ def finalize_block(self, req) -> ResponseFinalizeBlock:
 
     if self.current_block_rewards:
         for tx_hash, reward in self.current_block_rewards.items():
-            try:
-                reward_writes.append(distribute_rewards(
-                    stamp_rewards_amount=reward["amount"],
-                    stamp_rewards_contract=reward["contract"],
-                    driver=self.driver,
-                    client=self.client,
-                ))
-
-            except Exception as e:
-                logger.error(f"REWARD ERROR: {e} for tx_hash: {tx_hash}")
+        
+            reward_writes.append(distribute_rewards(
+                stamp_rewards_amount=reward["amount"],
+                stamp_rewards_contract=reward["contract"],
+                client=self.client
+            ))
         
     reward_hash = hash_from_rewards(reward_writes)
     validator_updates = self.validator_handler.build_validator_updates()

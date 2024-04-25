@@ -4,20 +4,20 @@ from contracting import config
 
 
 class NonceStorage:
-    def __init__(self, root=None, driver=None):
+    def __init__(self, client, root=None):
         root = root if root is not None else c.STORAGE_HOME
-        self.driver = driver
+        self.client = client
 
     # Move this to transaction.py
     def get_nonce(self, sender):
-        return self.driver.get(c.NONCE_FILENAME + config.INDEX_SEPARATOR + sender + config.DELIMITER)
+        return self.client.raw_driver.get(c.NONCE_FILENAME + config.INDEX_SEPARATOR + sender + config.DELIMITER)
 
     # Move this to transaction.py
     def get_pending_nonce(self, sender):
-        return self.driver.get(c.PENDING_NONCE_FILENAME + config.INDEX_SEPARATOR + sender + config.DELIMITER)
+        return self.client.raw_driver.get(c.PENDING_NONCE_FILENAME + config.INDEX_SEPARATOR + sender + config.DELIMITER)
 
     def set_nonce(self, sender, value):
-        self.driver.set(
+        self.client.raw_driver.set(
             c.NONCE_FILENAME + config.INDEX_SEPARATOR + sender + config.DELIMITER,
             value
         )
@@ -29,13 +29,13 @@ class NonceStorage:
             current_nonce = -1
 
         if value > current_nonce:
-            self.driver.set(
+            self.client.raw_driver.set(
                 c.NONCE_FILENAME + config.INDEX_SEPARATOR + sender + config.DELIMITER,
                 value
             )
 
     def set_pending_nonce(self, sender, value):
-        self.driver.set(
+        self.client.raw_driver.set(
             c.PENDING_NONCE_FILENAME + config.INDEX_SEPARATOR + sender + config.DELIMITER,
             value
         )
@@ -64,8 +64,8 @@ class NonceStorage:
         return current_nonce + 1
 
     def flush(self):
-        self.driver.flush_file(c.NONCE_FILENAME)
-        self.driver.flush_file(c.PENDING_NONCE_FILENAME)
+        self.client.raw_driver.flush_file(c.NONCE_FILENAME)
+        self.client.raw_driver.flush_file(c.PENDING_NONCE_FILENAME)
 
     def flush_pending(self):
-        self.driver.flush_file(c.PENDING_NONCE_FILENAME)
+        self.client.raw_driver.flush_file(c.PENDING_NONCE_FILENAME)
