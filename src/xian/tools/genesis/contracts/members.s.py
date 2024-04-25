@@ -42,11 +42,17 @@ def current_value():
 
 @export
 def check_unbonding():
+    to_be_removed = []
     for vk, time in S['scheduled_for_removal'].items():
         if now - time >= UNBONDING_PERIOD:
             members = S['members']
             members.remove(vk)
             S['members'] = members
+            to_be_removed.append(vk)
+    scheduled_for_removal = S['scheduled_for_removal']
+    for vk in to_be_removed:
+        scheduled_for_removal.pop(vk)
+    S['scheduled_for_removal'] = scheduled_for_removal
 
 @export
 def i_quit():
