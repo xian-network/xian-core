@@ -195,6 +195,7 @@ class Node:
             if parts[1] == "__code__":
                 contract_key = f"{parts[0]}.__compiled__"
                 print(f"processing {contract_key}")
+                # TODO: Need to get rid of this! Still needed?
                 # the encoded contract data from genesis was invalid, so we recompile it.
                 state_changes[i + 1]["value"]["__bytes__"] = self.recompile_contract_from_source(s)
             if type(s['value']) is dict:

@@ -154,7 +154,7 @@ class ABCIServer:
             log.info(" ~ running app - press CTRL-C to stop ~")
             loop.run_until_complete(self._start())
         except:
-            log.warn(" ... shutting down")
+            log.warning(" ... shutting down")
             if on_windows:
                 loop.run_until_complete(_stop())
         finally:
@@ -210,7 +210,7 @@ async def _stop() -> None:
     Clean up all async tasks.  Called on a signal or a connection closed by
     tendermint
     """
-    log.warn(" ... received exit signal")
+    log.warning(" ... received exit signal")
     tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
     for task in tasks:
         task.cancel()

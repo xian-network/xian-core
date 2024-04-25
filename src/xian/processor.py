@@ -18,13 +18,7 @@ class TxProcessor:
         self.executor = Executor(driver=self.client.raw_driver, metering=metering)
 
     def process_tx(self, tx, enabled_fees=False):
-        # TODO better error handling of anything in here
-        # Get the environment
-        # print(tx)
-        block_meta = tx["b_meta"]
-        nanos = block_meta["nanos"]
         environment = self.get_environment(tx=tx)
-        # transaction = tx['tx']
         stamp_cost = self.client.get_var(contract='stamp_cost', variable='S', arguments=['value']) or 1
 
         try:
@@ -65,7 +59,6 @@ class TxProcessor:
             }
 
     def execute_tx(self, transaction, stamp_cost, environment: dict = {}, metering=False):
-        # TODO better error handling of anything in here
         logger.debug("Executing transaction...")
 
         try:
@@ -94,19 +87,19 @@ class TxProcessor:
                 'environment': environment,
                 'auto_commit': False
             })
+
             return None
-            # self.stop_node()
 
     def process_tx_output(self, output, transaction, stamp_cost):
         # Clear pending writes, stu said to comment this out
         # self.executor.driver.pending_writes.clear()
 
         # Log out to the node logs if the tx fails
-        logger.debug(f"status code = {output['status_code']}")
+        logger.debug(f"Status code is {output['status_code']}")
 
         if output['status_code'] > 0:
             logger.error(
-                f'TX executed unsuccessfully. '
+                f'Transaction executed unsuccessfully. '
                 f'{output["stamps_used"]} stamps used. '
                 f'{len(output["writes"])} writes. '
                 f'Result = {output["result"]}'

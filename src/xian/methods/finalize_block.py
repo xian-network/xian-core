@@ -20,6 +20,7 @@ from xian.rewards import (
     distribute_rewards,
     distribute_static_rewards
 )
+from xian.exceptions import TransactionException
 from abci.application import ErrorCode
 from abci.utils import get_logger
 
@@ -27,24 +28,23 @@ logger = get_logger(__name__)
 
 
 def finalize_block(self, req) -> ResponseFinalizeBlock:
-    nanos = get_nanotime_from_block_time(req.time)
-    hash = convert_binary_to_hex(req.hash)
-    height = req.height
     tx_results = []
     reward_writes = []
 
     self.current_block_meta = {
-        "nanos": nanos,
-        "height": height,
-        "hash": hash,
+        "nanos": get_nanotime_from_block_time(req.time),
+        "height": req.height,
+        "hash": convert_binary_to_hex(req.hash),
     }   
 
     for tx in req.txs: 
         try:
             tx = decode_transaction_bytes(tx)
             sender, signature, payload = unpack_transaction(tx)
+
             if not verify(sender, payload, signature):
-                raise Exception("Invalid Signature") # Not really needed, because check_tx should catch this first, but just in case
+                raise TransactionException("Invalid Signature")
+
             # Attach metadata to the transaction
             tx["b_meta"] = self.current_block_meta
             result = self.xian.tx_processor.process_tx(tx, enabled_fees=self.enable_tx_fee)
@@ -58,13 +58,27 @@ def finalize_block(self, req) -> ResponseFinalizeBlock:
             self.xian.set_nonce(tx)
             tx_hash = result["tx_result"]["hash"]
             self.fingerprint_hashes.append(tx_hash)
+
             parsed_tx_result = json.dumps(stringify_decimals(result["tx_result"]))
-            logger.debug(f"parsed tx result : {parsed_tx_result}")
-            tx_results.append(ExecTxResult(code=result["tx_result"]["status"],data=encode_str(parsed_tx_result),gas_used=0))
+            logger.debug(f"Transaction result: {parsed_tx_result}")
+
+            tx_results.append(
+                ExecTxResult(
+                    code=result["tx_result"]["status"],
+                    data=encode_str(parsed_tx_result),
+                    gas_used=0
+                )
+            )
         except Exception as e:
-            # Normally this cannot happen, but if it does, we need to catch it
             logger.error(f"Fatal ERROR: {e}")
-            tx_results.append(ExecTxResult(code=ErrorCode, data=encode_str(f"ERROR: {e}"), gas_used=0))
+
+            tx_results.append(
+                ExecTxResult(
+                    code=ErrorCode,
+                    data=encode_str(f"ERROR: {e}"),
+                    gas_used=0
+                )
+            )
 
     if self.static_rewards:
         try:
@@ -92,4 +106,8 @@ def finalize_block(self, req) -> ResponseFinalizeBlock:
     self.fingerprint_hashes.append(reward_hash)
     self.fingerprint_hash = hash_list(self.fingerprint_hashes)
 
-    return ResponseFinalizeBlock(validator_updates=validator_updates, tx_results=tx_results, app_hash=self.fingerprint_hash)
+    return ResponseFinalizeBlock(
+        validator_updates=validator_updates,
+        tx_results=tx_results,
+        app_hash=self.fingerprint_hash
+    )
