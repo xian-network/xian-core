@@ -17,10 +17,16 @@ class NonceStorage:
         if not (current_nonce is None or tx_nonce > current_nonce):
             raise TransactionException('Transaction nonce is invalid')
         
-    def set_nonce(self, tx):
+    def set_nonce_by_tx(self, tx):
         self.client.raw_driver.set(
             c.NONCE_FILENAME + config.INDEX_SEPARATOR + tx['payload']['sender'] + config.DELIMITER,
             tx['payload']['nonce']
+        )
+
+    def set_nonce(self, sender, value):
+        self.client.raw_driver.set(
+            c.NONCE_FILENAME + config.INDEX_SEPARATOR + sender + config.DELIMITER,
+            value
         )
 
     # Move this to transaction.py
