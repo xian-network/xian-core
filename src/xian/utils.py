@@ -6,13 +6,16 @@ import nacl
 import nacl.encoding
 import nacl.signing
 import hashlib
+import marshal
+import binascii
 
 import xian.constants as c
 
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 from contracting.stdlib.bridge.time import Datetime
-from contracting.storage.encoder import encode, decode
+from contracting.storage.encoder import encode, decode, convert_dict
 from xian.exceptions import TransactionException
+from xian.formatting import contract_name_is_formatted, TRANSACTION_PAYLOAD_RULES, TRANSACTION_RULES
 from abci.utils import get_logger
 
 
@@ -216,6 +219,27 @@ def format_dictionary(d: dict) -> dict:
             d[k] = format_dictionary(v)
     return {k: v for k, v in sorted(d.items())}
 
+def recurse_rules(d: dict, rule: dict):
+        if callable(rule):
+            return rule(d)
+
+        for key, subrule in rule.items():
+            arg = d[key]
+
+            if type(arg) == dict:
+                if not recurse_rules(arg, subrule):
+                    return False
+
+            elif type(arg) == list:
+                for a in arg:
+                    if not recurse_rules(a, subrule):
+                        return False
+
+            elif callable(subrule):
+                if not subrule(arg):
+                    return False
+
+        return True
 
 def tx_hash_from_tx(tx):
     h = hashlib.sha3_256()
@@ -238,6 +262,9 @@ def hash_from_rewards(rewards):
     h.update(encoded_rewards)
     return h.hexdigest()
 
+def dict_has_keys(d: dict, keys: set):
+        key_set = set(d.keys())
+        return len(keys ^ key_set) == 0
 
 def check_enough_stamps(
         balance: object,
@@ -257,3 +284,180 @@ def check_enough_stamps(
         # If you have less than 2 transactions worth of tau after trying to send your amount, fail.
         if ((balance - amount) * stamps_per_tau) / 6 < 2:
             raise TransactionException('Transaction sender has too few stamps for this transaction')
+
+def check_format(d: dict, rule: dict):
+        expected_keys = set(rule.keys())
+
+        if not dict_has_keys(d, expected_keys):
+            raise TransactionException("Transaction has unexpected or missing keys")
+        if not recurse_rules(d, rule):
+            raise TransactionException("Transaction has wrongly formatted dictionary")
+
+def check_tx_keys(tx):
+    metadata = tx.get("metadata")
+
+    if not metadata:
+        raise TransactionException("Metadata is missing")
+    if len(metadata.keys()) != 1:
+        raise TransactionException("Wrong number of metadata entries")
+
+    payload = tx.get("payload")
+
+    if not payload:
+        raise TransactionException("Payload is missing")
+    if not payload["sender"]:
+        raise TransactionException("Payload key 'sender' is missing")
+    if not payload["contract"]:
+        raise TransactionException("Payload key 'contract' is missing")
+    if not payload["function"]:
+        raise TransactionException("Payload key 'function' is missing")
+    if not payload["stamps_supplied"]:
+        raise TransactionException("Payload key 'stamps_supplied' is missing")
+
+    keys = list(payload.keys())
+    keys_are_valid = list(
+        map(lambda key: key in keys, list(TRANSACTION_PAYLOAD_RULES.keys()))
+    )
+
+    if not all(keys_are_valid) and len(keys) == len(list(TRANSACTION_PAYLOAD_RULES.keys())):
+        raise TransactionException("Payload keys are not valid")
+
+def check_tx_formatting(tx: dict):
+    check_tx_keys(tx)
+    check_format(tx, TRANSACTION_RULES)
+
+    if not verify(
+            tx["payload"]["sender"], encode(tx["payload"]), tx["metadata"]["signature"]
+    ):
+        raise TransactionException('Transaction is not signed by the sender')
+    
+def check_contract_name(contract, function, name):
+        if (
+                contract == "submission"
+                and function == "submit_contract"
+                and (len(name) > 255 or not contract_name_is_formatted(name))
+        ):
+            raise TransactionException('Transaction contract name is invalid')
+
+def validate_transaction(client, nonce_storage, tx):
+        # Check transaction formatting
+        check_tx_formatting(tx)
+
+        # Check if nonce is greater than the current nonce
+        nonce_storage.check_nonce(tx)
+
+        # Get the senders balance and the current stamp rate
+        try:
+            balance = client.get_var(
+                contract="currency",
+                variable="balances",
+                arguments=[tx["payload"]["sender"]],
+                mark=False
+            )
+        except Exception as e:
+            raise TransactionException(f"Failed to retrieve 'currency' balance for sender: {e}")
+
+        try:
+            stamp_rate = client.get_var(
+                contract="stamp_cost",
+                variable="S",
+                arguments=["value"],
+                mark=False
+            )
+        except Exception as e:
+            raise TransactionException(f"Failed to get stamp cost: {e}")
+
+        contract = tx["payload"]["contract"]
+        func = tx["payload"]["function"]
+        stamps_supplied = tx["payload"]["stamps_supplied"]
+
+        if stamps_supplied is None:
+            stamps_supplied = 0
+
+        if stamp_rate is None:
+            stamp_rate = 0
+
+        if balance is None:
+            balance = 0
+
+        # Get how much they are sending
+        amount = tx["payload"]["kwargs"].get("amount")
+        if amount is None:
+            amount = 0
+
+        # Check if they have enough stamps for the operation
+        check_enough_stamps(
+            balance,
+            stamp_rate,
+            stamps_supplied,
+            contract=contract,
+            function=func,
+            amount=amount,
+        )
+
+        # Check if contract name is valid
+        name = tx["payload"]["kwargs"].get("name")
+        check_contract_name(contract, func, name)
+
+def recompile_contract_from_source(s: dict):
+        code = compile(s["value"], '', "exec")
+        serialized_code = marshal.dumps(code)
+        hexadecimal_string = binascii.hexlify(serialized_code).decode()
+        return hexadecimal_string
+
+def apply_state_changes_from_block(client, block):
+    state_changes = block.get('genesis', [])
+    rewards = block.get('rewards', [])
+
+    nanos = block.get('hlc_timestamp')
+
+    for i, s in enumerate(state_changes):
+        parts = s["key"].split(".")
+
+        if parts[1] == "__code__":
+            contract_key = f"{parts[0]}.__compiled__"
+            print(f"processing {contract_key}")
+            # the encoded contract data from genesis was invalid, so we recompile it.
+            state_changes[i + 1]["value"]["__bytes__"] = recompile_contract_from_source(s)
+        if type(s['value']) is dict:
+            s['value'] = convert_dict(s['value'])
+
+        client.raw_driver.set(s['key'], s['value'])
+
+    for s in rewards:
+        if type(s['value']) is dict:
+            s['value'] = convert_dict(s['value'])
+
+        client.raw_driver.set(s['key'], s['value'])
+
+    client.raw_driver.hard_apply(nanos)
+
+async def store_genesis_block(client, genesis_block: dict):
+    if genesis_block is not None:
+        apply_state_changes_from_block(client, genesis_block)
+
+
+def get_latest_block_hash(driver):
+    latest_hash = driver.get(c.LATEST_BLOCK_HASH_KEY)
+    if latest_hash is None:
+        return b""
+    return latest_hash
+
+
+def set_latest_block_hash(h, driver):
+    driver.set(c.LATEST_BLOCK_HASH_KEY, h)
+
+
+def get_latest_block_height(driver):
+    h = driver.get(c.LATEST_BLOCK_HEIGHT_KEY, save=False)
+    if h is None:
+        return 0
+
+    if type(h) == ContractingDecimal:
+        h = int(h._d)
+
+    return int(h)
+
+
+def set_latest_block_height(h, driver):
+    driver.set(c.LATEST_BLOCK_HEIGHT_KEY, int(h))
