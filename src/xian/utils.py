@@ -434,7 +434,7 @@ def apply_state_changes_from_block(client, block):
 
 async def store_genesis_block(client, genesis_block: dict):
     if genesis_block is not None:
-        apply_state_changes_from_block(client.raw_driver, genesis_block)
+        apply_state_changes_from_block(client, genesis_block)
 
 
 def get_latest_block_hash(driver):
