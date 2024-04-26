@@ -191,12 +191,12 @@ class TxProcessor:
             'block_num': block_meta["height"],  # block number
             # TODO: review
             # Used for deterministic entropy for random games
-            '__input_hash': self.get_hlc_hash_from_tx(nanos, signature),
+            '__input_hash': self.get_timestamp_hash_from_tx(nanos, signature),
             'now': self.get_now_from_nanos(nanos=nanos),
             'AUXILIARY_SALT': signature
         }
 
-    def get_hlc_hash_from_tx(self, nanos, signature):
+    def get_timestamp_hash_from_tx(self, nanos, signature):
         h = hashlib.sha3_256()
         h.update('{}'.format(str(nanos)+signature).encode())
         return h.hexdigest()
