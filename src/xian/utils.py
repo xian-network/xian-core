@@ -322,9 +322,9 @@ def check_tx_keys(tx):
     if not all(keys_are_valid) and len(keys) == len(list(TRANSACTION_PAYLOAD_RULES.keys())):
         raise TransactionException("Payload keys are not valid")
 
-def check_tx_formatting(self, tx: dict):
-    self.check_tx_keys(tx)
-    self.check_format(tx, TRANSACTION_RULES)
+def check_tx_formatting(tx: dict):
+    check_tx_keys(tx)
+    check_format(tx, TRANSACTION_RULES)
 
     if not verify(
             tx["payload"]["sender"], encode(tx["payload"]), tx["metadata"]["signature"]
