@@ -1,4 +1,3 @@
-from copy import deepcopy
 import math
 import hashlib
 
@@ -52,7 +51,7 @@ class TxProcessor:
             )
 
             return {
-                'tx_result': self.prune_tx_result(tx_result),
+                'tx_result': tx_result,
                 'stamp_rewards_amount': output['stamps_used'],
                 'stamp_rewards_contract': tx_result['transaction']['payload']['contract']
             }
@@ -125,6 +124,7 @@ class TxProcessor:
 
         for write in writes:
             self.client.raw_driver.set(key=write['key'], value=write['value'])
+
         tx_output = {
             'hash': tx_hash,
             'transaction': transaction,
@@ -174,9 +174,11 @@ class TxProcessor:
         return writes
 
     def get_environment(self, tx):
+        # print(tx)
         block_meta = tx["b_meta"]
         nanos = block_meta["nanos"]
         signature = tx['metadata']['signature']
+        # print(f'signature : {signature}')
 
         # Nanos is set at the time of block being processed, and is shared between all txns in a block.
         # TODO : confirm this w/ CometBFT docs.
@@ -203,8 +205,3 @@ class TxProcessor:
         return Datetime._from_datetime(
             datetime.utcfromtimestamp(math.ceil(nanos / 1e9))
         )
-
-    def prune_tx_result(self, result):
-        tx_result_pruned = deepcopy(result)
-        tx_result_pruned.pop("transaction")
-        return tx_result_pruned
