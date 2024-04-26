@@ -3,7 +3,7 @@ import json
 from cometbft.abci.v1beta1.types_pb2 import ResponseQuery
 from xian.utils import encode_str
 from abci.application import (
-    OkCode, 
+    OkCode,
     ErrorCode
 )
 from contracting.stdlib.bridge.decimal import ContractingDecimal
@@ -38,6 +38,15 @@ def query(self, req) -> ResponseQuery:
                 result = self.client.raw_driver.get(path_parts[1])
             if path_parts[0] == "contracts":
                 result = self.client.raw_driver.get_contract_files()
+
+        # http://localhost:26657/abci_query?path="/estimate_stamps/<encoded_txn>" BLOCK SERVICE MODE ONLY
+        if self.block_service_mode:
+            if path_parts[0] == "estimate_stamps":
+                raw_tx = path_parts[1]
+                byte_data = bytes.fromhex(raw_tx)
+                tx_hex = byte_data.decode("utf-8")
+                tx = json.loads(tx_hex)
+                result = self.stamp_estimator.execute(tx)
 
         # http://localhost:26657/abci_query?path="/health"
         if path_parts[0] == "health":

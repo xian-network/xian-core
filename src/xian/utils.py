@@ -339,6 +339,7 @@ def check_contract_name(contract, function, name):
         ):
             raise TransactionException('Transaction contract name is invalid')
 
+
 def validate_transaction(client, nonce_storage, tx):
         # Check transaction formatting
         check_tx_formatting(tx)
@@ -399,18 +400,20 @@ def validate_transaction(client, nonce_storage, tx):
         name = tx["payload"]["kwargs"].get("name")
         check_contract_name(contract, func, name)
 
+
 def recompile_contract_from_source(s: dict):
         code = compile(s["value"], '', "exec")
         serialized_code = marshal.dumps(code)
         hexadecimal_string = binascii.hexlify(serialized_code).decode()
         return hexadecimal_string
 
-def apply_state_changes_from_block(client, block):
+
+def apply_state_changes_from_block(client, nonce_storage, block):
     state_changes = block.get('genesis', [])
     rewards = block.get('rewards', [])
 
     nanos = block.get('hlc_timestamp')
-
+    nonces = block.get('nonces')
     for i, s in enumerate(state_changes):
         parts = s["key"].split(".")
 
@@ -424,6 +427,9 @@ def apply_state_changes_from_block(client, block):
 
         client.raw_driver.set(s['key'], s['value'])
 
+    for n in nonces:
+        nonce_storage.set_nonce(n["key"], n["value"])
+
     for s in rewards:
         if type(s['value']) is dict:
             s['value'] = convert_dict(s['value'])
@@ -432,9 +438,10 @@ def apply_state_changes_from_block(client, block):
 
     client.raw_driver.hard_apply(nanos)
 
-async def store_genesis_block(client, genesis_block: dict):
+
+async def store_genesis_block(client, nonce_storage, genesis_block: dict):
     if genesis_block is not None:
-        apply_state_changes_from_block(client, genesis_block)
+        apply_state_changes_from_block(client, nonce_storage, genesis_block)
 
 
 def get_latest_block_hash(driver):

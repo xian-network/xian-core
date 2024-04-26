@@ -25,6 +25,7 @@ from xian.methods import (
 from xian.upgrader import UpgradeHandler
 from xian.validators import ValidatorHandler
 from xian.storage import NonceStorage
+from xian.services.stamp_estimator import StampEstimator
 from xian.processor import TxProcessor
 
 from xian.utils import (
@@ -77,6 +78,7 @@ class Xian(BaseApplication):
         self.fingerprint_hash = None
         self.chain_id = self.genesis.get("chain_id", None)
         self.block_service_mode = self.config.get("block_service_mode", True)
+        self.stamp_estimator = StampEstimator() if self.block_service_mode else None
         self.pruning_enabled = self.config.get("pruning_enabled", False)
         # If pruning is enabled, this is the number of blocks to keep history for
         self.blocks_to_keep = self.config.get("blocks_to_keep", 100000)
