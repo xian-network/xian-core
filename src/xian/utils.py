@@ -219,7 +219,7 @@ def format_dictionary(d: dict) -> dict:
             d[k] = format_dictionary(v)
     return {k: v for k, v in sorted(d.items())}
 
-def recurse_rules(self, d: dict, rule: dict):
+def recurse_rules(d: dict, rule: dict):
         if callable(rule):
             return rule(d)
 
@@ -227,12 +227,12 @@ def recurse_rules(self, d: dict, rule: dict):
             arg = d[key]
 
             if type(arg) == dict:
-                if not self.recurse_rules(arg, subrule):
+                if not recurse_rules(arg, subrule):
                     return False
 
             elif type(arg) == list:
                 for a in arg:
-                    if not self.recurse_rules(a, subrule):
+                    if not recurse_rules(a, subrule):
                         return False
 
             elif callable(subrule):
