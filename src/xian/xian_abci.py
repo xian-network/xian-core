@@ -70,7 +70,6 @@ class Xian(BaseApplication):
         self.client = ContractingClient()
         self.nonce_storage = NonceStorage(self.client)
         self.upgrader = UpgradeHandler(self)
-        self.xian = Node(self.client, self.nonce_storage)
         self.validator_handler = ValidatorHandler(self)
         self.tx_processor = TxProcessor(client=self.client)
         self.current_block_meta: dict = None

@@ -55,7 +55,7 @@ def finalize_block(self, req) -> ResponseFinalizeBlock:
                     "contract": result["stamp_rewards_contract"]
                 }
 
-            self.xian.set_nonce(tx)
+            self.nonce_storage.set_nonce(tx)
             tx_hash = result["tx_result"]["hash"]
             self.fingerprint_hashes.append(tx_hash)
             parsed_tx_result = json.dumps(stringify_decimals(result["tx_result"]))
