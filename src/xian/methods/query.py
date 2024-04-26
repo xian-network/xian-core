@@ -33,13 +33,13 @@ def query(self, req) -> ResponseQuery:
 
         # http://localhost:26657/abci_query?path="/get/currency.balances:c93dee52d7dc6cc43af44007c3b1dae5b730ccf18a9e6fb43521f8e4064561e6"
         if path_parts and path_parts[0] == "get":
-            result = get_value_of_key(path_parts[1], self.client.raw_driver)
+            result = self.client.raw_driver.get(path_parts[1])
             key = path_parts[1]
 
         # http://localhost:26657/abci_query?path="/keys/currency.balances" BLOCK SERVICE MODE ONLY
         if self.block_service_mode:
             if path_parts[0] == "keys":
-                result = get_keys(self.client.raw_driver, path_parts[1])
+                result = self.client.raw_driver.get(path_parts[1])
             if path_parts[0] == "contracts":
                 result = self.client.raw_driver.get_contract_files()
 

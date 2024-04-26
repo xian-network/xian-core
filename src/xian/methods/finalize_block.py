@@ -47,7 +47,7 @@ def finalize_block(self, req) -> ResponseFinalizeBlock:
                 raise Exception("Invalid Signature") # Not really needed, because check_tx should catch this first, but just in case
             # Attach metadata to the transaction
             tx["b_meta"] = self.current_block_meta
-            result = self.xian.tx_processor.process_tx(tx, enabled_fees=self.enable_tx_fee)
+            result = self.tx_processor.process_tx(tx, enabled_fees=self.enable_tx_fee)
 
             if self.enable_tx_fee:
                 self.current_block_rewards[tx['b_meta']['hash']] = {
