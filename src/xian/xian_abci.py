@@ -25,7 +25,6 @@ from xian.methods import (
 from xian.upgrader import UpgradeHandler
 from xian.validators import ValidatorHandler
 from xian.storage import NonceStorage
-from xian.node_base import Node
 from xian.processor import TxProcessor
 
 from xian.utils import (

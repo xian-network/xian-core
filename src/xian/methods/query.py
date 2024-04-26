@@ -1,10 +1,6 @@
 import json
 
 from cometbft.abci.v1beta1.types_pb2 import ResponseQuery
-from xian.driver_api import (
-    get_value_of_key,
-    get_keys,
-)
 from xian.utils import encode_str
 from abci.application import (
     OkCode, 
