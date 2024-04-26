@@ -13,7 +13,7 @@ import json
 def check_tx(self, raw_tx) -> ResponseCheckTx:
     try:
         tx = decode_transaction_bytes(raw_tx)
-        validate_transaction(tx)
+        validate_transaction(self.client,self.nonce_storage,tx)
         sender, signature, payload = unpack_transaction(tx)
         if not verify(sender, payload, signature):
             return ResponseCheckTx(code=ErrorCode, log="Bad signature")
