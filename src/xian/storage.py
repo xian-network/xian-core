@@ -1,4 +1,5 @@
 import xian.constants as c
+from xian.exceptions import TransactionException
 
 from contracting import config
 
@@ -8,6 +9,26 @@ class NonceStorage:
         root = root if root is not None else c.STORAGE_HOME
         self.client = client
 
+    def check_nonce(self, tx: dict):
+        tx_nonce = tx["payload"]["nonce"]
+        tx_sender = tx["payload"]["sender"]
+        current_nonce = self.get_nonce(sender=tx_sender)
+
+        if not (current_nonce is None or tx_nonce > current_nonce):
+            raise TransactionException('Transaction nonce is invalid')
+        
+    def set_nonce_by_tx(self, tx):
+        self.client.raw_driver.set(
+            c.NONCE_FILENAME + config.INDEX_SEPARATOR + tx['payload']['sender'] + config.DELIMITER,
+            tx['payload']['nonce']
+        )
+
+    def set_nonce(self, sender, value):
+        self.client.raw_driver.set(
+            c.NONCE_FILENAME + config.INDEX_SEPARATOR + sender + config.DELIMITER,
+            value
+        )
+
     # Move this to transaction.py
     def get_nonce(self, sender):
         return self.client.raw_driver.get(c.NONCE_FILENAME + config.INDEX_SEPARATOR + sender + config.DELIMITER)
@@ -15,12 +36,6 @@ class NonceStorage:
     # Move this to transaction.py
     def get_pending_nonce(self, sender):
         return self.client.raw_driver.get(c.PENDING_NONCE_FILENAME + config.INDEX_SEPARATOR + sender + config.DELIMITER)
-
-    def set_nonce(self, sender, value):
-        self.client.raw_driver.set(
-            c.NONCE_FILENAME + config.INDEX_SEPARATOR + sender + config.DELIMITER,
-            value
-        )
 
     def safe_set_nonce(self, sender, value):
         current_nonce = self.get_nonce(sender=sender)
