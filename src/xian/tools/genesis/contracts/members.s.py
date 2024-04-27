@@ -7,18 +7,24 @@ NO_MOTION = 0
 REMOVE_MEMBER = 1
 ADD_SEAT = 2
 REMOVE_SEAT = 3
+CHANGE_MINIMUM = 4
+CHANGE_UNBONDING_PERIOD = 5
 
 VOTING_PERIOD = datetime.DAYS * 1
 
 S = Hash()
 minimum_nodes = Variable()
 candidate_contract = Variable()
+unbonding_period = Variable()
+
 
 @construct
 def seed(initial_members: list, minimum: int=1, candidate: str='elect_members'):
     S['members'] = initial_members
+    S['scheduled_for_removal'] = {}
     minimum_nodes.set(minimum)
     candidate_contract.set(candidate)
+    unbonding_period.set(datetime.DAYS * 7)
 
     S['yays'] = 0
     S['nays'] = 0
@@ -36,8 +42,30 @@ def quorum_min():
 
 @export
 def current_value():
-    return S['members']
+    return {"members": S['members'], "scheduled_for_removal": S['scheduled_for_removal']}
 
+@export
+def remove_from_scheduled_removal(vk: str):
+    assert ctx.caller == candidate_contract.get(), 'Not authorized.'
+    scheduled_for_removal = S['scheduled_for_removal']
+    assert vk in scheduled_for_removal, 'VK not scheduled for removal.'
+    scheduled_for_removal.pop(vk)
+    S['scheduled_for_removal'] = scheduled_for_removal
+    remove_from_members(vk)
+
+def remove_from_members(vk: str):
+    members = S['members']
+    assert vk in members, 'VK not in members.'
+    members.remove(vk)
+    S['members'] = members
+
+@export
+def i_quit():
+    assert ctx.caller in S['members'], 'Not a member.'
+    assert len(S['members']) > minimum_nodes.get(), 'Cannot drop below current quorum.'
+    scheduled_for_removal = S['scheduled_for_removal']
+    scheduled_for_removal[ctx.caller] = now + unbonding_period.get()
+    S['scheduled_for_removal'] = scheduled_for_removal
 
 @export
 def vote(vk: str, obj: list):
@@ -108,6 +136,14 @@ def introduce_motion(position: int, arg: Any):
         assert arg in S['members'], 'Member does not exist.'
         assert len(S['members']) > minimum_nodes.get(), 'Cannot drop below current quorum.'
         S['member_in_question'] = arg
+    if position == CHANGE_MINIMUM:
+        assert arg > 0, 'Minimum must be greater than zero.'
+        assert isinstance(arg, int), 'Minimum must be an integer.'
+        S['proposed_minimum'] = arg
+    if position == CHANGE_UNBONDING_PERIOD:
+        assert arg > 0, 'Unbonding period must be greater than zero.'
+        assert isinstance(arg, int), 'Unbonding period must be an integer.'
+        S['proposed_unbonding_period'] = arg
 
     S['current_motion'] = position
     S['motion_opened'] = now
@@ -137,8 +173,18 @@ def pass_current_motion():
 
         # Remove them from the list and pop them from deprecating
         if old_mem is not None:
-            members.remove(old_mem)
+            scheduled_for_removal = S['scheduled_for_removal']
+            scheduled_for_removal[old_mem] = now + unbonding_period.get()
+            S['scheduled_for_removal'] = scheduled_for_removal
             member_candidates.pop_last()
+
+    elif current_motion == CHANGE_MINIMUM:
+        minimum_nodes.set(S['proposed_minimum'])
+        S['proposed_minimum'] = None
+
+    elif current_motion == CHANGE_UNBONDING_PERIOD:
+        unbonding_period.set(datetime.DAYS * S['proposed_unbonding_period'])
+        S['proposed_unbonding_period'] = None
 
     S['members'] = members
 

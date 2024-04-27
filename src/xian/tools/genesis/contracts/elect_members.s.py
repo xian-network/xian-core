@@ -36,15 +36,18 @@ def register():
 
 @export
 def unregister():
-    mns = election_house.current_value_for_policy(controller.get())
+    mns = election_house.current_value_for_policy(controller.get())["members"]
+    scheduled_for_removal = election_house.current_value_for_policy(controller.get())["scheduled_for_removal"]
     assert candidate_state['registered', ctx.caller], 'Not registered.'
 
-    assert ctx.caller not in mns, "Can't unstake if in governance."
+    assert datetime.now() > scheduled_for_removal.get(ctx.caller), "Can't unstake until unbonding period is over."
 
     currency.transfer(member_cost.get(), ctx.caller)
 
     candidate_state['registered', ctx.caller] = False
     candidate_state['votes', ctx.caller] = 0
+
+    importlib.import_module(controller.get()).remove_from_scheduled_removal(ctx.caller)
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # VOTE CANDIDATE
@@ -97,7 +100,7 @@ def pop_top():
 @export
 def vote_no_confidence(address: str):
     # Determine if caller can vote
-    assert address in election_house.current_value_for_policy(controller.get()), \
+    assert address in election_house.current_value_for_policy(controller.get())["members"], \
         'Cannot vote against a non-committee member'
 
     v = no_confidence_state['last_voted', ctx.caller]
@@ -156,7 +159,7 @@ def force_removal(address: str):
 
 @export
 def relinquish():
-    assert ctx.caller in election_house.current_value_for_policy(controller.get())
+    assert ctx.caller in election_house.current_value_for_policy(controller.get())["members"]
 
     r = to_be_relinquished.get()
     assert r is None, 'Someone is already trying to relinquish!'
