@@ -92,5 +92,3 @@ Follow these steps to set up the environment on Ubuntu 22.04:
 
 CometBFT RPC is exposed on `localhost:26657`.
 Xian is running inside the container and can be accessed accordingly.
-
-Ensure that all paths, JSON objects in your queries, and transaction data are correctly formatted and URL-encoded to avoid errors.
