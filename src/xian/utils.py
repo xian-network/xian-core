@@ -413,7 +413,8 @@ def apply_state_changes_from_block(client, nonce_storage, block):
     rewards = block.get('rewards', [])
 
     nanos = block.get('hlc_timestamp')
-    nonces = block.get('nonces')
+    nonces = block.get('nonces', [])
+
     for i, s in enumerate(state_changes):
         parts = s["key"].split(".")
 
@@ -468,3 +469,10 @@ def get_latest_block_height(driver):
 
 def set_latest_block_height(h, driver):
     driver.set(c.LATEST_BLOCK_HEIGHT_KEY, int(h))
+
+
+def is_compiled_key(key):
+    parts = key.split(".")
+    if parts[1] == "__compiled__":
+        return True
+    return False
