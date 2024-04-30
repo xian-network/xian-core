@@ -1,3 +1,4 @@
+from copy import deepcopy
 import math
 import hashlib
 
@@ -18,13 +19,11 @@ class TxProcessor:
         self.executor = Executor(driver=self.client.raw_driver, metering=metering)
 
     def process_tx(self, tx, enabled_fees=False):
-        # TODO better error handling of anything in here
-        # Get the environment
-        # print(tx)
+
         block_meta = tx["b_meta"]
         nanos = block_meta["nanos"]
         environment = self.get_environment(tx=tx)
-        # transaction = tx['tx']
+
         stamp_cost = self.client.get_var(contract='stamp_cost', variable='S', arguments=['value']) or 1
 
         try:
@@ -50,10 +49,12 @@ class TxProcessor:
                 stamp_cost=stamp_cost
             )
 
+            tx_result.pop("transaction")
+
             return {
-                'tx_result': tx_result,
+                'tx_result': self.prune_tx_result(tx_result),
                 'stamp_rewards_amount': output['stamps_used'],
-                'stamp_rewards_contract': tx_result['transaction']['payload']['contract']
+                'stamp_rewards_contract': tx['payload']['contract']
             }
         except Exception as e:
             logger.error(e)
@@ -95,7 +96,6 @@ class TxProcessor:
                 'auto_commit': False
             })
             return None
-            # self.stop_node()
 
     def process_tx_output(self, output, transaction, stamp_cost):
         # Clear pending writes, stu said to comment this out
@@ -124,7 +124,6 @@ class TxProcessor:
 
         for write in writes:
             self.client.raw_driver.set(key=write['key'], value=write['value'])
-
         tx_output = {
             'hash': tx_hash,
             'transaction': transaction,
@@ -174,11 +173,9 @@ class TxProcessor:
         return writes
 
     def get_environment(self, tx):
-        # print(tx)
         block_meta = tx["b_meta"]
         nanos = block_meta["nanos"]
         signature = tx['metadata']['signature']
-        # print(f'signature : {signature}')
 
         # Nanos is set at the time of block being processed, and is shared between all txns in a block.
         # TODO : confirm this w/ CometBFT docs.
@@ -205,3 +202,8 @@ class TxProcessor:
         return Datetime._from_datetime(
             datetime.utcfromtimestamp(math.ceil(nanos / 1e9))
         )
+
+    def prune_tx_result(self, result):
+        tx_result_pruned = deepcopy(result)
+        tx_result_pruned.pop("transaction")
+        return tx_result_pruned

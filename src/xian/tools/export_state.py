@@ -53,6 +53,8 @@ def build_genesis_block(founder_sk: str, contract_state: dict, run_state: dict):
     genesis_block["hash"] = run_state["__latest_block.hash"].hex()
     genesis_block["number"] = run_state["__latest_block.height"]
 
+    nonces = [{'key': k[4:], 'value': v} for k, v in run_state.items() if k.startswith("__n.")]
+
     print('Populating genesis block...')
     for key, value in contract_state.items():
         genesis_block['genesis'].append({
@@ -62,6 +64,7 @@ def build_genesis_block(founder_sk: str, contract_state: dict, run_state: dict):
 
     print('Sorting state changes...')
     genesis_block['genesis'] = sorted(genesis_block['genesis'], key=lambda d: d['key'])
+    genesis_block['nonces'] = nonces
 
     print('Signing state changes...')
     founders_wallet = Wallet(seed=bytes.fromhex(founder_sk))
