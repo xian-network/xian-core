@@ -126,8 +126,6 @@ class GenesisGen:
         genesis_block = {
             'hash': block_hash,
             'number': block_number,
-            'hlc_timestamp': hlc_timestamp,
-            'previous': previous_hash,
             'genesis': [],
             'origin': {
                 'signature': '',

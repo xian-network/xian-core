@@ -2,6 +2,8 @@ import json
 import hashlib
 from pathlib import Path
 from argparse import ArgumentParser
+
+from xian.utils import is_compiled_key
 from contracting.storage.driver import Driver
 from contracting.storage.encoder import encode
 from xian_py.wallet import Wallet
@@ -38,10 +40,12 @@ def fetch_filebased_state():
 
 
 def build_genesis_block(founder_sk: str, contract_state: dict, run_state: dict):
+    hash = run_state["__latest_block.hash"].hex()
+    block_number = run_state["__latest_block.height"]
+
     genesis_block = {
-        'hash': "0" * 64,
-        'number': "0",
-        'previous': "0" * 64,
+        'hash': hash,
+        'number': block_number,
         'origin': {
             'signature': '',
             'sender': ''
@@ -50,17 +54,16 @@ def build_genesis_block(founder_sk: str, contract_state: dict, run_state: dict):
     }
 
     print("Populating run state...")
-    genesis_block["hash"] = run_state["__latest_block.hash"].hex()
-    genesis_block["number"] = run_state["__latest_block.height"]
 
     nonces = [{'key': k[4:], 'value': v} for k, v in run_state.items() if k.startswith("__n.")]
 
     print('Populating genesis block...')
     for key, value in contract_state.items():
-        genesis_block['genesis'].append({
-            'key': key,
-            'value': value
-        })
+        if not is_compiled_key(key):
+            genesis_block['genesis'].append({
+                'key': key,
+                'value': value
+            })
 
     print('Sorting state changes...')
     genesis_block['genesis'] = sorted(genesis_block['genesis'], key=lambda d: d['key'])
