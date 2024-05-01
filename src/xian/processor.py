@@ -20,8 +20,6 @@ class TxProcessor:
 
     def process_tx(self, tx, enabled_fees=False):
 
-        block_meta = tx["b_meta"]
-        nanos = block_meta["nanos"]
         environment = self.get_environment(tx=tx)
 
         stamp_cost = self.client.get_var(contract='stamp_cost', variable='S', arguments=['value']) or 1
@@ -52,7 +50,7 @@ class TxProcessor:
             tx_result.pop("transaction")
 
             return {
-                'tx_result': self.prune_tx_result(tx_result),
+                'tx_result': tx_result,
                 'stamp_rewards_amount': output['stamps_used'],
                 'stamp_rewards_contract': tx['payload']['contract']
             }
@@ -202,8 +200,3 @@ class TxProcessor:
         return Datetime._from_datetime(
             datetime.utcfromtimestamp(math.ceil(nanos / 1e9))
         )
-
-    def prune_tx_result(self, result):
-        tx_result_pruned = deepcopy(result)
-        tx_result_pruned.pop("transaction")
-        return tx_result_pruned
