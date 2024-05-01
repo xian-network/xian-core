@@ -8,6 +8,7 @@ from abci.application import (
 )
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 from contracting.compilation import parser
+from contracting.storage.encoder import Encoder
 from abci.utils import get_logger
 
 logger = get_logger(__name__)
@@ -88,7 +89,7 @@ def query(self, req) -> ResponseQuery:
                 v = encode_str(str(result))
                 type_of_data = "decimal"
             elif isinstance(result, dict) or isinstance(result, list):
-                v = encode_str(json.dumps(result))
+                v = encode_str(json.dumps(result, cls=Encoder))
                 type_of_data = "str"
             else:
                 v = encode_str(str(result))

@@ -2146,6 +2146,12 @@
                 }
             },
             {
+                "key": "currency.balances:7daf42a3452567344f51c0e975968b734bef501ba0a7f88ca90e6166ca33ce28",
+                "value": {
+                    "__fixed__": "0.05493048493809005"
+                }
+            },
+            {
                 "key": "currency.balances:7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e",
                 "value": {
                     "__fixed__": "110111403.28240000"
@@ -2656,6 +2662,12 @@
                 }
             },
             {
+                "key": "currency.balances:b6fcced9d95cb27c53b1391e411477b3f4e0bf5f74303582fa3d918eec5ca806",
+                "value": {
+                    "__fixed__": "0.05493048493809005"
+                }
+            },
+            {
                 "key": "currency.balances:b732a492aac09838b9c448333611905fdb89b8e598a7dc77e9cfca59704aa960",
                 "value": {
                     "__fixed__": "1.3632357253311018134"
@@ -2855,6 +2867,12 @@
                 "key": "currency.balances:ca4ebdf557eae168bc5cabc85b98f1f43a4131faab877eef09b429e02d5175e5",
                 "value": {
                     "__fixed__": "168.2919"
+                }
+            },
+            {
+                "key": "currency.balances:cbfce31c1845440660107587a3997789ee6d917332c646a6d03a6c6b990843a0",
+                "value": {
+                    "__fixed__": "0.05493048493809005"
                 }
             },
             {
