@@ -69,14 +69,46 @@
     ],
     "app_hash": "",
     "abci_genesis": {
-        "hash": "37636638613133353534316630613162636362326537373536353661653532383062346535653961386233336537613734396462393366363366316464323065",
-        "number": 119,
+        "hash": "33376330376235653861656230386537373235633461653139666331363961633934666438393663653831666338666138653334653933336162326363626266",
+        "number": 79,
         "previous": "0000000000000000000000000000000000000000000000000000000000000000",
         "origin": {
-            "signature": "03c3e16459ca80e6ceedd2f2ffddebfac89830ea163ceb589a14294f9435aa450905b774ed0ad77d7143ac8539ab7ff8d29be61117e9d7ef417e71eac3fc9a07",
+            "signature": "65067902e73f6e74b25252954ef1d43dc851f582b71c3424b2357f3437530bc0ab8c994e5942b93139f943e2b602de0e4d8c0003b41c42e0761048f6455faf00",
             "sender": "da20816d1d5ff3ae65543c63dad14c1204d2260cfb8e4fe00a1a2b8e2edddcd9"
         },
         "genesis": [
+            {
+                "key": "con_borat.__code__",
+                "value": "def ____():\n    pass\n\n\n@__export('con_borat')\ndef borat():\n    return 'https://www.youtube.com/watch?v=r13riaRKGo0'\n"
+            },
+            {
+                "key": "con_borat.__compiled__",
+                "value": {
+                    "__bytes__": "e30000000000000000000000000300000000000000f3340000009700640084005a00020065016401a6010000ab01000000000000000064028400a6000000ab0000000000000000005a02640353002904630000000000000000000000000100000003000000f30600000097006400530029014ea9007203000000f300000000da00da045f5f5f5f72060000000100000073070000008000d8040880447204000000da09636f6e5f626f726174630000000000000000000000000100000003000000f30600000097006401530029024e7a2b68747470733a2f2f7777772e796f75747562652e636f6d2f77617463683f763d723133726961524b476f307203000000720300000072040000007205000000da05626f72617472090000000500000073080000008000e00b38d00b3872040000004e29037206000000da085f5f6578706f72747209000000720300000072040000007205000000fa083c6d6f64756c653e720b000000010000007344000000f003010101f002010109f000010109f000010109f00800020a8018882bd10116d40116f002010139f000010139f103000217d40116f002010139f000010139f0000101397204000000"
+                }
+            },
+            {
+                "key": "con_borat.__developer__",
+                "value": "80e1ac9fe93b88fc201bc3029a920bc27c752afd6ff0d71a0125ac485ab090f8"
+            },
+            {
+                "key": "con_borat.__owner__",
+                "value": null
+            },
+            {
+                "key": "con_borat.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        4,
+                        30,
+                        16,
+                        11,
+                        17,
+                        0
+                    ]
+                }
+            },
             {
                 "key": "con_multisend.__code__",
                 "value": "I = importlib\n\n\n@__export('con_multisend')\ndef send(addresses: list, amount: float, contract: str):\n    token = I.import_module(contract)\n    for address in addresses:\n        token.transfer_from(amount=amount, to=address, main_account=ctx.signer)\n"
@@ -137,6 +169,38 @@
                         23,
                         30,
                         34,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_pf3.__code__",
+                "value": "def ____():\n    pass\n\n\n@__export('con_pf3')\ndef pf3():\n    return 'pF3 was here!!'\n"
+            },
+            {
+                "key": "con_pf3.__compiled__",
+                "value": {
+                    "__bytes__": "e30000000000000000000000000300000000000000f3340000009700640084005a00020065016401a6010000ab01000000000000000064028400a6000000ab0000000000000000005a02640353002904630000000000000000000000000100000003000000f30600000097006400530029014ea9007203000000f300000000da00da045f5f5f5f72060000000100000073070000008000d8040880447204000000da07636f6e5f706633630000000000000000000000000100000003000000f30600000097006401530029024e7a0e70463320776173206865726521217203000000720300000072040000007205000000da0370663372090000000500000073080000008000e00b1bd00b1b72040000004e29037206000000da085f5f6578706f72747209000000720300000072040000007205000000fa083c6d6f64756c653e720b000000010000007344000000f003010101f002010109f000010109f000010109f00800020a80188829d10114d40114f00201011cf00001011cf103000215d40114f00201011cf00001011cf00001011c7204000000"
+                }
+            },
+            {
+                "key": "con_pf3.__developer__",
+                "value": "80e1ac9fe93b88fc201bc3029a920bc27c752afd6ff0d71a0125ac485ab090f8"
+            },
+            {
+                "key": "con_pf3.__owner__",
+                "value": null
+            },
+            {
+                "key": "con_pf3.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        4,
+                        30,
+                        16,
+                        9,
+                        51,
                         0
                     ]
                 }
@@ -356,6 +420,70 @@
                         0
                     ]
                 }
+            },
+            {
+                "key": "con_test14.__code__",
+                "value": "__balances = Hash(default_value=0, contract='con_test14', name='balances')\n__metadata = Hash(contract='con_test14', name='metadata')\n\n\ndef ____():\n    __balances[ctx.caller] = 1000000\n    __metadata['token_name'] = 'TEST TOKEN'\n    __metadata['token_symbol'] = 'TST'\n    __metadata['token_logo_url'] = 'https://some.token.url/test-token.png'\n    __metadata['token_website'] = 'https://some.token.url'\n    __metadata['operator'] = ctx.caller\n\n\n@__export('con_test14')\ndef change_metadata(key: str, value: Any):\n    assert ctx.caller == __metadata['operator'\n        ], 'Only operator can set metadata!'\n    __metadata[key] = value\n\n\n@__export('con_test14')\ndef transfer(amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    assert __balances[ctx.caller] >= amount, 'Not enough coins to send!'\n    __balances[ctx.caller] -= amount\n    __balances[to] += amount\n    return f'Sent {amount} to {to}'\n\n\n@__export('con_test14')\ndef approve(amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    __balances[ctx.caller, to] += amount\n    return f'Approved {amount} for {to}'\n\n\n@__export('con_test14')\ndef transfer_from(amount: float, to: str, main_account: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    assert __balances[main_account, ctx.caller\n        ] >= amount, 'Not enough coins approved to send! You have {} and are trying to spend {}'.format(\n        __balances[main_account, ctx.caller], amount)\n    assert __balances[main_account] >= amount, 'Not enough coins to send!'\n    __balances[main_account, ctx.caller] -= amount\n    __balances[main_account] -= amount\n    __balances[to] += amount\n    return f'Sent {amount} to {to} from {main_account}'\n"
+            },
+            {
+                "key": "con_test14.__compiled__",
+                "value": {
+                    "__bytes__": "e30000000000000000000000000700000000000000f30e010000970002006500640064016402ac03a6030000ab0300000000000000005a010200650064016404ac05a6020000ab0200000000000000005a02640684005a03020065046401a6010000ab0100000000000000006407650564086506660464098404a6000000ab0000000000000000005a07020065046401a6010000ab010000000000000000640a6508640b65056604640c8404a6000000ab0000000000000000005a09020065046401a6010000ab010000000000000000640a6508640b65056604640d8404a6000000ab0000000000000000005a0a020065046401a6010000ab010000000000000000640a6508640b6505640e65056606640f8404a6000000ab0000000000000000005a0b641053002911e900000000da0a636f6e5f746573743134da0862616c616e6365732903da0d64656661756c745f76616c7565da08636f6e7472616374da046e616d65da086d65746164617461290272060000007207000000630000000000000000000000000300000003000000f3a6000000970064017400000000000000000000007402000000000000000000006a0200000000000000003c000000640274060000000000000000000064033c000000640474060000000000000000000064053c000000640674060000000000000000000064073c000000640874060000000000000000000064093c0000007402000000000000000000006a020000000000000000740600000000000000000000640a3c00000064005300290b4e6940420f007a0a5445535420544f4b454eda0a746f6b656e5f6e616d65da03545354da0c746f6b656e5f73796d626f6c7a2568747470733a2f2f736f6d652e746f6b656e2e75726c2f746573742d746f6b656e2e706e67da0e746f6b656e5f6c6f676f5f75726c7a1668747470733a2f2f736f6d652e746f6b656e2e75726cda0d746f6b656e5f77656273697465da086f70657261746f722904da0a5f5f62616c616e636573da03637478da0663616c6c6572da0a5f5f6d65746164617461a900f300000000da00da045f5f5f5f72170000000500000073490000008000d81d24854a8d738c7ad1041ad81f2b854a887cd1041cd82126854a887ed1041ed8234a854ad00f1fd10420d8223a854a887fd1041fdd1d209c5a854a887ad1041ad0041ad0041a7215000000da036b6579da0576616c7565630200000000000000000000000300000003000000f36400000097007400000000000000000000006a0100000000000000007404000000000000000000006401190000000000000000006b0200000000730a4a006402a6000000ab00000000000000000082017c017404000000000000000000007c003c0000006400530029034e720f0000007a1f4f6e6c79206f70657261746f722063616e20736574206d65746164617461212903721100000072120000007213000000290272180000007219000000730200000020207216000000da0f6368616e67655f6d65746164617461721b0000000e000000733e0000008000e50b0e8c3a9d1aa04af400011a0af200010c0af000010c0af000010c0ad80b2cf103010c0af400010c0af000010c0ae0161b854a8873814f804f804f7215000000da06616d6f756e74da02746f630200000000000000000000000400000003000000f3e400000097007c0064016b0400000000730a4a006402a6000000ab00000000000000000082017400000000000000000000007402000000000000000000006a020000000000000000190000000000000000007c006b0500000000730a4a006403a6000000ab00000000000000000082017400000000000000000000007402000000000000000000006a02000000000000000078027802190000000000000000007c007a170000630363023c0000007400000000000000000000007c0178027802190000000000000000007c007a0d0000630363023c00000064047c009b0064057c019b009d04530029064e7202000000fa1e43616e6e6f742073656e64206e656761746976652062616c616e63657321fa194e6f7420656e6f75676820636f696e7320746f2073656e6421fa0553656e7420fa0420746f20a903721000000072110000007212000000a902721c000000721d000000730200000020207216000000da087472616e7366657272250000001500000073810000008000e00b1190418a3a883a883ad01737893a8c3a883add0b159563946ad40b21a056d20b2bd00b2bd00b2bd02d48d10b2bd40b2bd00b2bdd040e8d738c7ad0041ad0041ad4041a9866d10424d0041ad0041ad1041add040e8872804e804e844e9066d1041c804e804e814ed80b239036d00b23d00b239872d00b23d00b23d004237215000000630200000000000000000000000400000003000000f37400000097007c0064016b0400000000730a4a006402a6000000ab00000000000000000082017400000000000000000000007402000000000000000000006a0200000000000000007c01660278027802190000000000000000007c007a0d0000630363023c00000064037c009b0064047c019b009d04530029054e7202000000721f0000007a09417070726f766564207a0520666f722072230000007224000000730200000020207216000000da07617070726f766572270000001e000000734e0000008000e00b1190418a3a883a883ad01737893a8c3a883add040e8d738c7a9832887ed0041ed0041ed4041ea026d10428d0041ed0041ed1041ed80b289076d00b28d00b28a042d00b28d00b28d004287215000000da0c6d61696e5f6163636f756e74630300000000000000000000000600000003000000f3a801000097007c0064016b0400000000730a4a006402a6000000ab00000000000000000082017400000000000000000000007c027402000000000000000000006a0200000000000000006602190000000000000000007c006b050000000073354a006403a00300000000000000000000000000000000000000007400000000000000000000007c027402000000000000000000006a0200000000000000006602190000000000000000007c00a6020000ab020000000000000000a6000000ab00000000000000000082017400000000000000000000007c02190000000000000000007c006b0500000000730a4a006404a6000000ab00000000000000000082017400000000000000000000007c027402000000000000000000006a020000000000000000660278027802190000000000000000007c007a170000630363023c0000007400000000000000000000007c0278027802190000000000000000007c007a170000630363023c0000007400000000000000000000007c0178027802190000000000000000007c007a0d0000630363023c00000064057c009b0064067c019b0064077c029b009d06530029084e7202000000721f0000007a494e6f7420656e6f75676820636f696e7320617070726f76656420746f2073656e642120596f752068617665207b7d20616e642061726520747279696e6720746f207370656e64207b7d7220000000722100000072220000007a062066726f6d202904721000000072110000007212000000da06666f726d61742903721c000000721d000000722800000073030000002020207216000000da0d7472616e736665725f66726f6d722b0000002500000073000100008000e00b1190418a3a883a883ad01737893a8c3a883add0b15906ca543a44ad0162ef400010c0ad80d13f203010c14f000010c14f000010c14d81560d71567d21567dd0812903ca513a41ad0132bd4082ca866f103011636f400011636f103010c14f400010c14f000010c14f506000c16906cd40b23a076d20b2dd00b2dd00b2dd02f4ad10b2dd40b2dd00b2ddd040e887c9d539c5ad00f27d00428d00428d40428a846d10432d00428d00428d10428dd040e887cd0041cd0041cd4041ca006d10426d0041cd0041cd1041cdd040e8872804e804e844e9066d1041c804e804e814ed80b379036d00b37d00b379872d00b37d00b37a81cd00b37d00b37d0043772150000004e290cda0448617368721000000072130000007217000000da085f5f6578706f7274da03737472da03416e79721b000000da05666c6f617472250000007227000000722b000000721400000072150000007216000000fa083c6d6f64756c653e7231000000010000007333010000f003010101d80d118854a001a84cb87ad00d4ad10d4ad40d4a800ad80d118854983ca86ad00d39d10d39d40d39800af006060128f000060128f000060128f01200020a8018882cd10117d40117f00203011c9813f00003011ca053f00003011cf00003011cf00003011cf103000218d40117f00203011cf00c00020a8018882cd10117d40117f0020501249055f000050124a003f000050124f000050124f000050124f103000218d40117f002050124f01000020a8018882cd10117d40117f0020301299045f0000301299873f000030129f000030129f000030129f103000218d40117f002030129f00c00020a8018882cd10117d40117f0020901389825f000090138a053f000090138b803f000090138f000090138f000090138f103000218d40117f002090138f000090138f0000901387215000000"
+                }
+            },
+            {
+                "key": "con_test14.__developer__",
+                "value": "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e"
+            },
+            {
+                "key": "con_test14.__owner__",
+                "value": null
+            },
+            {
+                "key": "con_test14.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        4,
+                        30,
+                        16,
+                        48,
+                        8,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_test14.balances",
+                "value": null
+            },
+            {
+                "key": "con_test14.balances:7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e",
+                "value": 1000000
+            },
+            {
+                "key": "con_test14.metadata",
+                "value": null
+            },
+            {
+                "key": "con_test14.metadata:operator",
+                "value": "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e"
+            },
+            {
+                "key": "con_test14.metadata:token_logo_url",
+                "value": "https://some.token.url/test-token.png"
+            },
+            {
+                "key": "con_test14.metadata:token_name",
+                "value": "TEST TOKEN"
+            },
+            {
+                "key": "con_test14.metadata:token_symbol",
+                "value": "TST"
+            },
+            {
+                "key": "con_test14.metadata:token_website",
+                "value": "https://some.token.url"
             },
             {
                 "key": "con_test3.__code__",
@@ -700,9 +828,15 @@
                 }
             },
             {
+                "key": "currency.balances:01f00f4c2b7a0867f74e45dfc0d7eed1eb8af0421f55daf42acaf76c96e3edae",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
                 "key": "currency.balances:02122bff580ac362bfa5578eda5fcac86db69f6a1d0c693dd0fe26183327e223",
                 "value": {
-                    "__fixed__": "145.1642"
+                    "__fixed__": "189.7205"
                 }
             },
             {
@@ -714,7 +848,19 @@
             {
                 "key": "currency.balances:03e2669bf5a8190f8472fcf6f1cff2e6f36a81d2c9305020ba444679f196d2cb",
                 "value": {
-                    "__fixed__": "148.4975"
+                    "__fixed__": "172.3075"
+                }
+            },
+            {
+                "key": "currency.balances:0467b2a79d5e0917dc1569acf2986147878e68250e06421fc708c96d15231ff3",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
+                "key": "currency.balances:05056ec869719b2113d7de8770140a5abd7b6428f3b59accdf735ea5083dd284",
+                "value": {
+                    "__fixed__": "2.381"
                 }
             },
             {
@@ -727,6 +873,12 @@
                 "key": "currency.balances:05cd9c302b77e3be424c4993ced9ec5f49c15481a8ddc7fc1b504071037ad9b7",
                 "value": {
                     "__fixed__": "248.14400082077605404338"
+                }
+            },
+            {
+                "key": "currency.balances:062452014a5d79224c41562ebfdd9aa56bd89800f3bc59400f70e4cc00365d7a",
+                "value": {
+                    "__fixed__": "2.381"
                 }
             },
             {
@@ -748,6 +900,18 @@
                 }
             },
             {
+                "key": "currency.balances:0c7cce9538c9371d79dedae5f04dd1c81ddde3c5e96b4e0fcc48b6ce70cf241b",
+                "value": {
+                    "__fixed__": "0.7463"
+                }
+            },
+            {
+                "key": "currency.balances:0ca3ca0e8feb3c47f3bbd25dd94f9f5596b15a8d162a993f738c3e654a06ce79",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
                 "key": "currency.balances:0cde5cba145619e997e2e9f71760bed4c2878f249ea1825984c7cb17d8b18618",
                 "value": {
                     "__fixed__": "108.2734"
@@ -756,7 +920,13 @@
             {
                 "key": "currency.balances:0d180b6005058e94b846067f72019354902ddcb893e0aadbd9ff5906bdd27d4f",
                 "value": {
-                    "__fixed__": "143.7356"
+                    "__fixed__": "168.2919"
+                }
+            },
+            {
+                "key": "currency.balances:0d3dedcf24562cb9e18caec5af2c0738bf6bdd320b6df2bffc4ed187b27b78c8",
+                "value": {
+                    "__fixed__": "2.381"
                 }
             },
             {
@@ -814,15 +984,45 @@
                 }
             },
             {
+                "key": "currency.balances:13edf39d0dfb6abe0f18f9f3eb685374c5a51406df2e6b37d77cc23f34d628c4",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
+                "key": "currency.balances:1463cc23bead3dad76048adf71f0b72c0697fbf379a1c418352fa54fc7f482a9",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
                 "key": "currency.balances:1486c075b96ca3f1b75d2d7bb5d358e80f5639c2308ff6199f753aafd21e5e6d",
                 "value": {
                     "__fixed__": "50.40631867539557483328"
                 }
             },
             {
+                "key": "currency.balances:1506d295ce4087b2e0f6be6e6a09205991960ca1f859483648d6ec7c727db18b",
+                "value": {
+                    "__fixed__": "0.7463"
+                }
+            },
+            {
+                "key": "currency.balances:1603b5d02c32ae525c3e247132d764e1c1cbd8ad0ec3856448f6309c590dab42",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
                 "key": "currency.balances:1721b575536921048c7b2b8e8d6526f1724ce6f05c7f271fdf577f71db19b775",
                 "value": {
                     "__fixed__": "140.4196"
+                }
+            },
+            {
+                "key": "currency.balances:1785bf944e69562b9244e4981990c8dacdcd561e995278110d81622e3eb5acd4",
+                "value": {
+                    "__fixed__": "2.381"
                 }
             },
             {
@@ -864,13 +1064,13 @@
             {
                 "key": "currency.balances:1c93de62a1c5349a5884b83b2c02924f2e653c50b3f144f1006283006a8f2dc9",
                 "value": {
-                    "__fixed__": "143.7356"
+                    "__fixed__": "168.2919"
                 }
             },
             {
                 "key": "currency.balances:1d3680e34fb0e5932326a55df98ec49142c27ee33ae0dd9fe871fc2735f50cd6",
                 "value": {
-                    "__fixed__": "143.7356"
+                    "__fixed__": "168.2919"
                 }
             },
             {
@@ -880,9 +1080,15 @@
                 }
             },
             {
+                "key": "currency.balances:1db759dff4f1cdb5ca4c9ff3bc90cd3e4211be9835af7adc96f35f1867b12315",
+                "value": {
+                    "__fixed__": "0.7463"
+                }
+            },
+            {
                 "key": "currency.balances:1f8d6a8fad271296883cb1b10e29172145551a852140403e58e519dd0da80fce",
                 "value": {
-                    "__fixed__": "147.0689"
+                    "__fixed__": "171.6252"
                 }
             },
             {
@@ -894,7 +1100,7 @@
             {
                 "key": "currency.balances:2125401df90e39c26020fc3501935d5787d1a467e6d737f6941e2ba8b5c8248a",
                 "value": {
-                    "__fixed__": "0.7463"
+                    "__fixed__": "1.4926"
                 }
             },
             {
@@ -952,6 +1158,12 @@
                 }
             },
             {
+                "key": "currency.balances:288b94c4a11510cfef77b7b492b28e4651e10a6dba2db7db4f62af92d0bee5fc",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
                 "key": "currency.balances:28be507463647f16123d5bcf60310aaccacc0e0e4e44d154ec9a9ccb0fb2ef71",
                 "value": {
                     "__fixed__": "41.97646592247445941624"
@@ -972,7 +1184,7 @@
             {
                 "key": "currency.balances:292b346779dca86b8ffb979f48b590ea04c2d49d9fb505af9d6aa7e044a45269",
                 "value": {
-                    "__fixed__": "1979.6740"
+                    "__fixed__": "2004.2303"
                 }
             },
             {
@@ -984,13 +1196,19 @@
             {
                 "key": "currency.balances:2938406d22e9f730f1e7fe4823db8d22f3db253f82f745093dc2749d54f8601d",
                 "value": {
-                    "__fixed__": "140.7053"
+                    "__fixed__": "164.5153"
                 }
             },
             {
                 "key": "currency.balances:2975862f47e130882252624090744c98fb90aa8878511d1d60ffb9174cc042c0",
                 "value": {
                     "__fixed__": "1.1430823056410462704"
+                }
+            },
+            {
+                "key": "currency.balances:29d740c906c0a34c9d62303af0730832378c2b6139ca0e2d00a36d77e23691c7",
+                "value": {
+                    "__fixed__": "2.381"
                 }
             },
             {
@@ -1014,7 +1232,7 @@
             {
                 "key": "currency.balances:2c07e0854d720b5172b0023e1d0d2c6e4f1620272e0222e2f209b43eae555609",
                 "value": {
-                    "__fixed__": "143.7356"
+                    "__fixed__": "167.5456"
                 }
             },
             {
@@ -1024,9 +1242,15 @@
                 }
             },
             {
+                "key": "currency.balances:2c72697a84411415021a65faea7e9be43a95cb3e0a6c3a1bec147518e991d486",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
                 "key": "currency.balances:2cb8c0387efe848520a3c3e020b588fe8333d15189e15819ecdebae948a4eca2",
                 "value": {
-                    "__fixed__": "0.7463"
+                    "__fixed__": "1.4926"
                 }
             },
             {
@@ -1054,6 +1278,12 @@
                 }
             },
             {
+                "key": "currency.balances:2de82325bbb3ac38ddd3943dec18c287d2e305f038e019134b25678a513d34b6",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
                 "key": "currency.balances:2e6932647f4f0ba0ed21d6e77fb0fa01c447de2bde4e2410ce3f6208c297d2cf",
                 "value": {
                     "__fixed__": "0.05493048493809005"
@@ -1072,6 +1302,12 @@
                 }
             },
             {
+                "key": "currency.balances:3047d269f1e3a7164518afbfa6ca3d7169169c57b84c3d6b270baa40dcdcbc26",
+                "value": {
+                    "__fixed__": "0.7463"
+                }
+            },
+            {
                 "key": "currency.balances:315c97e5df02e27b74038293df2b163abc776c823efa272ea9b172f324ee81e1",
                 "value": {
                     "__fixed__": "1.435493507856006278"
@@ -1086,13 +1322,31 @@
             {
                 "key": "currency.balances:31a0a2b07717e67bcbd8390c79c355ebe460cc6d309be8679e6a899cd834bba2",
                 "value": {
-                    "__fixed__": "143.7356"
+                    "__fixed__": "168.2919"
                 }
             },
             {
                 "key": "currency.balances:31fa8d5a88d7ece9abaf312a76a9360fc314ecd2a2f0e9e44c5571d3ccd12595",
                 "value": {
-                    "__fixed__": "37.0669"
+                    "__fixed__": "82.6232"
+                }
+            },
+            {
+                "key": "currency.balances:3280c99e859e3dd033cdb71148ad917fe21da7b07218015025a5ba5ec1d1ed45",
+                "value": {
+                    "__fixed__": "0.7463"
+                }
+            },
+            {
+                "key": "currency.balances:32a22314b9297ac5024eaec51b23b1a4b85d8160bbe4c41e5258ef100011b765",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
+                "key": "currency.balances:33b433a2c1d8308ab70f76b9247a0790a7c9b06b9159e63dbb0dda5ca5dbc2ef",
+                "value": {
+                    "__fixed__": "2.381"
                 }
             },
             {
@@ -1108,6 +1362,12 @@
                 }
             },
             {
+                "key": "currency.balances:35f3242d430efab3ac392d15dcd22d74884910d9e6efa9c7281fa4356430ad09",
+                "value": {
+                    "__fixed__": "0.7463"
+                }
+            },
+            {
                 "key": "currency.balances:36ba11f9aaeadbcf83366ec18a03c5b87125d315516690dcc0be41dcdd5e7e09",
                 "value": {
                     "__fixed__": "1.1430823056410462704"
@@ -1116,7 +1376,7 @@
             {
                 "key": "currency.balances:3703dab66190bc5045f118ae93c4cec03f0bb2994b1953102dd97716c417f317",
                 "value": {
-                    "__fixed__": "143.7356"
+                    "__fixed__": "167.5456"
                 }
             },
             {
@@ -1126,9 +1386,21 @@
                 }
             },
             {
+                "key": "currency.balances:383228115e27b517824a191779532ab4c8497fd668f16b8728f2eeee40e40315",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
+                "key": "currency.balances:38751d52ef89215f53d5197c2a22e265b5167f4685621334709f6e390ad0c5aa",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
                 "key": "currency.balances:3949f668838b7d2dae11ad1ff62fcd4b0aaa1b9ab161ad9eda7ce787b7314790",
                 "value": {
-                    "__fixed__": "416.3642"
+                    "__fixed__": "359.3742"
                 }
             },
             {
@@ -1138,9 +1410,21 @@
                 }
             },
             {
+                "key": "currency.balances:39f89bc9aeddbd5ab4214a47c98469dc306ea66cb6df5cc54f77bc2c3064a23d",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
                 "key": "currency.balances:3a5f760e798ff29013a2befac937c625efbf52740df2bb6408cdae7fa24d0e11",
                 "value": {
                     "__fixed__": "5.2498048247201599663"
+                }
+            },
+            {
+                "key": "currency.balances:3c77b8398e03d8270d65713c3765c4a9a5f099c3c5473015e91a76547be1ebf1",
+                "value": {
+                    "__fixed__": "2.381"
                 }
             },
             {
@@ -1156,9 +1440,21 @@
                 }
             },
             {
+                "key": "currency.balances:3e96416f603f1bba58c2d767b1f3d4acced40329e3d1b0784dfe6ed807319800",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
                 "key": "currency.balances:3f23440ac15c8c01ec4bfdd09242dea8c856c13a5192a3b6a502ae0779eec7e0",
                 "value": {
                     "__fixed__": "1.3046766714097223418"
+                }
+            },
+            {
+                "key": "currency.balances:411767e0543ad47baf42a5b340217b48bef970751b8d05858e50f866ad53ff8b",
+                "value": {
+                    "__fixed__": "2.381"
                 }
             },
             {
@@ -1192,6 +1488,12 @@
                 }
             },
             {
+                "key": "currency.balances:461909b109e454df01284c62bb30d98ea2b6bc699179ba5bfaeabdf466aa9fba",
+                "value": {
+                    "__fixed__": "23.810"
+                }
+            },
+            {
                 "key": "currency.balances:4659bfbef339ff8392489ab951a37e1820e060888fee49a60a82aecfbe1d5ac3",
                 "value": {
                     "__fixed__": "1.2715701223073921686"
@@ -1201,6 +1503,12 @@
                 "key": "currency.balances:46fd2d88d4bd71d27013eb64ebde8dc40163a2a10f6ddb100f5d87a45e893f1e",
                 "value": {
                     "__fixed__": "1.1430823056410462704"
+                }
+            },
+            {
+                "key": "currency.balances:4726ec6158594df9c74bb44bb859fb8e8eee56865d53c7cd2052064d65fd4f25",
+                "value": {
+                    "__fixed__": "0.7463"
                 }
             },
             {
@@ -1218,7 +1526,7 @@
             {
                 "key": "currency.balances:475e26a05e1c8de41c0f2472b032bb92833903840d863d4b19d9e25b34d80ed1",
                 "value": {
-                    "__fixed__": "0.7463"
+                    "__fixed__": "1.4926"
                 }
             },
             {
@@ -1246,6 +1554,12 @@
                 }
             },
             {
+                "key": "currency.balances:4b3b068d31cb12ff24d44330fe0612e95a5f94175d0f1231772623b34fde8cbf",
+                "value": {
+                    "__fixed__": "0.7463"
+                }
+            },
+            {
                 "key": "currency.balances:4b69e54fdf5b31622bf3c4a65de976801e7aa4f8ac02287f90191b03be5723f6",
                 "value": {
                     "__fixed__": "1.3046766714097223418"
@@ -1261,6 +1575,12 @@
                 "key": "currency.balances:4bfcd438e7d403b2b4149c2c7f35a28908185b7b869ecf02167f76700170ef1c",
                 "value": {
                     "__fixed__": "50.40631867539557483328"
+                }
+            },
+            {
+                "key": "currency.balances:4caf28c80e43be4101bd2caf6c747ef8a393837809df50f2bbe5367d2ff79794",
+                "value": {
+                    "__fixed__": "0.7463"
                 }
             },
             {
@@ -1290,7 +1610,7 @@
             {
                 "key": "currency.balances:52226e31d56da22fa8ea0d8725790d26b9040580a2e5780926fdc348d9ccc65c",
                 "value": {
-                    "__fixed__": "140.7053"
+                    "__fixed__": "165.2616"
                 }
             },
             {
@@ -1318,6 +1638,12 @@
                 }
             },
             {
+                "key": "currency.balances:559bc7d9462902cf71ca335943b31bc29c020f1c471b5e0caa33bbeb18da4622",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
                 "key": "currency.balances:55c0a9b8d290fa297633ae4a57e7f6d61c832cdbb0afaf8567d6b2e56b59b311",
                 "value": {
                     "__fixed__": "41.97646592247445941624"
@@ -1330,15 +1656,39 @@
                 }
             },
             {
+                "key": "currency.balances:5667cfe4bbaad133c82de373872adbec53c61ef174b81ba4f573c8384f2cd12b",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
                 "key": "currency.balances:56710a628565623b4aca874c0d3c90353ee0a3076daf7810e9611f9a2d58b308",
                 "value": {
-                    "__fixed__": "143.7356"
+                    "__fixed__": "168.2919"
+                }
+            },
+            {
+                "key": "currency.balances:567f62facc8b86347159f6a14076d28e521177361c11dd144ee9c1b710d29342",
+                "value": {
+                    "__fixed__": "2.381"
                 }
             },
             {
                 "key": "currency.balances:56f9529bd9b2e0f6fa25e5d01a377fbad5542d9508d1ddc40bbc8034ac7ba17e",
                 "value": {
                     "__fixed__": "1.001702629151920584"
+                }
+            },
+            {
+                "key": "currency.balances:57553bb7b0c12262fdb30fca7ec8ec739ce38a796267e105e2e0a0c9572f1afd",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
+                "key": "currency.balances:57b771f4eaee8809d473f1535eb88778400203d390217313777e55e99588ef3b",
+                "value": {
+                    "__fixed__": "2.381"
                 }
             },
             {
@@ -1350,7 +1700,7 @@
             {
                 "key": "currency.balances:58392bcf21150d0339b2f84f7ee36e6f0986ca0016ba919881de5ab21a6760ce",
                 "value": {
-                    "__fixed__": "140.7053"
+                    "__fixed__": "164.5153"
                 }
             },
             {
@@ -1374,7 +1724,7 @@
             {
                 "key": "currency.balances:5a5128857a999aeae59dbf6a6d8a078a8e7d9f749372e68f08a5ea23bfa75954",
                 "value": {
-                    "__fixed__": "160.1642"
+                    "__fixed__": "184.7205"
                 }
             },
             {
@@ -1384,9 +1734,21 @@
                 }
             },
             {
+                "key": "currency.balances:5dd1464589a7207479b575f2084ccc9fb55cf3c2fa73b1cabd5b72f09bebfdf9",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
                 "key": "currency.balances:5ec2b5dea778b1c2951a3d5ac147e55d99b0dfac87967fc9d36040523f7bd55e",
                 "value": {
-                    "__fixed__": "143.7356"
+                    "__fixed__": "167.5456"
+                }
+            },
+            {
+                "key": "currency.balances:5f6e52214caa35b9b2b43554d1b3d244daadb22f22de514f823660207176a3b8",
+                "value": {
+                    "__fixed__": "0.7463"
                 }
             },
             {
@@ -1398,7 +1760,7 @@
             {
                 "key": "currency.balances:61098978339b426c1d7d3c7f862c7b05fd7bf41b0bd0e2e335ee5d1c8088cf72",
                 "value": {
-                    "__fixed__": "144.4819"
+                    "__fixed__": "169.0382"
                 }
             },
             {
@@ -1426,13 +1788,19 @@
             {
                 "key": "currency.balances:6469db016e9444cec27e0e5ffcf0908cbeb2a6ee5ad29742ec46044266cc9e37",
                 "value": {
-                    "__fixed__": "143.7356"
+                    "__fixed__": "168.2919"
                 }
             },
             {
                 "key": "currency.balances:6473ed58c00fa0998f1ab3fd70f3abd372b2d39bb8e7d83073ef8b140fc6d9d8",
                 "value": {
                     "__fixed__": "1.3046766714097223418"
+                }
+            },
+            {
+                "key": "currency.balances:64d25b76d8728c6dfaf4c0c3b25b85f10dbd0994c6bbe7970524471e830c357d",
+                "value": {
+                    "__fixed__": "2.381"
                 }
             },
             {
@@ -1454,6 +1822,12 @@
                 }
             },
             {
+                "key": "currency.balances:6572011961f9b9ecf2d2a718247a48de3d3672de5650dd6786b3311c064df034",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
                 "key": "currency.balances:6599000ce0a911d1f0af87840142fb58784b803ccbf8bda10cbe49b24239b5ee",
                 "value": {
                     "__fixed__": "19.19661255579699733485"
@@ -1472,6 +1846,12 @@
                 }
             },
             {
+                "key": "currency.balances:66e5d8c6f5d440e118411211644febeb011ae508a163d205e0e96522714cc074",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
                 "key": "currency.balances:670950d1f02f36b1a2b19edb100dede915dffeb84f265346ed89ce0abee4aef0",
                 "value": {
                     "__fixed__": "1.1555125728857042467"
@@ -1480,13 +1860,31 @@
             {
                 "key": "currency.balances:681601c6b8812d150ec15d531407187fd13c74fd6048d07ee1fa470a0fa9c906",
                 "value": {
-                    "__fixed__": "141.4516"
+                    "__fixed__": "167.5005"
+                }
+            },
+            {
+                "key": "currency.balances:684a3925fa336b8728fb9b0ff036cd43701436b1b8b1f0786a5635eabdcb6f42",
+                "value": {
+                    "__fixed__": "0.7463"
+                }
+            },
+            {
+                "key": "currency.balances:685fa39d37b746611301eeefb5da80664a3b709368cb693fe5a4b28cde322e6f",
+                "value": {
+                    "__fixed__": "2.381"
                 }
             },
             {
                 "key": "currency.balances:6864be34f7fd6ac246f8d219b4e74808df4168525d9b30ac7952f8a9b3690b3c",
                 "value": {
                     "__fixed__": "1.3632357253311018134"
+                }
+            },
+            {
+                "key": "currency.balances:68ced29788d015c2d820d01726f2aa5d31ebe2345e468bfab51cfc43ef0c495e",
+                "value": {
+                    "__fixed__": "2.381"
                 }
             },
             {
@@ -1498,7 +1896,7 @@
             {
                 "key": "currency.balances:69f2e1e4484efdb544c8e4631ab8a5bf632c9a55896cf67389d7fe8ba21b756a",
                 "value": {
-                    "__fixed__": "143.7356"
+                    "__fixed__": "168.2919"
                 }
             },
             {
@@ -1510,7 +1908,7 @@
             {
                 "key": "currency.balances:6b596c4590a64651145a45a1e512eb6f1255124c06cae1e33586d3434b67e761",
                 "value": {
-                    "__fixed__": "21.2766"
+                    "__fixed__": "45.0866"
                 }
             },
             {
@@ -1534,7 +1932,7 @@
             {
                 "key": "currency.balances:6d2476cd66fa277b6077c76cdcd92733040dada2e12a28c3ebb08af44e12be76",
                 "value": {
-                    "__fixed__": "146.98640000"
+                    "__fixed__": "207.66240000"
                 }
             },
             {
@@ -1604,6 +2002,12 @@
                 }
             },
             {
+                "key": "currency.balances:739bb0c226b829df8e67e41e8c6ad5807b50dda2c43b2016a5f63808b8407018",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
                 "key": "currency.balances:74261ba51e13d67e23327f08cbc8d3dc50c35a7491653caf99f0fe989577144a",
                 "value": {
                     "__fixed__": "0.05493048493809005"
@@ -1630,13 +2034,19 @@
             {
                 "key": "currency.balances:777bdee9f2aa1f0b0a607596e8089e997735c2bb82a3652207710356dc4bcd08",
                 "value": {
-                    "__fixed__": "140.4196"
+                    "__fixed__": "141.1659"
                 }
             },
             {
                 "key": "currency.balances:78c1e3d74ad3ad68813dfc9b423b9b856fb9b6e786ffc1541c7be2f19c6a4195",
                 "value": {
                     "__fixed__": "1.2622067352942212396"
+                }
+            },
+            {
+                "key": "currency.balances:78dffad488b879d9b66ac1dc35dfc437e60336dacd68dcb74799e65956513803",
+                "value": {
+                    "__fixed__": "2.381"
                 }
             },
             {
@@ -1652,15 +2062,33 @@
                 }
             },
             {
+                "key": "currency.balances:7968dd9f86519106317bf9a93f0428f6710fc1a24dab1883d62c58ab913743db",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
                 "key": "currency.balances:79a167b9259ccaac6650b4389b98d6c829960782a8b8bbc570ba67c94e14ac61",
                 "value": {
                     "__fixed__": "47.14940503745774570008"
                 }
             },
             {
+                "key": "currency.balances:79e23a0dee1f2aa8c66fba2ed22e0d0f8297c014e2abe9a1d82f3b1a2a021576",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
                 "key": "currency.balances:79e710423fe5c63514a2bc2c59bbec7d501fa8678b01f52973edca42c4886d88",
                 "value": {
-                    "__fixed__": "141.4516"
+                    "__fixed__": "166.0079"
+                }
+            },
+            {
+                "key": "currency.balances:7a82b018851461eca8924f7fb4d5e19ebace3370e558a7af5f01b63897583590",
+                "value": {
+                    "__fixed__": "2.381"
                 }
             },
             {
@@ -1682,6 +2110,12 @@
                 }
             },
             {
+                "key": "currency.balances:7bea26bd4af52b8ba8554e4f0d43837520676ce099dd2a884b7539c08825a334",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
                 "key": "currency.balances:7c0d2b198f0796055f504af589a86009118cf7194dd91f95b0f9004d206648a2",
                 "value": {
                     "__fixed__": "20.11213512233705944193"
@@ -1694,15 +2128,27 @@
                 }
             },
             {
+                "key": "currency.balances:7cc361d9d3ded51dc28787816f695d53ea0a90e6ff28884cfe59077bbd56b945",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
                 "key": "currency.balances:7daf42a3452567344f51c0e975968b734bef501ba0a7f88ca90e6166ca33ce28",
                 "value": {
                     "__fixed__": "0.05493048493809005"
                 }
             },
             {
+                "key": "currency.balances:7dd43cd1c6ad9dd2c77080adc0db1c92b7bc548d8ceed5ddb642794d4dfcbf27",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
                 "key": "currency.balances:7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e",
                 "value": {
-                    "__fixed__": "110111322.72640000"
+                    "__fixed__": "110111403.28240000"
                 }
             },
             {
@@ -1718,9 +2164,27 @@
                 }
             },
             {
+                "key": "currency.balances:80e1ac9fe93b88fc201bc3029a920bc27c752afd6ff0d71a0125ac485ab090f8",
+                "value": {
+                    "__fixed__": "95.69000000"
+                }
+            },
+            {
                 "key": "currency.balances:8359e7047e2966beee8014bdaea45ac471483fc0a552f3b57291f20d8f4a0588",
                 "value": {
-                    "__fixed__": "143.7356"
+                    "__fixed__": "168.2919"
+                }
+            },
+            {
+                "key": "currency.balances:83da9b9324578fb81d6b20ebe9de467ff41604826fc3dd66f21e46ea39fdf5ff",
+                "value": {
+                    "__fixed__": "0.7463"
+                }
+            },
+            {
+                "key": "currency.balances:8434a7364503a6fb3d262d59367d5b289206e08d9505a7cf5cb1bc973ae379d4",
+                "value": {
+                    "__fixed__": "0.7463"
                 }
             },
             {
@@ -1748,6 +2212,12 @@
                 }
             },
             {
+                "key": "currency.balances:85cf3395ebc837ff931179363392ad24bc206dfe8797a99adf9f8999be7dcdf7",
+                "value": {
+                    "__fixed__": "0.7463"
+                }
+            },
+            {
                 "key": "currency.balances:860746f5a86ecbfe842084212db3e4406809b7ebe3d8e6f2f6aa93d1d619eac7",
                 "value": {
                     "__fixed__": "50.40631867539557483328"
@@ -1756,7 +2226,13 @@
             {
                 "key": "currency.balances:86809369bbb89771acc0c1b97648b6e3a34c28e511e7ebdc413564c866a07bbb",
                 "value": {
-                    "__fixed__": "0.7463"
+                    "__fixed__": "1.4926"
+                }
+            },
+            {
+                "key": "currency.balances:881b13a531b4d275a1d7b5e798b2f6d12cca36df79821633794db5235704d125",
+                "value": {
+                    "__fixed__": "2.381"
                 }
             },
             {
@@ -1778,9 +2254,21 @@
                 }
             },
             {
+                "key": "currency.balances:89c73c6e5285616278992dc4ed6d4f41df75e313cf34a98f595de7a223d2804d",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
                 "key": "currency.balances:8a692e197e1f1d746c7b8215fea6114d2a1bdea4a9cb672feac18f8dec1a505e",
                 "value": {
                     "__fixed__": "248.14400082077605404338"
+                }
+            },
+            {
+                "key": "currency.balances:8b1c32ed7b10dc9b3c06671651ad925187f3da38cdf09e225457cfd0ac6642ae",
+                "value": {
+                    "__fixed__": "0.7463"
                 }
             },
             {
@@ -1796,6 +2284,12 @@
                 }
             },
             {
+                "key": "currency.balances:8f08cb48e63a2548ed93a9d31e479e9c2036c7eb8bde5f3e5990abd945da1155",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
                 "key": "currency.balances:8f5c7f5f6151c7cdc875ef6bc3765015cf5f37132667c84d10c894f6f3ed3ee5",
                 "value": {
                     "__fixed__": "47.14940503745774570008"
@@ -1808,6 +2302,18 @@
                 }
             },
             {
+                "key": "currency.balances:914984e9d731c455d1396f65461f301baa0be76a473bf7aacf75db04293c4b73",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
+                "key": "currency.balances:91e0b6089453bd1b7958ad3544e820594b40541bad8911f24abe74578631dfa1",
+                "value": {
+                    "__fixed__": "0.7463"
+                }
+            },
+            {
                 "key": "currency.balances:921fc116a3c3dfafb960dabd25427c042a0d1e82c77010b13e024e530bfdf941",
                 "value": {
                     "__fixed__": "1.435493507856006278"
@@ -1817,6 +2323,24 @@
                 "key": "currency.balances:9220ea340ae7863b3197d4d4ac072500d28426e7b39918bfbd050bc77fa2b587",
                 "value": {
                     "__fixed__": "19.19661255579699733485"
+                }
+            },
+            {
+                "key": "currency.balances:9304fcabc25323d7207b65afdfa853cf6251574edf7b99382fa987f3abd0fe17",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
+                "key": "currency.balances:940ddc4922f06fae45e8c26ad8542f8ce3711adb4e4e6b2faa39a830d32c60ce",
+                "value": {
+                    "__fixed__": "0.7463"
+                }
+            },
+            {
+                "key": "currency.balances:94c8fdfcfea61a44732474892fd207ce19529e387addaea56b02f92f86d315c5",
+                "value": {
+                    "__fixed__": "2.381"
                 }
             },
             {
@@ -1844,6 +2368,12 @@
                 }
             },
             {
+                "key": "currency.balances:971d56a1883ac25749e98f9230d2f0054a193ec1398ed00cc5184688e1d48d92",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
                 "key": "currency.balances:975474fb373520325d3fd1317c252c41fe3a458bea66b8bf54af7a00152600d4",
                 "value": {
                     "__fixed__": "1.3046766714097223418"
@@ -1862,15 +2392,45 @@
                 }
             },
             {
+                "key": "currency.balances:9d8e16f68de482ee4d9bfc037a2785a2f3aed97c71b959194da293ae921f5478",
+                "value": {
+                    "__fixed__": "0.7463"
+                }
+            },
+            {
                 "key": "currency.balances:9d9dec9c24d8a6d238a6a8801a1355fb84d8a1ab35c1f93ba0ad7bd1803a8516",
                 "value": {
                     "__fixed__": "1.1555125728857042467"
                 }
             },
             {
+                "key": "currency.balances:9e335b00e84c4395c3db800375698f0e9ad29de315dd4d2d45789708be27389d",
+                "value": {
+                    "__fixed__": "0.7463"
+                }
+            },
+            {
+                "key": "currency.balances:a0d883152df3a2611f33eb3f58ec337da79cbe696ffe81172fdb8d13f201ff9e",
+                "value": {
+                    "__fixed__": "0.7463"
+                }
+            },
+            {
+                "key": "currency.balances:a2209e48eecaa9afd17b819279d679ee01f7fe42bc94e1e997b5b55e1abb2945",
+                "value": {
+                    "__fixed__": "0.7463"
+                }
+            },
+            {
                 "key": "currency.balances:a269c2d8f517eeb803891f09ea759ae9306afa9444738db9c642ea7e7708cfba",
                 "value": {
-                    "__fixed__": "37.0284"
+                    "__fixed__": "60.8384"
+                }
+            },
+            {
+                "key": "currency.balances:a36e76e3e8554a8d5c613a032eeb836d5021a83d74aa8c8ab8c881729b80d578",
+                "value": {
+                    "__fixed__": "2.381"
                 }
             },
             {
@@ -1888,7 +2448,7 @@
             {
                 "key": "currency.balances:a671bf670678fb7e9709d8a120e413ac30abe3311310f50ed496ba914ad10896",
                 "value": {
-                    "__fixed__": "143.7356"
+                    "__fixed__": "167.5456"
                 }
             },
             {
@@ -1916,6 +2476,12 @@
                 }
             },
             {
+                "key": "currency.balances:ab04e76e480393c6f6a65bbbc9d21a4dd7dcd374f66a280513a3d26643326592",
+                "value": {
+                    "__fixed__": "0.7463"
+                }
+            },
+            {
                 "key": "currency.balances:ab4386a17fa1f523bca8b78b3dc60a9348126dde599a7c52f2845acb732686d5",
                 "value": {
                     "__fixed__": "49.64796361620098179367"
@@ -1930,7 +2496,7 @@
             {
                 "key": "currency.balances:ac441f75f5d0abc7b6eabbc5669628edbc4ec9948d2c65d87942524a6f0a84c6",
                 "value": {
-                    "__fixed__": "37.0284"
+                    "__fixed__": "60.8384"
                 }
             },
             {
@@ -1940,9 +2506,39 @@
                 }
             },
             {
+                "key": "currency.balances:acdb88f31de06a55032f710de8404cf01f8bcdd888985697eed9cda87fbb5226",
+                "value": {
+                    "__fixed__": "0.7463"
+                }
+            },
+            {
+                "key": "currency.balances:ad147601c87378bae2699c7dd837e02a6fd4286b263f0532c6f37e7b95e4bfbc",
+                "value": {
+                    "__fixed__": "0.7463"
+                }
+            },
+            {
+                "key": "currency.balances:adbca57b20b61449f721110a5c867a52d76826fc234b2147979bc8e69d21bb01",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
                 "key": "currency.balances:ae101624d060d347b4adeae79abf108866c894ed2bf44d68eca26af61d4ad71d",
                 "value": {
                     "__fixed__": "50.40631867539557483328"
+                }
+            },
+            {
+                "key": "currency.balances:ae80d082b638adf6a963af3864c3f5aa9171544a84a67ae86ed85162fdaddbc1",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
+                "key": "currency.balances:ae865885c8d2df55b92b4fb11194d6d29d4a102644bde5cf3a20c64bef26d028",
+                "value": {
+                    "__fixed__": "0.7463"
                 }
             },
             {
@@ -1976,6 +2572,18 @@
                 }
             },
             {
+                "key": "currency.balances:b1ef4a5a1b6b2d6f84318556dff37107c509ec007ec6e0a503ed608d6b9c8721",
+                "value": {
+                    "__fixed__": "0.7463"
+                }
+            },
+            {
+                "key": "currency.balances:b2242dbb882d85ec3764d24600370112d9c707fc498ba958ebf59bd102680a5b",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
                 "key": "currency.balances:b44d5dc59a6b564ea21bbce3c2970abd59dd01d17677019cd3f2ad5a3dbed425",
                 "value": {
                     "__fixed__": "1.0017897372713558826"
@@ -1988,9 +2596,21 @@
                 }
             },
             {
+                "key": "currency.balances:b499715ce38c21507308ae9958b9207a76ab4746a3a2e0e16e183278ed878f0f",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
                 "key": "currency.balances:b4d1967e6264bbcd61fd487caf3cafaffdc34be31d0994bf02afdcc2056c053c",
                 "value": {
-                    "__fixed__": "146.98640000"
+                    "__fixed__": "207.66240000"
+                }
+            },
+            {
+                "key": "currency.balances:b50727f7c30dd00659a6b551f91c66e01b44fbce03870988f75d183977a9933e",
+                "value": {
+                    "__fixed__": "0.7463"
                 }
             },
             {
@@ -2014,13 +2634,13 @@
             {
                 "key": "currency.balances:b6504cf056e264a4c1932d5de6893d110db5459ab4f742eb415d98ed989bb98d",
                 "value": {
-                    "__fixed__": "4019.2221"
+                    "__fixed__": "3978.3300"
                 }
             },
             {
                 "key": "currency.balances:b6504cf056e264a4c1932d5de6893d110db5459ab4f742eb415d98ed989bb98d:con_multisend",
                 "value": {
-                    "__fixed__": "2709999994480.5324"
+                    "__fixed__": "2709999994430.5303"
                 }
             },
             {
@@ -2060,9 +2680,21 @@
                 }
             },
             {
+                "key": "currency.balances:b9a566e161b95c0d3dfcaf69f9e6e571f29692450cbcdec6b99cb00c32777e11",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
                 "key": "currency.balances:ba454a419705ed3ac1e590394fffff71c0f7ee8ed4f3365a9fcc23a83b924165",
                 "value": {
                     "__fixed__": "140.4196"
+                }
+            },
+            {
+                "key": "currency.balances:ba743859270f0d8e68b3c33d5851e6e411aebfcad281aa56934e153ceeb34e89",
+                "value": {
+                    "__fixed__": "2.381"
                 }
             },
             {
@@ -2092,7 +2724,7 @@
             {
                 "key": "currency.balances:be033abce4b62ac96366bc16b1a5bdc35404acffbbb1e347046381d08c34d295",
                 "value": {
-                    "__fixed__": "57.0284"
+                    "__fixed__": "81.5847"
                 }
             },
             {
@@ -2102,9 +2734,15 @@
                 }
             },
             {
+                "key": "currency.balances:bea069e83aec32259d81516665bf2d780a5a3c45ae74ad5f745a4a2b7ae684c9",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
                 "key": "currency.balances:bea0ea30705cd5bb5fc73f128db4165736bbab3b8962ae8cd4a7651d0e63b216",
                 "value": {
-                    "__fixed__": "143.7356"
+                    "__fixed__": "167.5456"
                 }
             },
             {
@@ -2142,9 +2780,15 @@
                 "value": 1
             },
             {
-                "key": "currency.balances:c0d779cc1a123e92825b770d984a19df3e8747f5740faf26d0cab534a674306c",
+                "key": "currency.balances:c065ff5fb9dcb664c7bc11855f16127dd0381699d56262c0bcebeb558e803704",
                 "value": {
                     "__fixed__": "0.7463"
+                }
+            },
+            {
+                "key": "currency.balances:c0d779cc1a123e92825b770d984a19df3e8747f5740faf26d0cab534a674306c",
+                "value": {
+                    "__fixed__": "1.4926"
                 }
             },
             {
@@ -2162,13 +2806,19 @@
             {
                 "key": "currency.balances:c4f3e7457dcf025ad469696449420849431bac5e1d08318d6cd07f147019246e",
                 "value": {
-                    "__fixed__": "140.7053"
+                    "__fixed__": "164.5153"
+                }
+            },
+            {
+                "key": "currency.balances:c5c83cebac5432bf3a454bfc09bdde87ef2153eda3f7938257c88b599a569ecc",
+                "value": {
+                    "__fixed__": "0.7463"
                 }
             },
             {
                 "key": "currency.balances:c8103f212e4b556afdf1e3873192f22d1c90cfcfe8a6dbe62b116c2dc9613785",
                 "value": {
-                    "__fixed__": "143.7356"
+                    "__fixed__": "167.5456"
                 }
             },
             {
@@ -2198,13 +2848,13 @@
             {
                 "key": "currency.balances:ca46d58d6b9712896357c44ad376d25e24e93716eecbb9c841d0dd2119df3305",
                 "value": {
-                    "__fixed__": "143.7356"
+                    "__fixed__": "167.5456"
                 }
             },
             {
                 "key": "currency.balances:ca4ebdf557eae168bc5cabc85b98f1f43a4131faab877eef09b429e02d5175e5",
                 "value": {
-                    "__fixed__": "143.7356"
+                    "__fixed__": "168.2919"
                 }
             },
             {
@@ -2220,9 +2870,27 @@
                 }
             },
             {
+                "key": "currency.balances:cdadd96ec902cdf73ec2d8439f4053cdeca7f04c851ede519438cac116ec8836",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
+                "key": "currency.balances:cdd9ecc3ffad0aee0ff16ea1bdab4fa5de9ce8e169f007c8988ad87e5125be65",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
                 "key": "currency.balances:cdff2cc4bce459cadf340af4cf0de40a16c9d0a2938e11c4693ce355977ccdaf",
                 "value": {
                     "__fixed__": "1.435493507856006278"
+                }
+            },
+            {
+                "key": "currency.balances:ce4893155b0368895348fae914cd5fc4a2075ce341c8727553b2f8ae4618f516",
+                "value": {
+                    "__fixed__": "2.381"
                 }
             },
             {
@@ -2250,15 +2918,39 @@
                 }
             },
             {
+                "key": "currency.balances:d1753b0d6fe698efeafbfff73d4beb604588279d80cdb4bdd4d22c739d53720b",
+                "value": {
+                    "__fixed__": "0.7463"
+                }
+            },
+            {
                 "key": "currency.balances:d376127e25c4b41583fe0840618a8478d73c26878ab9679297bc1e45371bf1fe",
                 "value": {
                     "__fixed__": "19.19661255579699733485"
                 }
             },
             {
+                "key": "currency.balances:d44e45f82cb40deb28f088eb2251c944db0bc2f878ee99382e00bb674684428c",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
+                "key": "currency.balances:d4a0ff1a7e3e6ab627213b8bc7fb1c66146aa2f977254b511e10290b10e133d2",
+                "value": {
+                    "__fixed__": "0.7463"
+                }
+            },
+            {
                 "key": "currency.balances:d6121f951fdb947760a3b3b4c7fdd60da5dc4c27cbf6ce6557c05045162543c4",
                 "value": {
                     "__fixed__": "1.3394546986552956245"
+                }
+            },
+            {
+                "key": "currency.balances:d62bea15c14beb21272b3a63784ed42256e85678961a9b85124b9a23c292fafb",
+                "value": {
+                    "__fixed__": "2.381"
                 }
             },
             {
@@ -2286,6 +2978,12 @@
                 }
             },
             {
+                "key": "currency.balances:d8cbcc12cd2ca2840f08db83ea8ba3a81d1f7be12df1fee73caea7eb1d345499",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
                 "key": "currency.balances:d97eab80096335c24b6c95e445106b39c2e0a1291b42ee5b2c879b0be0767ab1",
                 "value": {
                     "__fixed__": "1.3632357253311018134"
@@ -2300,7 +2998,13 @@
             {
                 "key": "currency.balances:db21a73137672f075f9a8ee142a1aa4839a5deb28ef03a10f3e7e16c87db8f24",
                 "value": {
-                    "__fixed__": "146.98640000"
+                    "__fixed__": "207.66240000"
+                }
+            },
+            {
+                "key": "currency.balances:dbf7b797232d2e2a70ea96a874ef7d034121d68566b83c1219804fa220083c6c",
+                "value": {
+                    "__fixed__": "2.381"
                 }
             },
             {
@@ -2330,13 +3034,13 @@
             {
                 "key": "currency.balances:df12392c53d516d310677428ff89e278c8f37612d5ace3e7c79e3e54fba98cf7",
                 "value": {
-                    "__fixed__": "140.7053"
+                    "__fixed__": "164.5153"
                 }
             },
             {
                 "key": "currency.balances:dff5d54d9c3cdb04d279c3c0a123d6a73a94e0725d7eac955fdf87298dbe45a6",
                 "value": {
-                    "__fixed__": "147.98640000"
+                    "__fixed__": "208.66240000"
                 }
             },
             {
@@ -2366,7 +3070,7 @@
             {
                 "key": "currency.balances:e61015a85575296b9c2a4a2a27cf92373677a61e821a95797b6dbd8afe903528",
                 "value": {
-                    "__fixed__": "0.7463"
+                    "__fixed__": "1.4926"
                 }
             },
             {
@@ -2400,6 +3104,12 @@
                 }
             },
             {
+                "key": "currency.balances:e90b63ac24bbddba833fc2478e8725bc7d31d2f8e4cc2e551cfaf56ade39dc5f",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
                 "key": "currency.balances:e9155848640861cdc562d1209693fe0f8ce1a25a17cf65cbebf53e0fcf8a4958",
                 "value": {
                     "__fixed__": "19.19661255579699733485"
@@ -2408,19 +3118,37 @@
             {
                 "key": "currency.balances:e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931",
                 "value": {
-                    "__fixed__": "863789.53642533893552038210"
+                    "__fixed__": "862230.14272533893552038210"
                 }
             },
             {
                 "key": "currency.balances:e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931:con_multisend",
                 "value": {
-                    "__fixed__": "21000899999992231.59622468319208693610"
+                    "__fixed__": "21000899999990964.90622468319208693610"
+                }
+            },
+            {
+                "key": "currency.balances:eb0cb8279170e1e0359a88eb2d7907e79e97b49139f103d1dd17b5abb969c763",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
+                "key": "currency.balances:eca40f21024d0a2b99a236f48feffb81643b08f820f0e216a8fd9cb96ffb82e1",
+                "value": {
+                    "__fixed__": "0.7463"
                 }
             },
             {
                 "key": "currency.balances:ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9",
                 "value": {
-                    "__fixed__": "20.80150000"
+                    "__fixed__": "26.05400000"
+                }
+            },
+            {
+                "key": "currency.balances:ee3cb64b2bb34d8d741596ca737f4e89532be8a76c356bbfba2b9afe2f56bae1",
+                "value": {
+                    "__fixed__": "2.381"
                 }
             },
             {
@@ -2438,7 +3166,7 @@
             {
                 "key": "currency.balances:efc7c549869f9f901330d92e3e4f7393d9acd33dc574fe3c2498b61a2d0401ca",
                 "value": {
-                    "__fixed__": "0.7463"
+                    "__fixed__": "1.4926"
                 }
             },
             {
@@ -2454,9 +3182,21 @@
                 }
             },
             {
+                "key": "currency.balances:f3a8d3706317f0b04a77e3b28a7e9c5f9fa533cbc60970e4f233660d84e88d54",
+                "value": {
+                    "__fixed__": "2.381"
+                }
+            },
+            {
                 "key": "currency.balances:f41838a849334ee549a98eb0d7550afb20a56e25e332cc1b5b9b14c15e3f3b73",
                 "value": {
                     "__fixed__": "248.14400082077605404338"
+                }
+            },
+            {
+                "key": "currency.balances:f473c2ab9c6027668da02bd1b6ee6d1d84cbb24e97f8cd6a821bec61eb3af6e1",
+                "value": {
+                    "__fixed__": "0.7463"
                 }
             },
             {
@@ -2466,21 +3206,39 @@
                 }
             },
             {
+                "key": "currency.balances:f4bcd51ba5623d57eba5abcf1a7b4441f4131ccd931a883803111693e78847b8",
+                "value": {
+                    "__fixed__": "0.7463"
+                }
+            },
+            {
                 "key": "currency.balances:f581c09053c8875f89af0bb1d835dd051593e10b40f1fc0e6dd7e584db1b7595",
                 "value": {
-                    "__fixed__": "143.7356"
+                    "__fixed__": "167.5456"
+                }
+            },
+            {
+                "key": "currency.balances:f5839bdb04789b39de7466499f3ef6edb933f1fbc12dadabe79befa6b5245ab6",
+                "value": {
+                    "__fixed__": "2.381"
                 }
             },
             {
                 "key": "currency.balances:f5bdce0a60d1ea3db3eafd3daf923d27035824aa1d0ec4a179dced3d2be26143",
                 "value": {
-                    "__fixed__": "143.7356"
+                    "__fixed__": "188.2919"
                 }
             },
             {
                 "key": "currency.balances:f63cd419a54e6b2e1a73744a009633120c2aebc26eca50878e7390b1843b8b90",
                 "value": {
                     "__fixed__": "1.522301713250560088"
+                }
+            },
+            {
+                "key": "currency.balances:f7ec19ad2747c30ee570897d52a3cd2f172eff4aab74f66ed98c55c960252b4c",
+                "value": {
+                    "__fixed__": "2.381"
                 }
             },
             {
@@ -2492,19 +3250,19 @@
             {
                 "key": "currency.balances:f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce",
                 "value": {
-                    "__fixed__": "10148.4975"
+                    "__fixed__": "10173.0538"
                 }
             },
             {
                 "key": "currency.balances:f8e50a34e0ab068450b67f0855763ac9de1db6be2b19e82748dfb9232e915ea5",
                 "value": {
-                    "__fixed__": "143.7356"
+                    "__fixed__": "168.2919"
                 }
             },
             {
                 "key": "currency.balances:f9642da69987e29f2c8307b5a2afa408ee0816e36dc9ef2abb766b3df7cd16f7",
                 "value": {
-                    "__fixed__": "37.0284"
+                    "__fixed__": "60.8384"
                 }
             },
             {
@@ -2517,6 +3275,12 @@
                 "key": "currency.balances:fb6616c4a2feb99a294c9daa281a5738d9da51552f80368a16a0e6b14b304e3a",
                 "value": {
                     "__fixed__": "20.11213512233705944193"
+                }
+            },
+            {
+                "key": "currency.balances:fbae97cf7a6503f3448013cd5db619d12d96b09a08daa6d46ac036fbf7659fd6",
+                "value": {
+                    "__fixed__": "2.381"
                 }
             },
             {
