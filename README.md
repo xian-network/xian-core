@@ -24,6 +24,7 @@ Follow these steps to set up the environment on Ubuntu 22.04:
    ./configure --prefix=/usr/local
    make
    sudo make install
+   cd ..
    ```
 
 4. **Install necessary packages:**
