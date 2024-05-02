@@ -401,11 +401,11 @@ def validate_transaction(client, nonce_storage, tx):
         check_contract_name(contract, func, name)
 
 
-def recompile_contract_from_source(s: dict):
-        code = compile(s["value"], '', "exec")
-        serialized_code = marshal.dumps(code)
-        hexadecimal_string = binascii.hexlify(serialized_code).decode()
-        return hexadecimal_string
+def compile_contract_from_source(s: dict):
+    code = compile(s["value"], '', "exec")
+    serialized_code = marshal.dumps(code)
+    hexadecimal_string = binascii.hexlify(serialized_code).decode()
+    return hexadecimal_string
 
 
 def apply_state_changes_from_block(client, nonce_storage, block):
@@ -419,10 +419,11 @@ def apply_state_changes_from_block(client, nonce_storage, block):
         parts = s["key"].split(".")
 
         if parts[1] == "__code__":
-            contract_key = f"{parts[0]}.__compiled__"
-            print(f"processing {contract_key}")
+            compiled_contract_key = f"{parts[0]}.__compiled__"
+            print(f"processing {compiled_contract_key}")
             # the encoded contract data from genesis was invalid, so we recompile it.
-            state_changes[i + 1]["value"]["__bytes__"] = recompile_contract_from_source(s)
+            compiled_code = compile_contract_from_source(s)
+            client.raw_driver.set(compiled_contract_key, compiled_code)
         if type(s['value']) is dict:
             s['value'] = convert_dict(s['value'])
 
