@@ -1,10 +1,9 @@
-from copy import deepcopy
 import math
 import hashlib
 
 from datetime import datetime
 from abci.utils import get_logger
-from xian.utils import format_dictionary, tx_hash_from_tx
+from xian.utils import format_dictionary, tx_hash_from_tx, is_compiled_key
 from contracting.execution.executor import Executor
 from contracting.storage.encoder import convert_dict, safe_repr
 from contracting.stdlib.bridge.time import Datetime
@@ -47,7 +46,7 @@ class TxProcessor:
                 stamp_cost=stamp_cost
             )
 
-            tx_result.pop("transaction")
+            tx_result = self.prune_tx_result(tx_result)
 
             return {
                 'tx_result': tx_result,
@@ -200,3 +199,10 @@ class TxProcessor:
         return Datetime._from_datetime(
             datetime.utcfromtimestamp(math.ceil(nanos / 1e9))
         )
+
+    def prune_tx_result(self, tx_result: dict):
+        # remove compiled code in the case of a contract submission
+        tx_result["state"] = [entry for entry in tx_result["state"] if not is_compiled_key(entry["key"])]
+        # remove original sent transaction
+        tx_result.pop("transaction")
+        return tx_result
