@@ -419,9 +419,7 @@ def apply_state_changes_from_block(client, nonce_storage, block):
         parts = s["key"].split(".")
 
         if parts[1] == "__code__":
-            contract_key = f"{parts[0]}.__compiled__"
-            print(f"processing {contract_key}")
-            # the encoded contract data from genesis was invalid, so we recompile it.
+            logger.info(f'Processing contract: {parts[0]}')
             state_changes[i + 1]["value"]["__bytes__"] = recompile_contract_from_source(s)
         if type(s['value']) is dict:
             s['value'] = convert_dict(s['value'])
