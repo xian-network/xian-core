@@ -219,6 +219,7 @@ def format_dictionary(d: dict) -> dict:
             d[k] = format_dictionary(v)
     return {k: v for k, v in sorted(d.items())}
 
+
 def recurse_rules(d: dict, rule: dict):
         if callable(rule):
             return rule(d)
@@ -241,6 +242,7 @@ def recurse_rules(d: dict, rule: dict):
 
         return True
 
+
 def tx_hash_from_tx(tx):
     h = hashlib.sha3_256()
     tx_dict = format_dictionary(tx)
@@ -262,9 +264,11 @@ def hash_from_rewards(rewards):
     h.update(encoded_rewards)
     return h.hexdigest()
 
+
 def dict_has_keys(d: dict, keys: set):
         key_set = set(d.keys())
         return len(keys ^ key_set) == 0
+
 
 def check_enough_stamps(
         balance: object,
@@ -285,6 +289,7 @@ def check_enough_stamps(
         if ((balance - amount) * stamps_per_tau) / 6 < 2:
             raise TransactionException('Transaction sender has too few stamps for this transaction')
 
+
 def check_format(d: dict, rule: dict):
         expected_keys = set(rule.keys())
 
@@ -292,6 +297,7 @@ def check_format(d: dict, rule: dict):
             raise TransactionException("Transaction has unexpected or missing keys")
         if not recurse_rules(d, rule):
             raise TransactionException("Transaction has wrongly formatted dictionary")
+
 
 def check_tx_keys(tx):
     metadata = tx.get("metadata")
@@ -322,6 +328,7 @@ def check_tx_keys(tx):
     if not all(keys_are_valid) and len(keys) == len(list(TRANSACTION_PAYLOAD_RULES.keys())):
         raise TransactionException("Payload keys are not valid")
 
+
 def check_tx_formatting(tx: dict):
     check_tx_keys(tx)
     check_format(tx, TRANSACTION_RULES)
@@ -330,7 +337,8 @@ def check_tx_formatting(tx: dict):
             tx["payload"]["sender"], encode(tx["payload"]), tx["metadata"]["signature"]
     ):
         raise TransactionException('Transaction is not signed by the sender')
-    
+
+
 def check_contract_name(contract, function, name):
         if (
                 contract == "submission"
