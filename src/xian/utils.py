@@ -82,11 +82,10 @@ def verify(vk: str, msg: str, signature: str):
 
 
 def hash_list(obj: list) -> bytes:
-    h = hashlib.sha3_256()
-    str = "".join(obj)
-    encoded_tx = encode(str).encode()
-    h.update(encoded_tx)
-    return h.hexdigest().encode("utf-8")
+    encoded_tx = encode("".join(obj)).encode()
+    hash_sha3 = hashlib.sha3_256()
+    hash_sha3.update(encoded_tx)
+    return hash_sha3.hexdigest().encode("utf-8")
 
 
 def hash_from_rewards(rewards):
@@ -221,26 +220,26 @@ def format_dictionary(d: dict) -> dict:
 
 
 def recurse_rules(d: dict, rule: dict):
-        if callable(rule):
-            return rule(d)
+    if callable(rule):
+        return rule(d)
 
-        for key, subrule in rule.items():
-            arg = d[key]
+    for key, subrule in rule.items():
+        arg = d[key]
 
-            if type(arg) == dict:
-                if not recurse_rules(arg, subrule):
+        if type(arg) == dict:
+            if not recurse_rules(arg, subrule):
+                return False
+
+        elif type(arg) == list:
+            for a in arg:
+                if not recurse_rules(a, subrule):
                     return False
 
-            elif type(arg) == list:
-                for a in arg:
-                    if not recurse_rules(a, subrule):
-                        return False
+        elif callable(subrule):
+            if not subrule(arg):
+                return False
 
-            elif callable(subrule):
-                if not subrule(arg):
-                    return False
-
-        return True
+    return True
 
 
 def tx_hash_from_tx(tx):
@@ -266,8 +265,8 @@ def hash_from_rewards(rewards):
 
 
 def dict_has_keys(d: dict, keys: set):
-        key_set = set(d.keys())
-        return len(keys ^ key_set) == 0
+    key_set = set(d.keys())
+    return len(keys ^ key_set) == 0
 
 
 def check_enough_stamps(
@@ -291,12 +290,12 @@ def check_enough_stamps(
 
 
 def check_format(d: dict, rule: dict):
-        expected_keys = set(rule.keys())
+    expected_keys = set(rule.keys())
 
-        if not dict_has_keys(d, expected_keys):
-            raise TransactionException("Transaction has unexpected or missing keys")
-        if not recurse_rules(d, rule):
-            raise TransactionException("Transaction has wrongly formatted dictionary")
+    if not dict_has_keys(d, expected_keys):
+        raise TransactionException("Transaction has unexpected or missing keys")
+    if not recurse_rules(d, rule):
+        raise TransactionException("Transaction has wrongly formatted dictionary")
 
 
 def check_tx_keys(tx):
@@ -340,80 +339,80 @@ def check_tx_formatting(tx: dict):
 
 
 def check_contract_name(contract, function, name):
-        if (
-                contract == "submission"
-                and function == "submit_contract"
-                and (len(name) > 255 or not contract_name_is_formatted(name))
-        ):
-            raise TransactionException('Transaction contract name is invalid')
+    if (
+            contract == "submission"
+            and function == "submit_contract"
+            and (len(name) > 255 or not contract_name_is_formatted(name))
+    ):
+        raise TransactionException('Transaction contract name is invalid')
 
 
 def validate_transaction(client, nonce_storage, tx):
-        # Check transaction formatting
-        check_tx_formatting(tx)
+    # Check transaction formatting
+    check_tx_formatting(tx)
 
-        # Check if nonce is greater than the current nonce
-        nonce_storage.check_nonce(tx)
+    # Check if nonce is greater than the current nonce
+    nonce_storage.check_nonce(tx)
 
-        # Get the senders balance and the current stamp rate
-        try:
-            balance = client.get_var(
-                contract="currency",
-                variable="balances",
-                arguments=[tx["payload"]["sender"]],
-                mark=False
-            )
-        except Exception as e:
-            raise TransactionException(f"Failed to retrieve 'currency' balance for sender: {e}")
-
-        try:
-            stamp_rate = client.get_var(
-                contract="stamp_cost",
-                variable="S",
-                arguments=["value"],
-                mark=False
-            )
-        except Exception as e:
-            raise TransactionException(f"Failed to get stamp cost: {e}")
-
-        contract = tx["payload"]["contract"]
-        func = tx["payload"]["function"]
-        stamps_supplied = tx["payload"]["stamps_supplied"]
-
-        if stamps_supplied is None:
-            stamps_supplied = 0
-
-        if stamp_rate is None:
-            stamp_rate = 0
-
-        if balance is None:
-            balance = 0
-
-        # Get how much they are sending
-        amount = tx["payload"]["kwargs"].get("amount")
-        if amount is None:
-            amount = 0
-
-        # Check if they have enough stamps for the operation
-        check_enough_stamps(
-            balance,
-            stamp_rate,
-            stamps_supplied,
-            contract=contract,
-            function=func,
-            amount=amount,
+    # Get the senders balance and the current stamp rate
+    try:
+        balance = client.get_var(
+            contract="currency",
+            variable="balances",
+            arguments=[tx["payload"]["sender"]],
+            mark=False
         )
+    except Exception as e:
+        raise TransactionException(f"Failed to retrieve 'currency' balance for sender: {e}")
 
-        # Check if contract name is valid
-        name = tx["payload"]["kwargs"].get("name")
-        check_contract_name(contract, func, name)
+    try:
+        stamp_rate = client.get_var(
+            contract="stamp_cost",
+            variable="S",
+            arguments=["value"],
+            mark=False
+        )
+    except Exception as e:
+        raise TransactionException(f"Failed to get stamp cost: {e}")
+
+    contract = tx["payload"]["contract"]
+    func = tx["payload"]["function"]
+    stamps_supplied = tx["payload"]["stamps_supplied"]
+
+    if stamps_supplied is None:
+        stamps_supplied = 0
+
+    if stamp_rate is None:
+        stamp_rate = 0
+
+    if balance is None:
+        balance = 0
+
+    # Get how much they are sending
+    amount = tx["payload"]["kwargs"].get("amount")
+    if amount is None:
+        amount = 0
+
+    # Check if they have enough stamps for the operation
+    check_enough_stamps(
+        balance,
+        stamp_rate,
+        stamps_supplied,
+        contract=contract,
+        function=func,
+        amount=amount,
+    )
+
+    # Check if contract name is valid
+    name = tx["payload"]["kwargs"].get("name")
+    check_contract_name(contract, func, name)
 
 
 def recompile_contract_from_source(s: dict):
-        code = compile(s["value"], '', "exec")
-        serialized_code = marshal.dumps(code)
-        hexadecimal_string = binascii.hexlify(serialized_code).decode()
-        return hexadecimal_string
+    code = compile(s["value"], '', "exec")
+    serialized_code = marshal.dumps(code)
+    hexadecimal_string = binascii.hexlify(serialized_code).decode()
+    return hexadecimal_string
 
 
 def apply_state_changes_from_block(client, nonce_storage, block):
