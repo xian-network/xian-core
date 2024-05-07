@@ -23,15 +23,7 @@ Follow these steps to set up the environment on Ubuntu 22.04:
 
 3. **Install Python 3.11.8**
 
-   ```bash
-   wget https://www.python.org/ftp/python/3.11.8/Python-3.11.8.tgz
-   tar xzf Python-3.11.8.tgz
-   cd Python-3.11.8
-   ./configure --prefix=/usr/local
-   make
-   sudo make install
-   cd ..
-   ```
+   Use your preferred way of installing this.
 
 4. **Clone Xian and related repositories:**
 
