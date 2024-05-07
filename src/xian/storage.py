@@ -1,7 +1,7 @@
 import xian.constants as c
 from xian.exceptions import TransactionException
 
-from contracting import config
+from contracting import constants
 
 
 class NonceStorage:
@@ -19,23 +19,23 @@ class NonceStorage:
         
     def set_nonce_by_tx(self, tx):
         self.client.raw_driver.set(
-            c.NONCE_FILENAME + config.INDEX_SEPARATOR + tx['payload']['sender'] + config.DELIMITER,
+            c.NONCE_FILENAME + constants.INDEX_SEPARATOR + tx['payload']['sender'] + constants.DELIMITER,
             tx['payload']['nonce']
         )
 
     def set_nonce(self, sender, value):
         self.client.raw_driver.set(
-            c.NONCE_FILENAME + config.INDEX_SEPARATOR + sender + config.DELIMITER,
+            c.NONCE_FILENAME + constants.INDEX_SEPARATOR + sender + constants.DELIMITER,
             value
         )
 
     # Move this to transaction.py
     def get_nonce(self, sender):
-        return self.client.raw_driver.get(c.NONCE_FILENAME + config.INDEX_SEPARATOR + sender + config.DELIMITER)
+        return self.client.raw_driver.get(c.NONCE_FILENAME + constants.INDEX_SEPARATOR + sender + constants.DELIMITER)
 
     # Move this to transaction.py
     def get_pending_nonce(self, sender):
-        return self.client.raw_driver.get(c.PENDING_NONCE_FILENAME + config.INDEX_SEPARATOR + sender + config.DELIMITER)
+        return self.client.raw_driver.get(c.PENDING_NONCE_FILENAME + constants.INDEX_SEPARATOR + sender + constants.DELIMITER)
 
     def safe_set_nonce(self, sender, value):
         current_nonce = self.get_nonce(sender=sender)
@@ -45,13 +45,13 @@ class NonceStorage:
 
         if value > current_nonce:
             self.client.raw_driver.set(
-                c.NONCE_FILENAME + config.INDEX_SEPARATOR + sender + config.DELIMITER,
+                c.NONCE_FILENAME + constants.INDEX_SEPARATOR + sender + constants.DELIMITER,
                 value
             )
 
     def set_pending_nonce(self, sender, value):
         self.client.raw_driver.set(
-            c.PENDING_NONCE_FILENAME + config.INDEX_SEPARATOR + sender + config.DELIMITER,
+            c.PENDING_NONCE_FILENAME + constants.INDEX_SEPARATOR + sender + constants.DELIMITER,
             value
         )
 
