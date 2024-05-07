@@ -12,17 +12,20 @@ Follow these steps to set up the environment on Ubuntu 22.04:
 
    ```bash
    sudo apt-get update
-   sudo add-apt-repository ppa:deadsnakes/ppa -y
    sudo apt-get update
    ```
 
 2. **Install necessary packages:**
 
    ```bash
-   sudo apt-get install pkg-config python3.11 python3.11-dev python3.11-venv libhdf5-dev build-essential
+   sudo apt-get install pkg-config libhdf5-dev build-essential
    ```
 
-3. **Clone Xian and related repositories:**
+3. **Install Python 3.11.8**
+
+   Use your preferred way of installing this.
+
+4. **Clone Xian and related repositories:**
 
    ```bash
    git clone https://github.com/xian-network/xian-core.git
@@ -30,7 +33,7 @@ Follow these steps to set up the environment on Ubuntu 22.04:
    git clone https://github.com/xian-network/contracting.git
    ```
 
-4. **Set up Python virtual environment and dependencies:**
+5. **Set up Python virtual environment and dependencies:**
 
    ```bash
    python3.11 -m venv xian_venv
@@ -38,7 +41,7 @@ Follow these steps to set up the environment on Ubuntu 22.04:
    pip install -e contracting/ -e .
    ```
 
-5. **Download, unpack, and initialize CometBFT:**
+6. **Download, unpack, and initialize CometBFT:**
 
    ```bash
    wget https://github.com/cometbft/cometbft/releases/download/v0.38.6/cometbft_0.38.6_linux_amd64.tar.gz
@@ -47,7 +50,7 @@ Follow these steps to set up the environment on Ubuntu 22.04:
    ./cometbft init
    ```
 
-6. **Configuring your node:**
+7. **Configuring your node:**
 
    - **For starting your own local network:**
 
@@ -65,7 +68,7 @@ Follow these steps to set up the environment on Ubuntu 22.04:
 
      Use `--seed-node` to specify the seed node's IP address you want to connect to. `--validator-privkey` is your validator wallet's private key. Ensure ports 26657 (REST API), 26656 (Node Communication), and 26660 (Prometheus Metrics) are open on your firewall.
 
-7. **Run CometBFT and Xian:**
+8. **Run CometBFT and Xian:**
 
    Run CometBFT:
 
