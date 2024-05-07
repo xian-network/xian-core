@@ -1,7 +1,7 @@
 import xian.constants as c
 from xian.exceptions import TransactionException
 
-from contracting import config
+from contracting import constants as config
 
 
 class NonceStorage:
