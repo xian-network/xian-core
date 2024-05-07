@@ -69,10 +69,11 @@ def build_genesis_block(founder_sk: str, contract_state: dict, run_state: dict):
     genesis_block['genesis'] = sorted(genesis_block['genesis'], key=lambda d: d['key'])
     genesis_block['nonces'] = nonces
 
-    print('Signing state changes...')
-    founders_wallet = Wallet(seed=bytes.fromhex(founder_sk))
-    genesis_block['origin']['sender'] = founders_wallet.public_key
-    genesis_block['origin']['signature'] = founders_wallet.sign_msg(hash_genesis_block_state_changes(genesis_block['genesis']))
+    if founder_sk:
+        print('Signing state changes...')
+        founders_wallet = Wallet(seed=bytes.fromhex(founder_sk))
+        genesis_block['origin']['sender'] = founders_wallet.public_key
+        genesis_block['origin']['signature'] = founders_wallet.sign_msg(hash_genesis_block_state_changes(genesis_block['genesis']))
     return genesis_block
 
 
@@ -93,8 +94,8 @@ def main(
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('-k', '--key', type=str, required=True)
-    parser.add_argument('--output-path', type=str, required=True)
+    parser.add_argument('-k', '--key', type=str, required=False)
+    parser.add_argument('--output-path', type=str, required=False)
     args = parser.parse_args()
-    output_path = Path(args.output_path)
+    output_path = Path(args.output_path) if args.output_path is not None else Path("./")
     main(args.key, output_path)
