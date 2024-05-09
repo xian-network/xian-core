@@ -97,5 +97,5 @@ if __name__ == '__main__':
     parser.add_argument('-k', '--key', type=str, required=False)
     parser.add_argument('--output-path', type=str, required=False)
     args = parser.parse_args()
-    output_path = Path(args.output_path) if args.output_path is not None else Path("./")
+    output_path = Path(args.output_path) if args.output_path is not None else Path.cwd()
     main(args.key, output_path)
