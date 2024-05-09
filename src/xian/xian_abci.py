@@ -36,6 +36,7 @@ from xian.utils import (
 # Logging (30 = WARNING)
 get_logger("requests").setLevel(30)
 get_logger("urllib3").setLevel(30)
+get_logger("asyncio").setLevel(30)
 logger = get_logger(__name__)
 
 
