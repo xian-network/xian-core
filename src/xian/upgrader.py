@@ -1,10 +1,7 @@
 import os
 import gc
 
-from abci.utils import get_logger
-
-# Logging
-logger = get_logger(__name__)
+from loguru import logger
 
 
 class UpgradeHandler:

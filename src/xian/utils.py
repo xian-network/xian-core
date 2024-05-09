@@ -16,8 +16,7 @@ from contracting.stdlib.bridge.time import Datetime
 from contracting.storage.encoder import encode, decode, convert_dict
 from xian.exceptions import TransactionException
 from xian.formatting import contract_name_is_formatted, TRANSACTION_PAYLOAD_RULES, TRANSACTION_RULES
-from abci.utils import get_logger
-
+from loguru import logger
 
 # Z85CHARS is the base 85 symbol table
 Z85CHARS = b"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#"
@@ -25,9 +24,6 @@ Z85CHARS = b"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=
 Z85MAP = {c: idx for idx, c in enumerate(Z85CHARS)}
 
 _85s = [85**i for i in range(5)][::-1]
-
-# Logging
-logger = get_logger(__name__)
 
 
 def z85_encode(rawbytes):
