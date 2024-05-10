@@ -16,8 +16,7 @@ from contracting.stdlib.bridge.time import Datetime
 from contracting.storage.encoder import encode, decode, convert_dict
 from xian.exceptions import TransactionException
 from xian.formatting import contract_name_is_formatted, TRANSACTION_PAYLOAD_RULES, TRANSACTION_RULES
-from abci.utils import get_logger
-
+from loguru import logger
 
 # Z85CHARS is the base 85 symbol table
 Z85CHARS = b"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#"
@@ -25,9 +24,6 @@ Z85CHARS = b"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=
 Z85MAP = {c: idx for idx, c in enumerate(Z85CHARS)}
 
 _85s = [85**i for i in range(5)][::-1]
-
-# Logging
-logger = get_logger(__name__)
 
 
 def z85_encode(rawbytes):
@@ -426,11 +422,9 @@ def apply_state_changes_from_block(client, nonce_storage, block):
         parts = s["key"].split(".")
 
         if parts[1] == "__code__":
-            compiled_contract_key = f"{parts[0]}.__compiled__"
-            print(f"processing {compiled_contract_key}")
-            # the encoded contract data from genesis was invalid, so we recompile it.
+            logger.info(f'Processing contract: {parts[0]}')
             compiled_code = compile_contract_from_source(s)
-            client.raw_driver.set(compiled_contract_key, compiled_code)
+            client.raw_driver.set(f"{parts[0]}.__compiled__", compiled_code)
         if type(s['value']) is dict:
             s['value'] = convert_dict(s['value'])
 
