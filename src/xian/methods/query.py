@@ -9,7 +9,9 @@ from abci.application import (
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 from contracting.compilation import parser
 from contracting.storage.encoder import Encoder
-from loguru import logger
+from abci.utils import get_logger
+
+logger = get_logger(__name__)
 
 
 def query(self, req) -> ResponseQuery:

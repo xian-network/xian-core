@@ -8,7 +8,7 @@ import secrets
 
 class StampEstimator:
     def __init__(self):
-        self.executor = Executor(metering=False, bypass_balance_amount=True, bypass_cache=True)
+        self.executor = Executor(metering=False, bypass_balance_amount=True)
 
     def generate_environment(self, input_hash='0' * 64, bhash='0' * 64, num=1):
         now = Datetime._from_datetime(

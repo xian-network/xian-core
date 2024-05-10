@@ -21,7 +21,9 @@ from xian.rewards import (
     distribute_static_rewards
 )
 from abci.application import ErrorCode
-from loguru import logger
+from abci.utils import get_logger
+
+logger = get_logger(__name__)
 
 
 def finalize_block(self, req) -> ResponseFinalizeBlock:
@@ -37,7 +39,7 @@ def finalize_block(self, req) -> ResponseFinalizeBlock:
         "hash": hash,
     }   
 
-    for tx in req.txs:
+    for tx in req.txs: 
         try:
             tx = decode_transaction_bytes(tx)
             sender, signature, payload = unpack_transaction(tx)
