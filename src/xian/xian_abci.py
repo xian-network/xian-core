@@ -11,6 +11,7 @@ from abci.server import ABCIServer
 from abci.application import BaseApplication
 
 from contracting.client import ContractingClient
+from contracting.storage.driver import build_directories
 
 from xian.methods import (
     init_chain,
@@ -69,6 +70,7 @@ class Xian(BaseApplication):
             logger.error(e)
             raise SystemExit()
 
+        build_directories()
         self.client = ContractingClient()
         self.nonce_storage = NonceStorage(self.client)
         self.upgrader = UpgradeHandler(self)
