@@ -5,8 +5,7 @@ import gc
 
 os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
 
-from loguru import logger
-from datetime import timedelta
+from abci.utils import get_logger
 from abci.server import ABCIServer
 from abci.application import BaseApplication
 
@@ -34,10 +33,10 @@ from xian.utils import (
     load_genesis_data,
 )
 
-from abci.utils import get_logger
+# Logging (30 = WARNING)
 get_logger("requests").setLevel(30)
 get_logger("urllib3").setLevel(30)
-get_logger("asyncio").setLevel(30)
+logger = get_logger(__name__)
 
 
 def load_module(module_path, original_module_path):
@@ -166,19 +165,6 @@ class Xian(BaseApplication):
 
 
 def main():
-    logger.remove()
-
-    logger.add(
-        sys.stderr,
-        level='DEBUG')
-
-    logger.add(
-        os.path.join('log', '{time}.log'),
-        retention=timedelta(days=3),
-        format='{time} {level} {name} {message}',
-        level='DEBUG',
-        rotation='10 MB')
-
     app = ABCIServer(app=Xian())
     app.run()
 
