@@ -6,7 +6,6 @@ import signal
 import platform
 from .utils import *
 from io import BytesIO
-from loguru import logger
 from cometbft.abci.v1beta3.types_pb2 import (
     Request,
     Response,
@@ -20,6 +19,8 @@ from .application import BaseApplication
 
 DefaultABCIPort = 26658
 MaxReadInBytes = 64 * 1024  # Max we'll consume on a read stream
+
+log = get_logger("abci.server")
 
 
 class ProtocolHandler:
@@ -120,7 +121,7 @@ class ABCIServer:
 
     port: int
     protocol: ProtocolHandler
-    
+
     def __init__(self, app: BaseApplication, port=DefaultABCIPort) -> None:
         """
         Requires App and an optional port if you changed the ABCI port on
@@ -150,10 +151,10 @@ class ABCIServer:
                 signal.SIGTERM, lambda: asyncio.create_task(_stop())
             )
         try:
-            logger.info(" ~ running app - press CTRL-C to stop ~")
+            log.info(" ~ running app - press CTRL-C to stop ~")
             loop.run_until_complete(self._start())
         except:
-            logger.warning(" ... shutting down")
+            log.warn(" ... shutting down")
             if on_windows:
                 loop.run_until_complete(_stop())
         finally:
@@ -171,7 +172,7 @@ class ABCIServer:
         self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
     ) -> None:
         ip, socket, *_ = writer.get_extra_info("peername")
-        logger.info(f" ... connection @ {ip}:{socket}")
+        log.info(f" ... connection @ {ip}:{socket}")
 
         data = BytesIO()
         last_pos = 0
@@ -183,7 +184,7 @@ class ABCIServer:
             
             bits = await reader.read(MaxReadInBytes)
             if len(bits) == 0:
-                logger.error(" ... tendermint closed connection")
+                log.error(" ... tendermint closed connection")
                 # break to the _stop if the connection stops
                 break
 
@@ -209,7 +210,7 @@ async def _stop() -> None:
     Clean up all async tasks.  Called on a signal or a connection closed by
     tendermint
     """
-    logger.warning(" ... received exit signal")
+    log.warn(" ... received exit signal")
     tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
     for task in tasks:
         task.cancel()
