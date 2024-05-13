@@ -1,6 +1,6 @@
 # Xian
 
-ABCI application to be used with CometBFT 0.38.6
+ABCI application to be used with CometBFT 0.38.7
 
 ## Installation
 
