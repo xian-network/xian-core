@@ -16,8 +16,6 @@ from cometbft.abci.v1beta1.types_pb2 import (
     ResponseException,
 )
 
-from .application import BaseApplication
-
 DefaultABCIPort = 26658
 MaxReadInBytes = 64 * 1024  # Max we'll consume on a read stream
 
@@ -27,8 +25,6 @@ class ProtocolHandler:
     Internal handler called by the server to process requests from
     Tendermint.  The handler delegates calls to your application
     """
-
-    app: BaseApplication
 
     def __init__(self, app):
         self.app = app
@@ -121,15 +117,11 @@ class ABCIServer:
     port: int
     protocol: ProtocolHandler
     
-    def __init__(self, app: BaseApplication, port=DefaultABCIPort) -> None:
+    def __init__(self, app, port=DefaultABCIPort) -> None:
         """
         Requires App and an optional port if you changed the ABCI port on
         Tendermint
         """
-        if not app or not isinstance(app, BaseApplication):
-            raise TypeError(
-                "Application missing or not an instance of ABCI Base Application"
-            )
         self.port = port
         self.protocol = ProtocolHandler(app)
 

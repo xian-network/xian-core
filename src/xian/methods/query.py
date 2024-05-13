@@ -2,7 +2,7 @@ import json
 
 from cometbft.abci.v1beta1.types_pb2 import ResponseQuery
 from xian.utils import encode_str
-from abci.application import (
+from xian.constants import (
     OkCode,
     ErrorCode
 )

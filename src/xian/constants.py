@@ -11,3 +11,6 @@ STORAGE_HOME = TENDERMINT_HOME / Path('xian/')
 LATEST_BLOCK_HASH_KEY = "__latest_block.hash"
 LATEST_BLOCK_HEIGHT_KEY = "__latest_block.height"
 DUST_EXPONENT = 8
+
+OkCode = 0
+ErrorCode = 1

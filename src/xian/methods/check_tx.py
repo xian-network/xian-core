@@ -5,7 +5,7 @@ from xian.utils import (
     verify,
     validate_transaction
 )
-from abci.application import ErrorCode, OkCode
+from xian.constants import ErrorCode, OkCode
 
 import json
 
