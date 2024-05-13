@@ -88,9 +88,6 @@ class BaseApplication:
     
     def finalize_block(self, req: RequestFinalizeBlock) -> ResponseFinalizeBlock:
         r = ResponseFinalizeBlock()
-        r.app_hash = b""
-        r.validator_updates = None
-        r.consensus_param_updates = None
         return ResponseFinalizeBlock()
 
     def query(self, req: RequestQuery) -> ResponseQuery:
