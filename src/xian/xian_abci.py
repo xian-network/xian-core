@@ -8,7 +8,6 @@ os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
 from loguru import logger
 from datetime import timedelta
 from abci.server import ABCIServer
-from abci.application import BaseApplication
 
 from contracting.client import ContractingClient
 
@@ -60,7 +59,7 @@ def load_module(module_path, original_module_path):
         raise Exception(f"Failed to load module {module_path}: {e}")
 
 
-class Xian(BaseApplication):
+class Xian():
     def __init__(self):
         try:
             self.config = load_tendermint_config()

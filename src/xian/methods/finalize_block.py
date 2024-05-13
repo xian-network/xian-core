@@ -20,7 +20,7 @@ from xian.rewards import (
     distribute_rewards,
     distribute_static_rewards
 )
-from abci.application import ErrorCode
+from xian.constants import ErrorCode
 from loguru import logger
 
 
