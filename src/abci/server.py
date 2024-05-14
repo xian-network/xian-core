@@ -13,6 +13,7 @@ from io import BytesIO
 # Max we'll consume on a read stream
 MaxReadInBytes = 64 * 1024
 
+
 @dataclass
 class ProtocolHandler:
     app: object
@@ -114,6 +115,7 @@ class ProtocolHandler:
             'exception',
             ResponseException(error="ABCI request not found")
         )
+
 
 class ABCIServer:
     def __init__(self, app, socket_path="/tmp/abci.sock") -> None:
