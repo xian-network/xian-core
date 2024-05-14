@@ -2,6 +2,7 @@ import asyncio
 import signal
 import platform
 import os
+
 from loguru import logger
 from dataclasses import dataclass
 from cometbft.abci.v1beta3.types_pb2 import Request, Response
@@ -9,7 +10,8 @@ from cometbft.abci.v1beta1.types_pb2 import ResponseFlush, ResponseException
 from .utils import read_messages, write_message
 from io import BytesIO
 
-MaxReadInBytes = 64 * 1024  # Max we'll consume on a read stream
+# Max we'll consume on a read stream
+MaxReadInBytes = 64 * 1024
 
 @dataclass
 class ProtocolHandler:
@@ -24,49 +26,94 @@ class ProtocolHandler:
         return write_message(response)
 
     def flush(self, req) -> bytes:
-        return self.create_response('flush', ResponseFlush())
+        return self.create_response(
+            'flush',
+            ResponseFlush()
+        )
     
     def echo(self, req) -> bytes:
-        return self.create_response('echo', self.app.echo(req.echo))
+        return self.create_response(
+            'echo',
+            self.app.echo(req.echo)
+        )
 
     def info(self, req) -> bytes:
-        return self.create_response('info', self.app.info(req.info))
+        return self.create_response(
+            'info',
+            self.app.info(req.info)
+        )
 
     def check_tx(self, req) -> bytes:
-        return self.create_response('check_tx', self.app.check_tx(req.check_tx.tx))
+        return self.create_response(
+            'check_tx',
+            self.app.check_tx(req.check_tx.tx)
+        )
 
     def query(self, req) -> bytes:
-        return self.create_response('query', self.app.query(req.query))
+        return self.create_response(
+            'query',
+            self.app.query(req.query)
+        )
 
     def commit(self, req) -> bytes:
-        return self.create_response('commit', self.app.commit())
+        return self.create_response(
+            'commit',
+            self.app.commit()
+        )
     
     def finalize_block(self, req) -> bytes:
-        return self.create_response('finalize_block', self.app.finalize_block(req.finalize_block))
+        return self.create_response(
+            'finalize_block',
+            self.app.finalize_block(req.finalize_block)
+        )
 
     def init_chain(self, req) -> bytes:
-        return self.create_response('init_chain', self.app.init_chain(req.init_chain))
+        return self.create_response(
+            'init_chain',
+            self.app.init_chain(req.init_chain)
+        )
 
     def list_snapshots(self, req) -> bytes:
-        return self.create_response('list_snapshots', self.app.list_snapshots(req.list_snapshots))
+        return self.create_response(
+            'list_snapshots',
+            self.app.list_snapshots(req.list_snapshots)
+        )
 
     def offer_snapshot(self, req) -> bytes:
-        return self.create_response('offer_snapshot', self.app.offer_snapshot(req.offer_snapshot))
+        return self.create_response(
+            'offer_snapshot',
+            self.app.offer_snapshot(req.offer_snapshot)
+        )
 
     def load_snapshot_chunk(self, req) -> bytes:
-        return self.create_response('load_snapshot_chunk', self.app.load_snapshot_chunk(req.load_snapshot_chunk))
+        return self.create_response(
+            'load_snapshot_chunk',
+            self.app.load_snapshot_chunk(req.load_snapshot_chunk)
+        )
 
     def apply_snapshot_chunk(self, req) -> bytes:
-        return self.create_response('apply_snapshot_chunk', self.app.apply_snapshot_chunk(req.apply_snapshot_chunk))
+        return self.create_response(
+            'apply_snapshot_chunk',
+            self.app.apply_snapshot_chunk(req.apply_snapshot_chunk)
+        )
     
     def process_proposal(self, req) -> bytes:
-        return self.create_response('process_proposal', self.app.process_proposal(req.process_proposal))
+        return self.create_response(
+            'process_proposal',
+            self.app.process_proposal(req.process_proposal)
+        )
     
     def prepare_proposal(self, req) -> bytes:
-        return self.create_response('prepare_proposal', self.app.prepare_proposal(req.prepare_proposal))
+        return self.create_response(
+            'prepare_proposal',
+            self.app.prepare_proposal(req.prepare_proposal)
+        )
 
     def no_match(self, req) -> bytes:
-        return self.create_response('exception', ResponseException(error="ABCI request not found"))
+        return self.create_response(
+            'exception',
+            ResponseException(error="ABCI request not found")
+        )
 
 class ABCIServer:
     def __init__(self, app, socket_path="/tmp/abci.sock") -> None:
@@ -109,9 +156,6 @@ class ABCIServer:
             os.remove(self.socket_path)
 
     async def _handler(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
-        peername = writer.get_extra_info("peername")
-        logger.info(f" ... connection @ {peername}")
-
         buffer = bytearray()
         
         try:
