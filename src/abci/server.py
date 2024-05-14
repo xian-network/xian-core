@@ -1,6 +1,7 @@
 import asyncio
 import signal
 import platform
+import os
 from loguru import logger
 from dataclasses import dataclass
 from cometbft.abci.v1beta3.types_pb2 import Request, Response
@@ -8,7 +9,6 @@ from cometbft.abci.v1beta1.types_pb2 import ResponseFlush, ResponseException
 from .utils import read_messages, write_message
 from io import BytesIO
 
-DefaultABCIPort = 26658
 MaxReadInBytes = 64 * 1024  # Max we'll consume on a read stream
 
 @dataclass
@@ -69,8 +69,8 @@ class ProtocolHandler:
         return self.create_response('exception', ResponseException(error="ABCI request not found"))
 
 class ABCIServer:
-    def __init__(self, app, port=DefaultABCIPort) -> None:
-        self.port = port
+    def __init__(self, app, socket_path="/tmp/abci.sock") -> None:
+        self.socket_path = socket_path
         self.protocol = ProtocolHandler(app)
         self._stop_event = asyncio.Event()
         self._server = None
@@ -94,19 +94,23 @@ class ABCIServer:
             loop.close()
 
     async def _start(self) -> None:
-        self._server = await asyncio.start_server(
+        if os.path.exists(self.socket_path):
+            os.remove(self.socket_path)
+        
+        self._server = await asyncio.start_unix_server(
             self._handler,
-            host="0.0.0.0",
-            port=self.port,
+            path=self.socket_path,
         )
         try:
             await self._stop_event.wait()
         except asyncio.CancelledError:
             logger.info(" ... _start task cancelled")
+        finally:
+            os.remove(self.socket_path)
 
     async def _handler(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
-        ip, port = writer.get_extra_info("peername")
-        logger.info(f" ... connection @ {ip}:{port}")
+        peername = writer.get_extra_info("peername")
+        logger.info(f" ... connection @ {peername}")
 
         buffer = bytearray()
         
