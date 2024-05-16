@@ -30,7 +30,7 @@ Follow these steps to set up the environment on Ubuntu 22.04:
    ```bash
    git clone https://github.com/xian-network/xian-core.git
    cd xian-core
-   git clone https://github.com/xian-network/contracting.git
+   git clone https://github.com/xian-network/xian-contracting.git
    ```
 
 5. **Set up Python virtual environment and dependencies:**
@@ -38,7 +38,7 @@ Follow these steps to set up the environment on Ubuntu 22.04:
    ```bash
    python3.11 -m venv xian_venv
    source xian_venv/bin/activate
-   pip install -e contracting/ -e .
+   pip install -e xian-contracting/ -e .
    ```
 
 6. **Download, unpack, and initialize CometBFT:**
