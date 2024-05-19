@@ -1,34 +1,55 @@
+import os
+os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
+
 from io import BytesIO
 
 from abci.application import BaseApplication, OkCode
 from abci.server import ProtocolHandler
 from abci.utils import read_messages
 
-from tendermint.abci.types_pb2 import (
+from cometbft.abci.v1beta3.types_pb2 import (
     Request,
     Response,
-    RequestFlush,
-    ResponseFlush,
     RequestInitChain,
     ResponseInitChain,
-    RequestInfo,
-    ResponseInfo,
-    RequestDeliverTx,
-    ResponseDeliverTx,
-    RequestCheckTx,
     ResponseCheckTx,
+    ResponseFinalizeBlock,
+    RequestFinalizeBlock,
+    ResponseCommit,
+    RequestPrepareProposal,
+    RequestProcessProposal,
+    RequestExtendVote,
+    ResponseExtendVote,
+    RequestVerifyVoteExtension,
+    ResponseVerifyVoteExtension,
+)
+from cometbft.abci.v1beta1.types_pb2 import (
+    ResponseInfo,
     RequestQuery,
     ResponseQuery,
-    RequestBeginBlock,
-    ResponseBeginBlock,
-    RequestEndBlock,
-    ResponseEndBlock,
-    RequestCommit,
-    ResponseCommit,
+    RequestLoadSnapshotChunk,
+    ResponseLoadSnapshotChunk,
+    RequestListSnapshots,
+    ResponseListSnapshots,
+    RequestOfferSnapshot,
+    ResponseOfferSnapshot,
+    RequestApplySnapshotChunk,
+    ResponseApplySnapshotChunk,
+    RequestFlush,
+    ResponseFlush,
+    RequestEcho,
+    ResponseEcho,
+    RequestCheckTx,
     ValidatorUpdate,
+    RequestCommit,
+)
+from cometbft.abci.v1beta2.types_pb2 import (
+    ResponsePrepareProposal,
+    ResponseProcessProposal,
+    RequestInfo,
 )
 
-from tendermint.crypto.keys_pb2 import PublicKey
+from cometbft.crypto.v1.keys_pb2 import PublicKey
 
 
 class ExampleApp(BaseApplication):
@@ -52,21 +73,13 @@ class ExampleApp(BaseApplication):
     def check_tx(self, tx):
         return ResponseCheckTx(code=OkCode, data=tx, log="bueno")
 
-    def deliver_tx(self, tx):
-        return ResponseDeliverTx(code=OkCode, data=tx, log="bueno")
 
     def query(self, req):
         d = req.data
         return ResponseQuery(code=OkCode, value=d)
 
-    def begin_block(self, req):
-        return ResponseBeginBlock()
-
-    def end_block(self, req):
-        return ResponseEndBlock(validator_updates=self.validators)
-
     def commit(self):
-        return ResponseCommit(data=b"0x1234")
+        return ResponseCommit()
 
 
 def __deserialze(raw: bytes) -> Request:
@@ -85,10 +98,10 @@ def test_handler():
     assert isinstance(resp.flush, ResponseFlush)
 
     # Echo
-    # req = Request(echo=RequestEcho(message="hello"))
-    # raw = p.process("echo", req)
-    # resp = __deserialze(raw)
-    # assert resp.echo.message == "hello"
+    req = Request(echo=RequestEcho())
+    raw = p.process("echo", req)
+    resp = __deserialze(raw)
+    assert isinstance(resp.echo, ResponseEcho)
 
     # Info
     req = Request(info=RequestInfo(version="16"))
@@ -117,14 +130,6 @@ def test_handler():
     assert resp.check_tx.data == b"helloworld"
     assert resp.check_tx.log == "bueno"
 
-    # deliver_tx
-    req = Request(deliver_tx=RequestDeliverTx(tx=b"helloworld"))
-    raw = p.process("deliver_tx", req)
-    resp = __deserialze(raw)
-    assert resp.deliver_tx.code == OkCode
-    assert resp.deliver_tx.data == b"helloworld"
-    assert resp.deliver_tx.log == "bueno"
-
     # query
     req = Request(query=RequestQuery(path="/dave", data=b"0x12"))
     raw = p.process("query", req)
@@ -132,28 +137,70 @@ def test_handler():
     assert resp.query.code == OkCode
     assert resp.query.value == b"0x12"
 
-    # begin_block
-    req = Request(begin_block=RequestBeginBlock(hash=b"0x12"))
-    raw = p.process("begin_block", req)
+    # finalize_block
+    req = Request(finalize_block=RequestFinalizeBlock(txs=[b"one", b"two"]))
+    raw = p.process("finalize_block", req)
     resp = __deserialze(raw)
-    assert isinstance(resp.begin_block, ResponseBeginBlock)
+    assert isinstance(resp.finalize_block, ResponseFinalizeBlock)
 
-    # end_block
-    req = Request(end_block=RequestEndBlock(height=10))
-    raw = p.process("end_block", req)
+    # prepare_proposal
+    req = Request(prepare_proposal=RequestPrepareProposal())
+    raw = p.process("prepare_proposal", req)
     resp = __deserialze(raw)
-    assert resp.end_block.validator_updates
-    assert len(resp.end_block.validator_updates) == 2
-    assert resp.end_block.validator_updates[0].pub_key.ed25519 == b"a_pub_key"
-    assert resp.end_block.validator_updates[1].pub_key.ed25519 == b"b_pub_key"
+    assert isinstance(resp.prepare_proposal, ResponsePrepareProposal)
+
+    # process_proposal
+    req = Request(process_proposal=RequestProcessProposal())
+    raw = p.process("process_proposal", req)
+    resp = __deserialze(raw)
+    assert isinstance(resp.process_proposal, ResponseProcessProposal)
+
+    # extend_vote
+    req = Request(extend_vote=RequestExtendVote())
+    raw = p.process("extend_vote", req)
+    resp = __deserialze(raw)
+    assert isinstance(resp.extend_vote, ResponseExtendVote)
+
+    # verify_vote_extension
+    req = Request(verify_vote_extension=RequestVerifyVoteExtension())
+    raw = p.process("verify_vote_extension", req)
+    resp = __deserialze(raw)
+    assert isinstance(resp.verify_vote_extension, ResponseVerifyVoteExtension)
+
+    # load_snapshot_chunk
+    req = Request(load_snapshot_chunk=RequestLoadSnapshotChunk())
+    raw = p.process("load_snapshot_chunk", req)
+    resp = __deserialze(raw)
+    assert isinstance(resp.load_snapshot_chunk, ResponseLoadSnapshotChunk)
+
+    # list_snapshots
+    req = Request(list_snapshots=RequestListSnapshots())
+    raw = p.process("list_snapshots", req)
+    resp = __deserialze(raw)
+    assert isinstance(resp.list_snapshots, ResponseListSnapshots)
+
+    # offer_snapshot
+    req = Request(offer_snapshot=RequestOfferSnapshot())
+    raw = p.process("offer_snapshot", req)
+    resp = __deserialze(raw)
+    assert isinstance(resp.offer_snapshot, ResponseOfferSnapshot)
+
+    # apply_snapshot_chunk
+    req = Request(apply_snapshot_chunk=RequestApplySnapshotChunk())
+    raw = p.process("apply_snapshot_chunk", req)
+    resp = __deserialze(raw)
+    assert isinstance(resp.apply_snapshot_chunk, ResponseApplySnapshotChunk)
 
     # Commit
     req = Request(commit=RequestCommit())
     raw = p.process("commit", req)
     resp = __deserialze(raw)
-    assert resp.commit.data == b"0x1234"
+    assert isinstance(resp.commit, ResponseCommit)
 
     # No match
     raw = p.process("whatever", None)
     resp = __deserialze(raw)
     assert resp.exception.error == "ABCI request not found"
+
+if __name__ == "__main__":
+    test_handler()
