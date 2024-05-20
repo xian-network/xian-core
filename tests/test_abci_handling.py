@@ -81,9 +81,7 @@ class TestXianHandler(unittest.TestCase):
         self.assertIsInstance(resp.info, ResponseInfo)
 
     def test_init_chain(self):
-        val_a = ValidatorUpdate(power=10, pub_key=PublicKey(ed25519=b"a_pub_key"))
-        val_b = ValidatorUpdate(power=10, pub_key=PublicKey(ed25519=b"b_pub_key"))
-        req = Request(init_chain=RequestInitChain(validators=[val_a, val_b]))
+        req = Request(init_chain=RequestInitChain())
         resp = self.process_request("init_chain", req)
         self.assertIsInstance(resp.init_chain, ResponseInitChain)
 
