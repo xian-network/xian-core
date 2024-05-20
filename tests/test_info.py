@@ -11,9 +11,13 @@ from abci.utils import read_messages
 from cometbft.abci.v1beta3.types_pb2 import (
     Request,
     Response,
-    ResponseFinalizeBlock,
-    RequestFinalizeBlock,
 )
+
+from cometbft.abci.v1beta2.types_pb2 import (
+    RequestInfo,
+)
+
+from cometbft.abci.v1beta1.types_pb2 import ResponseInfo
 
 
 # Disable any kind of logging
@@ -29,7 +33,7 @@ def deserialize(raw: bytes) -> Response:
         logging.error("Deserialization error: %s", e)
         raise
 
-class TestFinalizeBlock(unittest.TestCase):
+class TestInfo(unittest.TestCase):
 
     def setUp(self):
         self.app = Xian()
@@ -40,10 +44,14 @@ class TestFinalizeBlock(unittest.TestCase):
         resp = deserialize(raw)
         return resp
 
-    def test_finalize_block(self):
-        request = Request(finalize_block=RequestFinalizeBlock()) # We should add a working transaction to the block
-        response = self.process_request("finalize_block", request)
-        self.assertEqual(response.finalize_block.app_hash, b"4c1326d058447b0c526d48698e9b0f5100c6f4d0785b3ec6491e9eb2c07b7580")
+    def test_info(self):
+        request = Request(info=RequestInfo())
+        response = self.process_request("info", request)
+        self.assertEqual(response.info.app_version, 1)
+        self.assertEqual(response.info.data, "") # We dont use that
+        self.assertEqual(response.info.version, "") # Not running CometBFT
+        self.assertEqual(response.info.last_block_height, 0)
+        self.assertEqual(response.info.last_block_app_hash, b"")
 
 if __name__ == "__main__":
     unittest.main()
