@@ -5,9 +5,9 @@ import gc
 
 os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
 
-from abci.utils import get_logger
+from loguru import logger
+from datetime import timedelta
 from abci.server import ABCIServer
-from abci.application import BaseApplication
 
 from contracting.client import ContractingClient
 
@@ -33,10 +33,10 @@ from xian.utils import (
     load_genesis_data,
 )
 
-# Logging (30 = WARNING)
+from abci.utils import get_logger
 get_logger("requests").setLevel(30)
 get_logger("urllib3").setLevel(30)
-logger = get_logger(__name__)
+get_logger("asyncio").setLevel(30)
 
 
 def load_module(module_path, original_module_path):
@@ -59,7 +59,7 @@ def load_module(module_path, original_module_path):
         raise Exception(f"Failed to load module {module_path}: {e}")
 
 
-class Xian(BaseApplication):
+class Xian():
     def __init__(self):
         try:
             self.config = load_tendermint_config()
@@ -165,6 +165,19 @@ class Xian(BaseApplication):
 
 
 def main():
+    logger.remove()
+
+    logger.add(
+        sys.stderr,
+        level='DEBUG')
+
+    logger.add(
+        os.path.join('log', '{time}.log'),
+        retention=timedelta(days=3),
+        format='{time} {level} {name} {message}',
+        level='DEBUG',
+        rotation='10 MB')
+
     app = ABCIServer(app=Xian())
     app.run()
 

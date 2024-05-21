@@ -28,6 +28,7 @@ class Configure:
 
     COMET_HOME = Path.home() / '.cometbft'
     CONFIG_PATH = COMET_HOME / 'config' / 'config.toml'
+    UNIX_SOCKET_PATH = 'unix:///tmp/abci.sock'
 
     def __init__(self):
         parser = ArgumentParser(description='Configure CometBFT')
@@ -208,6 +209,8 @@ class Configure:
             else:
                 print("Failed to get node information after 10 attempts.")
 
+        config['proxy_app'] = self.UNIX_SOCKET_PATH
+
         if self.args.moniker:
             config['moniker'] = self.args.moniker
 
@@ -283,7 +286,6 @@ class Configure:
 
         if self.args.prometheus:
             config['instrumentation']['prometheus'] = True
-            print('Make sure that port 26660 is open for Prometheus')
 
         print('Make sure that port 26657 is open for the REST API')
         print('Make sure that port 26656 is open for P2P Node communication')

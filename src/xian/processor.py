@@ -1,15 +1,12 @@
 import math
 import hashlib
 
+from loguru import logger
 from datetime import datetime
-from abci.utils import get_logger
 from xian.utils import format_dictionary, tx_hash_from_tx, is_compiled_key
 from contracting.execution.executor import Executor
 from contracting.storage.encoder import convert_dict, safe_repr
 from contracting.stdlib.bridge.time import Datetime
-
-# Logging
-logger = get_logger(__name__)
 
 
 class TxProcessor:
@@ -18,7 +15,6 @@ class TxProcessor:
         self.executor = Executor(driver=self.client.raw_driver, metering=metering)
 
     def process_tx(self, tx, enabled_fees=False):
-
         environment = self.get_environment(tx=tx)
 
         stamp_cost = self.client.get_var(contract='stamp_cost', variable='S', arguments=['value']) or 1
@@ -80,6 +76,8 @@ class TxProcessor:
                 metering=metering
             )
         except (TypeError, ValueError) as err:
+            import traceback
+            traceback.print_exc()
             logger.error(err)
             logger.debug({
                 'transaction': transaction,

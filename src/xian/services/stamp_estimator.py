@@ -8,7 +8,7 @@ import secrets
 
 class StampEstimator:
     def __init__(self):
-        self.executor = Executor(metering=False, bypass_balance_amount=True)
+        self.executor = Executor(metering=False, bypass_balance_amount=True, bypass_cache=True)
 
     def generate_environment(self, input_hash='0' * 64, bhash='0' * 64, num=1):
         now = Datetime._from_datetime(
@@ -29,7 +29,6 @@ class StampEstimator:
     def execute_tx(self, transaction, stamp_cost, environment: dict = {}):
 
         balance = 9999999
-
         output = self.executor.execute(
             sender=transaction['payload']['sender'],
             contract_name=transaction['payload']['contract'],
@@ -60,7 +59,10 @@ class StampEstimator:
 
     def execute(self, transaction):
         environment = self.generate_environment()
-        stamp_cost = int(self.executor.driver.get_var(contract='stamp_cost', variable='S', arguments=['value']))
+        try:
+            stamp_cost = int(self.executor.driver.get_var(contract='stamp_cost', variable='S', arguments=['value']))
+        except:
+            stamp_cost = 20
         return self.execute_tx(
             transaction=transaction,
             environment=environment,

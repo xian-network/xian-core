@@ -1,0 +1,7 @@
+version: 2
+updates:
+  - package-ecosystem: "pip" # Type of package ecosystem (e.g., "npm", "maven")
+    directory: "/" # Location of package manifests
+    schedule:
+      interval: "daily" # How often to check for updates
+    open-pull-requests-limit: 10 # Maximum number of open pull requests Dependabot should have

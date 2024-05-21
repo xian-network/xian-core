@@ -2,6 +2,7 @@ from cometbft.abci.v1beta1.types_pb2 import ValidatorUpdate
 from cometbft.crypto.v1.keys_pb2 import PublicKey
 import requests
 import base64
+import logging
 
 
 class ValidatorHandler:
@@ -27,17 +28,17 @@ class ValidatorHandler:
         validators_state = self.get_validators_from_state()
         validators_tendermint = self.get_tendermint_validators()
         if len(validators_tendermint) == 0:
-            print("Could not get validators from tendermint")
+            logging.error("Failed to get validators from tendermint")
             return []
         updates = []
         for validator in validators_state:
             if validator not in validators_tendermint:
                 updates.append(ValidatorUpdate(pub_key=PublicKey(ed25519=self.to_bytes(validator)), power=10))
-                print(f"Adding {validator} to tendermint validators")
+                logging.info(f"Adding {validator} to tendermint validators")
         for validator in validators_tendermint:
             if validator not in validators_state:
                 updates.append(ValidatorUpdate(pub_key=PublicKey(ed25519=self.to_bytes(validator)), power=0))
-                print(f"Removing {validator} from tendermint validators")
+                logging.info(f"Removing {validator} from tendermint validators")
         if len(updates) > 0:
-            print(f"Pushing validator updates")
+            logging.info(f"Validator updates: {updates}")
         return updates

@@ -1,6 +1,6 @@
 # Xian
 
-ABCI application to be used with CometBFT 0.38.6
+ABCI application to be used with CometBFT 0.38.7
 
 ## Installation
 
@@ -30,7 +30,7 @@ Follow these steps to set up the environment on Ubuntu 22.04:
    ```bash
    git clone https://github.com/xian-network/xian-core.git
    cd xian-core
-   git clone https://github.com/xian-network/contracting.git
+   git clone https://github.com/xian-network/xian-contracting.git
    ```
 
 5. **Set up Python virtual environment and dependencies:**
@@ -38,15 +38,15 @@ Follow these steps to set up the environment on Ubuntu 22.04:
    ```bash
    python3.11 -m venv xian_venv
    source xian_venv/bin/activate
-   pip install -e contracting/ -e .
+   pip install -e xian-contracting/ -e .
    ```
 
 6. **Download, unpack, and initialize CometBFT:**
 
    ```bash
-   wget https://github.com/cometbft/cometbft/releases/download/v0.38.6/cometbft_0.38.6_linux_amd64.tar.gz
-   tar -xf cometbft_0.38.6_linux_amd64.tar.gz
-   rm cometbft_0.38.6_linux_amd64.tar.gz
+   wget https://github.com/cometbft/cometbft/releases/download/v0.38.7/cometbft_0.38.7_linux_amd64.tar.gz
+   tar -xf cometbft_0.38.7_linux_amd64.tar.gz
+   rm cometbft_0.38.7_linux_amd64.tar.gz
    ./cometbft init
    ```
 
