@@ -41,6 +41,17 @@ def query(self, req) -> ResponseQuery:
             if path_parts[0] == "contracts":
                 result = self.client.raw_driver.get_contract_files()
 
+            # http://localhost:26657/abci_query?path="/lint/<code>"
+            if path_parts[0] == "lint":
+                code = base64.b64decode(path_parts[1]).decode("utf-8")
+                stdout = StringIO()
+                stderr = StringIO()
+                reporter = Reporter(stdout, stderr)
+                check(code, "<string>", reporter)
+                stdout_output = stdout.getvalue()
+                stderr_output = stderr.getvalue()
+                result = {"stdout": stdout_output, "stderr": stderr_output}
+
         # http://localhost:26657/abci_query?path="/estimate_stamps/<encoded_txn>" BLOCK SERVICE MODE ONLY
         if self.block_service_mode:
             if path_parts[0] == "estimate_stamps":
