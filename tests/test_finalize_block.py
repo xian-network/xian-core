@@ -35,6 +35,7 @@ class TestFinalizeBlock(unittest.TestCase):
         self.app = Xian()
         self.app.current_block_meta = {"height": 0, "nanos": 0}
         self.app.client.raw_driver.set("currency.balances:e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931", 100000)
+
         self.handler = ProtocolHandler(self.app)
 
     def process_request(self, request_type, req):
@@ -47,6 +48,7 @@ class TestFinalizeBlock(unittest.TestCase):
         response = self.process_request("finalize_block", request)
         self.assertEqual(response.finalize_block.tx_results[0].code, OkCode)
         self.assertEqual(response.finalize_block.app_hash, b"d949d2261ae212dd6da2ad97d2f07cdb4b5ade4970c905219bbd626f4b4ea498")
+
 
 if __name__ == "__main__":
     unittest.main()

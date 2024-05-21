@@ -18,6 +18,7 @@ from cometbft.abci.v1beta1.types_pb2 import (
 )
 import json
 
+
 # Disable any kind of logging
 logging.disable(logging.CRITICAL)
 
@@ -36,6 +37,7 @@ class TestQuery(unittest.TestCase):
     def setUp(self):
         self.app = Xian()
         self.app.current_block_meta = {"height": 0, "nanos": 0}
+
         self.app.client.raw_driver.set_contract("currency", '''balances = Hash(default_value=0)
 
 @construct
@@ -112,6 +114,7 @@ def transfer_from(amount: float, to: str, main_account: str):
         self.assertEqual(response.query.key, b"currency.balances")
         self.assertEqual(response.query.value, b'["c93dee52d7dc6cc43af44007c3b1dae5b730ccf18a9e6fb43521f8e4064561e6"]')
 
+
     def test_contracts_query(self):
         request = Request(query=RequestQuery(path="/contracts"))
         response = self.process_request("query", request)
@@ -129,6 +132,7 @@ def transfer_from(amount: float, to: str, main_account: str):
         self.assertEqual(response.query.key, b"")
         self.assertEqual(result["status"], OkCode)
         self.assertEqual(result["stamps_used"], 221)
+
 
     def test_health_query(self):
         request = Request(query=RequestQuery(path="/health"))
