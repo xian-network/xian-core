@@ -368,6 +368,8 @@ def validate_transaction(client, nonce_storage, tx):
             arguments=["value"],
             mark=False
         )
+        if stamp_rate is None:
+            stamp_rate = 20
     except Exception as e:
         raise TransactionException(f"Failed to get stamp cost: {e}")
 
@@ -378,8 +380,6 @@ def validate_transaction(client, nonce_storage, tx):
     if stamps_supplied is None:
         stamps_supplied = 0
 
-    if stamp_rate is None:
-        stamp_rate = 0
 
     if balance is None:
         balance = 0

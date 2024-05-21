@@ -34,7 +34,10 @@ def query(self, req) -> ResponseQuery:
         # http://localhost:26657/abci_query?path="/keys/currency.balances" BLOCK SERVICE MODE ONLY
         if self.block_service_mode:
             if path_parts[0] == "keys":
-                result = self.client.raw_driver.get(path_parts[1])
+                list_of_keys = self.client.raw_driver.keys(prefix=path_parts[1])
+                result = [key.split(":")[1] for key in list_of_keys]
+                key = path_parts[1]
+
             if path_parts[0] == "contracts":
                 result = self.client.raw_driver.get_contract_files()
 
@@ -76,7 +79,7 @@ def query(self, req) -> ResponseQuery:
         if path_parts[0] == "ping":
             result = {'status': 'online'}
 
-        if result:
+        if result is not None:
             if isinstance(result, str):
                 v = encode_str(result)
                 type_of_data = "str"
@@ -97,8 +100,8 @@ def query(self, req) -> ResponseQuery:
             v = b"\x00"
             type_of_data = "None"
 
-    except Exception as e:
-        logger.error(f"QUERY ERROR: {e}")
+    except Exception as err:
+        logger.error(f"QUERY ERROR: {err}")
         return ResponseQuery(code=ErrorCode, log=f"QUERY ERROR")
 
     return ResponseQuery(code=OkCode, value=v, info=type_of_data, key=encode_str(key))
