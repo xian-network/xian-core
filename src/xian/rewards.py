@@ -46,6 +46,9 @@ def find_developer_and_reward(
 def calculate_tx_output_rewards(
         total_stamps_to_split, contract, client
     ):
+        rewards_contract_is_deployed = client.raw_driver.get("rewards") is not None
+        if not rewards_contract_is_deployed:
+            return 0, 0, {}
         try:
             (
                 master_ratio,
@@ -85,6 +88,9 @@ def calculate_tx_output_rewards(
 
 
 def distribute_rewards(stamp_rewards_amount, stamp_rewards_contract, client):
+    rewards_contract_is_deployed = client.raw_driver.get("rewards") is not None
+    if not rewards_contract_is_deployed:
+        return []
     if stamp_rewards_amount > 0:
         driver = client.raw_driver
         (
