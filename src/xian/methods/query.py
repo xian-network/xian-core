@@ -11,6 +11,10 @@ from contracting.compilation import parser
 from contracting.storage.encoder import Encoder
 from loguru import logger
 
+from pyflakes.api import check
+from pyflakes.reporter import Reporter
+from io import StringIO
+import base64
 
 def query(self, req) -> ResponseQuery:
     """
@@ -78,6 +82,17 @@ def query(self, req) -> ResponseQuery:
         # http://localhost:26657/abci_query?path="/ping"
         if path_parts[0] == "ping":
             result = {'status': 'online'}
+
+        # http://localhost:26657/abci_query?path="/lint/<code>"
+        if path_parts[0] == "lint":
+            code = base64.b64decode(path_parts[1]).decode("utf-8")
+            stdout = StringIO()
+            stderr = StringIO()
+            reporter = Reporter(stdout, stderr)
+            check(code, "<string>", reporter)
+            stdout_output = stdout.getvalue()
+            stderr_output = stderr.getvalue()
+            result = {"stdout": stdout_output, "stderr": stderr_output}
 
         if result is not None:
             if isinstance(result, str):
