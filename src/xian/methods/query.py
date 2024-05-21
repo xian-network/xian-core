@@ -11,6 +11,11 @@ from contracting.compilation import parser
 from contracting.storage.encoder import Encoder
 from loguru import logger
 
+from pyflakes.api import check
+from pyflakes.reporter import Reporter
+from io import StringIO
+import base64
+
 
 def query(self, req) -> ResponseQuery:
     """
