@@ -71,7 +71,7 @@ def finalize_block(self, req) -> ResponseFinalizeBlock:
         except Exception as e:
             # Normally this cannot happen, but if it does, we need to catch it
             logger.error(f"Fatal ERROR: {e}")
-            traceback.print_exc()
+            logger.error(traceback.format_exc())  # Log the traceback
             tx_results.append(
                 ExecTxResult(
                     code=ErrorCode,
