@@ -22,6 +22,7 @@ from xian.rewards import (
 )
 from xian.constants import ErrorCode
 from loguru import logger
+import traceback
 
 
 def finalize_block(self, req) -> ResponseFinalizeBlock:
@@ -70,7 +71,7 @@ def finalize_block(self, req) -> ResponseFinalizeBlock:
         except Exception as e:
             # Normally this cannot happen, but if it does, we need to catch it
             logger.error(f"Fatal ERROR: {e}")
-
+            traceback.print_exc()
             tx_results.append(
                 ExecTxResult(
                     code=ErrorCode,
