@@ -22,6 +22,7 @@ from xian.rewards import (
 )
 from xian.constants import ErrorCode
 from loguru import logger
+import traceback
 
 
 def finalize_block(self, req) -> ResponseFinalizeBlock:
@@ -38,46 +39,34 @@ def finalize_block(self, req) -> ResponseFinalizeBlock:
     }   
 
     for tx in req.txs:
-        try:
-            tx = decode_transaction_bytes(tx)
-            sender, signature, payload = unpack_transaction(tx)
-            if not verify(sender, payload, signature):
-                # Not really needed, because check_tx should catch this first, but just in case
-                raise Exception("Invalid Signature")
-            # Attach metadata to the transaction
-            tx["b_meta"] = self.current_block_meta
-            result = self.tx_processor.process_tx(tx, enabled_fees=self.enable_tx_fee)
+        tx = decode_transaction_bytes(tx)
+        sender, signature, payload = unpack_transaction(tx)
+        if not verify(sender, payload, signature):
+            # Not really needed, because check_tx should catch this first, but just in case
+            raise Exception("Invalid Signature")
+        # Attach metadata to the transaction
+        tx["b_meta"] = self.current_block_meta
+        result = self.tx_processor.process_tx(tx, enabled_fees=self.enable_tx_fee)
 
-            if self.enable_tx_fee:
-                self.current_block_rewards[tx['b_meta']['hash']] = {
-                    "amount": result["stamp_rewards_amount"],
-                    "contract": result["stamp_rewards_contract"]
-                }
+        if self.enable_tx_fee:
+            self.current_block_rewards[tx['b_meta']['hash']] = {
+                "amount": result["stamp_rewards_amount"],
+                "contract": result["stamp_rewards_contract"]
+            }
 
-            self.nonce_storage.set_nonce_by_tx(tx)
-            tx_hash = result["tx_result"]["hash"]
-            self.fingerprint_hashes.append(tx_hash)
-            parsed_tx_result = json.dumps(stringify_decimals(result["tx_result"]))
-            logger.debug(f"Parsed tx result: {parsed_tx_result}")
+        self.nonce_storage.set_nonce_by_tx(tx)
+        tx_hash = result["tx_result"]["hash"]
+        self.fingerprint_hashes.append(tx_hash)
+        parsed_tx_result = json.dumps(stringify_decimals(result["tx_result"]))
+        logger.debug(f"Parsed tx result: {parsed_tx_result}")
 
-            tx_results.append(
-                ExecTxResult(
-                    code=result["tx_result"]["status"],
-                    data=encode_str(parsed_tx_result),
-                    gas_used=0
-                )
+        tx_results.append(
+            ExecTxResult(
+                code=result["tx_result"]["status"],
+                data=encode_str(parsed_tx_result),
+                gas_used=0
             )
-        except Exception as e:
-            # Normally this cannot happen, but if it does, we need to catch it
-            logger.error(f"Fatal ERROR: {e}")
-
-            tx_results.append(
-                ExecTxResult(
-                    code=ErrorCode,
-                    data=encode_str(f"ERROR: {e}"),
-                    gas_used=0
-                )
-            )
+        )
 
     if self.static_rewards:
         try:
