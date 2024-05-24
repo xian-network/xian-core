@@ -1,218 +1,209 @@
+"""
+TCP Server that communicates with Tendermint
+"""
 import asyncio
 import signal
 import platform
-import os
-
-from loguru import logger
-from dataclasses import dataclass
-from cometbft.abci.v1beta3.types_pb2 import Request, Response
-from cometbft.abci.v1beta1.types_pb2 import ResponseFlush, ResponseException
-from .utils import read_messages, write_message
+from .utils import *
 from io import BytesIO
+import os
+from loguru import logger
+from cometbft.abci.v1beta3.types_pb2 import (
+    Request,
+    Response,
+)
+from cometbft.abci.v1beta1.types_pb2 import (
+    ResponseFlush,
+    ResponseException,
+)
 
-# Max we'll consume on a read stream
-MaxReadInBytes = 64 * 1024
+MaxReadInBytes = 64 * 1024  # Max we'll consume on a read stream
 
 
-@dataclass
 class ProtocolHandler:
-    app: object
+    """
+    Internal handler called by the server to process requests from
+    Tendermint.  The handler delegates calls to your application
+    """
+
+    def __init__(self, app):
+        self.app = app
 
     def process(self, req_type: str, req) -> bytes:
         handler = getattr(self, req_type, self.no_match)
         return handler(req)
 
-    def create_response(self, response_type, result=None) -> bytes:
-        response = Response(**{response_type: result})
-        return write_message(response)
-
     def flush(self, req) -> bytes:
-        return self.create_response(
-            'flush',
-            ResponseFlush()
-        )
+        response = Response(flush=ResponseFlush())
+        return write_message(response)
     
     def echo(self, req) -> bytes:
-        return self.create_response(
-            'echo',
-            self.app.echo(req.echo)
-        )
+        result = self.app.echo(req.echo)
+        response = Response(echo=result)
+        return write_message(response)
 
     def info(self, req) -> bytes:
-        return self.create_response(
-            'info',
-            self.app.info(req.info)
-        )
+        result = self.app.info(req.info)
+        response = Response(info=result)
+        return write_message(response)
 
     def check_tx(self, req) -> bytes:
-        return self.create_response(
-            'check_tx',
-            self.app.check_tx(req.check_tx.tx)
-        )
+        result = self.app.check_tx(req.check_tx.tx)
+        response = Response(check_tx=result)
+        return write_message(response)
 
     def query(self, req) -> bytes:
-        return self.create_response(
-            'query',
-            self.app.query(req.query)
-        )
+        result = self.app.query(req.query)
+        response = Response(query=result)
+        return write_message(response)
 
     def commit(self, req) -> bytes:
-        return self.create_response(
-            'commit',
-            self.app.commit()
-        )
+        result = self.app.commit()
+        response = Response(commit=result)
+        return write_message(response)
     
     def finalize_block(self, req) -> bytes:
-        return self.create_response(
-            'finalize_block',
-            self.app.finalize_block(req.finalize_block)
-        )
+        result = self.app.finalize_block(req.finalize_block)
+        response = Response(finalize_block=result)
+        return write_message(response)
 
     def init_chain(self, req) -> bytes:
-        return self.create_response(
-            'init_chain',
-            self.app.init_chain(req.init_chain)
-        )
+        result = self.app.init_chain(req.init_chain)
+        response = Response(init_chain=result)
+        return write_message(response)
 
     def list_snapshots(self, req) -> bytes:
-        return self.create_response(
-            'list_snapshots',
-            self.app.list_snapshots(req.list_snapshots)
-        )
+        result = self.app.list_snapshots(req.list_snapshots)
+        response = Response(list_snapshots=result)
+        return write_message(response)
 
     def offer_snapshot(self, req) -> bytes:
-        return self.create_response(
-            'offer_snapshot',
-            self.app.offer_snapshot(req.offer_snapshot)
-        )
+        result = self.app.offer_snapshot(req.offer_snapshot)
+        response = Response(offer_snapshot=result)
+        return write_message(response)
 
     def load_snapshot_chunk(self, req) -> bytes:
-        return self.create_response(
-            'load_snapshot_chunk',
-            self.app.load_snapshot_chunk(req.load_snapshot_chunk)
-        )
+        result = self.app.load_snapshot_chunk(req.load_snapshot_chunk)
+        response = Response(load_snapshot_chunk=result)
+        return write_message(response)
 
     def apply_snapshot_chunk(self, req) -> bytes:
-        return self.create_response(
-            'apply_snapshot_chunk',
-            self.app.apply_snapshot_chunk(req.apply_snapshot_chunk)
-        )
+        result = self.app.apply_snapshot_chunk(req.apply_snapshot_chunk)
+        response = Response(apply_snapshot_chunk=result)
+        return write_message(response)
     
     def process_proposal(self, req) -> bytes:
-        return self.create_response(
-            'process_proposal',
-            self.app.process_proposal(req.process_proposal)
-        )
+        result = self.app.process_proposal(req.process_proposal)
+        response = Response(process_proposal=result)
+        return write_message(response)
     
     def prepare_proposal(self, req) -> bytes:
-        return self.create_response(
-            'prepare_proposal',
-            self.app.prepare_proposal(req.prepare_proposal)
-        )
+        result = self.app.prepare_proposal(req.prepare_proposal)
+        response = Response(prepare_proposal=result)
+        return write_message(response)
 
     def no_match(self, req) -> bytes:
-        return self.create_response(
-            'exception',
-            ResponseException(error="ABCI request not found")
+        response = Response(
+            exception=ResponseException(error="ABCI request not found")
         )
+        return write_message(response)
 
 
 class ABCIServer:
+    """
+    Async TCP server
+    """
+
+    protocol: ProtocolHandler
+    
     def __init__(self, app, socket_path="/tmp/abci.sock") -> None:
+        """
+        Requires App and an optional port if you changed the ABCI port on
+        Tendermint
+        """
         self.socket_path = socket_path
         self.protocol = ProtocolHandler(app)
-        self._stop_event = asyncio.Event()
-        self._server = None
 
     def run(self) -> None:
-        loop = asyncio.get_event_loop()
-        if platform.system() != "Windows":
-            loop.add_signal_handler(signal.SIGINT, lambda: asyncio.create_task(self.stop()))
-            loop.add_signal_handler(signal.SIGTERM, lambda: asyncio.create_task(self.stop()))
+        """
+        Run the application
+        """
+        # Check OS to handle signals appropriately
+        on_windows = platform.system() == "Windows"
 
+        loop = asyncio.get_event_loop()
+        if not on_windows:
+            # Unix...register signal handlers
+            loop.add_signal_handler(
+                signal.SIGINT, lambda: asyncio.create_task(_stop())
+            )
+            loop.add_signal_handler(
+                signal.SIGTERM, lambda: asyncio.create_task(_stop())
+            )
         try:
             logger.info(" ~ running app - press CTRL-C to stop ~")
             loop.run_until_complete(self._start())
         except Exception as e:
-            logger.warning(f" ... shutting down due to: {e}")
-            loop.run_until_complete(self.stop())
+            logger.error(f" ... error: {e}")
+            logger.warning(" ... shutting down")
+            if on_windows:
+                loop.run_until_complete(_stop())
         finally:
-            pending = asyncio.all_tasks(loop)
-            loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
-            loop.run_until_complete(loop.shutdown_asyncgens())
-            loop.close()
+            loop.stop()
 
     async def _start(self) -> None:
         if os.path.exists(self.socket_path):
             os.remove(self.socket_path)
-        
-        self._server = await asyncio.start_unix_server(
+
+        self.server = await asyncio.start_unix_server(
             self._handler,
             path=self.socket_path,
         )
-        try:
-            await self._stop_event.wait()
-        except asyncio.CancelledError:
-            logger.info(" ... _start task cancelled")
-        finally:
-            os.remove(self.socket_path)
+        await self.server.serve_forever()
 
-    async def _handler(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
-        buffer = bytearray()
+    async def _handler(
+        self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
+    ) -> None:
         
-        try:
-            while True:
-                data = await reader.read(MaxReadInBytes)
-                if not data:
-                    logger.error(" ... tendermint closed connection")
-                    break
 
-                buffer.extend(data)
+        data = BytesIO()
+        last_pos = 0
 
-                responses = []
-                while True:
-                    message, remaining_data = self._parse_message(buffer)
-                    if message is None:
-                        break
-                    
-                    req_type = message.WhichOneof("value")
-                    response = self.protocol.process(req_type, message)
-                    responses.append(response)
-                    
-                    buffer = bytearray(remaining_data)
+        while True:
+            if last_pos == data.tell():
+                data = BytesIO()
+                last_pos = 0
+            
+            bits = await reader.read(MaxReadInBytes)
+            if len(bits) == 0:
+                logger.error(" ... tendermint closed connection")
+                # break to the _stop if the connection stops
+                break
 
-                if responses:
-                    writer.writelines(responses)
-                    await writer.drain()
-        except asyncio.CancelledError:
-            logger.info(" ... handler task cancelled")
-        except Exception as e:
-            logger.error(f" ... handler exception: {e}")
-        finally:
-            writer.close()
-            await writer.wait_closed()
+            data.write(bits)
+            data.seek(last_pos)
 
-    def _parse_message(self, buffer: bytearray):
-        try:
-            data = BytesIO(buffer)
-            message = next(read_messages(data, Request))
-            remaining_data = data.read()
-            return message, remaining_data
-        except StopIteration:
-            return None, buffer
+            ## Tendermint prefixes each serialized protobuf message
+            ## with varint encoded length. We use the 'data' buffer to
+            ## keep track of where we are in the byte stream and progress
+            ## based on the length encoding
+            for message in read_messages(data, Request):
+                req_type = message.WhichOneof("value")
+                response = self.protocol.process(req_type, message)
+                writer.write(response)
+                last_pos = data.tell()
 
-    async def stop(self) -> None:
-        logger.warning(" ... received exit signal")
-        self._stop_event.set()
+        # Any connection fails and we shut the whole thing down
+        await _stop()
 
-        if self._server:
-            self._server.close()
-            await self._server.wait_closed()
 
-        tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
-        logger.info(f" ... cancelling {len(tasks)} tasks")
-        for task in tasks:
-            task.cancel()
-        
-        await asyncio.gather(*tasks, return_exceptions=True)
-        logger.info(" ... all tasks cancelled")
+async def _stop() -> None:
+    """
+    Clean up all async tasks.  Called on a signal or a connection closed by
+    tendermint
+    """
+    logger.warning(" ... received exit signal")
+    tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
+    for task in tasks:
+        task.cancel()
+    await asyncio.gather(*tasks, return_exceptions=True)
