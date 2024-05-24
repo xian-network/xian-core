@@ -143,7 +143,8 @@ class ABCIServer:
         try:
             logger.info(" ~ running app - press CTRL-C to stop ~")
             loop.run_until_complete(self._start())
-        except:
+        except Exception as e:
+            logger.error(f" ... error: {e}")
             logger.warning(" ... shutting down")
             if on_windows:
                 loop.run_until_complete(_stop())
@@ -154,17 +155,15 @@ class ABCIServer:
         if os.path.exists(self.socket_path):
             os.remove(self.socket_path)
 
-        self.server = await asyncio.start_server(
+        self.server = await asyncio.start_unix_server(
             self._handler,
-            host="0.0.0.0",
-            port=self.port,
+            path=self.socket_path,
         )
         await self.server.serve_forever()
 
     async def _handler(
         self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
     ) -> None:
-        ip, socket, *_ = writer.get_extra_info("peername")
         
 
         data = BytesIO()
