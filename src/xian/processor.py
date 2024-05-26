@@ -19,44 +19,35 @@ class TxProcessor:
 
         stamp_cost = self.client.get_var(contract='stamp_cost', variable='S', arguments=['value']) or 1
 
-        try:
-            # Execute the transaction
-            output = self.execute_tx(
-                transaction=tx,
-                stamp_cost=stamp_cost,
-                environment=environment,
-                metering=enabled_fees
-            )
+        # Execute the transaction
+        output = self.execute_tx(
+            transaction=tx,
+            stamp_cost=stamp_cost,
+            environment=environment,
+            metering=enabled_fees
+        )
 
-            if output is None:
-                return {
-                    'tx_result': None,
-                    'stamp_rewards_amount': 0,
-                    'stamp_rewards_contract': None
-                }
-
-            # Process the result of the executor
-            tx_result = self.process_tx_output(
-                output=output,
-                transaction=tx,
-                stamp_cost=stamp_cost
-            )
-
-            tx_result = self.prune_tx_result(tx_result)
-
-            return {
-                'tx_result': tx_result,
-                'stamp_rewards_amount': output['stamps_used'],
-                'stamp_rewards_contract': tx['payload']['contract']
-            }
-        except Exception as e:
-            logger.error(e)
-
+        if output is None:
             return {
                 'tx_result': None,
                 'stamp_rewards_amount': 0,
                 'stamp_rewards_contract': None
             }
+
+        # Process the result of the executor
+        tx_result = self.process_tx_output(
+            output=output,
+            transaction=tx,
+            stamp_cost=stamp_cost
+        )
+
+        tx_result = self.prune_tx_result(tx_result)
+
+        return {
+            'tx_result': tx_result,
+            'stamp_rewards_amount': output['stamps_used'],
+            'stamp_rewards_contract': tx['payload']['contract']
+        }
 
     def execute_tx(self, transaction, stamp_cost, environment: dict = {}, metering=False):
         # TODO better error handling of anything in here
