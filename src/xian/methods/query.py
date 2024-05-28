@@ -13,6 +13,8 @@ from loguru import logger
 
 from pyflakes.api import check
 from pyflakes.reporter import Reporter
+from urllib.parse import unquote
+
 from io import StringIO
 import base64
 
@@ -50,6 +52,7 @@ def query(self, req) -> ResponseQuery:
             if path_parts[0] == "lint":
                 try:
                     code = base64.b64decode(path_parts[1]).decode("utf-8")
+                    code = unquote(code)
                     stdout = StringIO()
                     stderr = StringIO()
                     reporter = Reporter(stdout, stderr)
