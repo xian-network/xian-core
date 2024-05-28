@@ -11,6 +11,13 @@ from contracting.compilation import parser
 from contracting.storage.encoder import Encoder
 from loguru import logger
 
+from pyflakes.api import check
+from pyflakes.reporter import Reporter
+from urllib.parse import unquote
+
+from io import StringIO
+import base64
+
 
 def query(self, req) -> ResponseQuery:
     """
@@ -43,14 +50,18 @@ def query(self, req) -> ResponseQuery:
 
             # http://localhost:26657/abci_query?path="/lint/<code>"
             if path_parts[0] == "lint":
-                code = base64.b64decode(path_parts[1]).decode("utf-8")
-                stdout = StringIO()
-                stderr = StringIO()
-                reporter = Reporter(stdout, stderr)
-                check(code, "<string>", reporter)
-                stdout_output = stdout.getvalue()
-                stderr_output = stderr.getvalue()
-                result = {"stdout": stdout_output, "stderr": stderr_output}
+                try:
+                    code = base64.b64decode(path_parts[1]).decode("utf-8")
+                    code = unquote(code)
+                    stdout = StringIO()
+                    stderr = StringIO()
+                    reporter = Reporter(stdout, stderr)
+                    check(code, "<string>", reporter)
+                    stdout_output = stdout.getvalue()
+                    stderr_output = stderr.getvalue()
+                    result = {"stdout": stdout_output, "stderr": stderr_output}
+                except Exception as e:
+                    result = {"stdout": "", "stderr": ""}
 
         # http://localhost:26657/abci_query?path="/estimate_stamps/<encoded_txn>" BLOCK SERVICE MODE ONLY
         if self.block_service_mode:
@@ -112,6 +123,8 @@ def query(self, req) -> ResponseQuery:
             type_of_data = "None"
 
     except Exception as err:
+        import traceback
+        traceback.print_exc()
         logger.error(f"QUERY ERROR: {err}")
         return ResponseQuery(code=ErrorCode, log=f"QUERY ERROR")
 
