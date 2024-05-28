@@ -20,9 +20,7 @@ from xian.rewards import (
     distribute_rewards,
     distribute_static_rewards
 )
-from xian.constants import ErrorCode
 from loguru import logger
-import traceback
 
 
 def finalize_block(self, req) -> ResponseFinalizeBlock:
