@@ -4,9 +4,10 @@ TCP Server that communicates with Tendermint
 import asyncio
 import signal
 import platform
+import os
+
 from .utils import *
 from io import BytesIO
-import os
 from loguru import logger
 from cometbft.abci.v1beta3.types_pb2 import (
     Request,
@@ -164,7 +165,6 @@ class ABCIServer:
     async def _handler(
         self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
     ) -> None:
-        
 
         data = BytesIO()
         last_pos = 0
@@ -183,10 +183,12 @@ class ABCIServer:
             data.write(bits)
             data.seek(last_pos)
 
-            ## Tendermint prefixes each serialized protobuf message
-            ## with varint encoded length. We use the 'data' buffer to
-            ## keep track of where we are in the byte stream and progress
-            ## based on the length encoding
+            """
+            Tendermint prefixes each serialized protobuf message
+            with varint encoded length. We use the 'data' buffer to
+            keep track of where we are in the byte stream and progress
+            based on the length encoding
+            """
             for message in read_messages(data, Request):
                 req_type = message.WhichOneof("value")
                 response = self.protocol.process(req_type, message)
