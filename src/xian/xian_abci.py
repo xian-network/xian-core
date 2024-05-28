@@ -59,7 +59,7 @@ def load_module(module_path, original_module_path):
         raise Exception(f"Failed to load module {module_path}: {e}")
 
 
-class Xian():
+class Xian:
     def __init__(self):
         try:
             self.config = load_tendermint_config()
