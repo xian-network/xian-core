@@ -1,4 +1,5 @@
 from argparse import ArgumentParser
+from xian.utils import is_compiled_key
 from contracting.client import ContractingClient
 from contracting.storage.driver import Driver
 from contracting.storage.encoder import encode
@@ -11,6 +12,10 @@ import re
 
 """
 Generate genesis_block.json file for CometBFT genesis.json
+Usage : 
+    Run from an environment where xian-contracting & xian-core are installed.
+    Xian state must be blank. You may wish to temporarily rename .cometbft and call `make init` before hand to achieve this.
+    `python genesis_gen.py --validator-pubkey "your_validator_public_key" --founder-privkey "your_founder_private_key" --output-path "path_to_output_file"`
 """
 
 
@@ -77,7 +82,6 @@ class GenesisGen:
 
             with open(con_path) as f:
                 code = f.read()
-
             if contract.get('submit_as') is not None:
                 con_name = contract['submit_as']
 
@@ -139,10 +143,11 @@ class GenesisGen:
         data = {k: v for k, v in state_changes.items() if v is not None}
 
         for key, value in data.items():
-            genesis_block['genesis'].append({
-                'key': key,
-                'value': value
-            })
+            if not is_compiled_key(key):
+                genesis_block['genesis'].append({
+                    'key': key,
+                    'value': value
+                })
 
         # Signing genesis block with founder's wallet
         wallet = Wallet(seed=founder_privkey)

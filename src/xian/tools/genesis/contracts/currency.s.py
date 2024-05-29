@@ -1,4 +1,19 @@
 balances = Hash(default_value=0)
+metadata = Hash()
+permits = Hash()
+streams = Hash()
+
+SENDER_KEY = "sender"
+RECEIVER_KEY = "receiver"
+STATUS_KEY = "status"
+BEGIN_KEY = "begins"
+CLOSE_KEY = "closes"
+RATE_KEY = "rate"
+CLAIMED_KEY = "claimed"
+STREAM_ACTIVE = "active"
+STREAM_FINALIZED = "finalized"
+STREAM_FORFEIT = "forfeit"
+
 
 @construct
 def seed(vk: str):
@@ -8,44 +23,251 @@ def seed(vk: str):
     balances[vk] += 49999999.95 # 45% Second batch of public tokens, to be sent out after mint
     balances[vk] += 5555555.55 # 5% First batch of public tokens, to be sent out after mint
 
+    # TEAM LOCK
+    # 365 * 4 + 364 = 1824 (4 years + 1 leap-year)
+    # 1824 * 24 * 60 * 60 = 157593600 (seconds in duration)
+    # 16666666.65 / 157593600 (release per second)
+    
+    setup_seed_stream("team_lock", "team_lock", vk, 0.10575725568804825, 1824)
+
+
+def setup_seed_stream(stream_id: str, sender: str, receiver: str, rate: float, duration_days: int):
+    streams[stream_id, 'status'] = "active"
+    streams[stream_id, 'begins'] = now
+    streams[stream_id, 'closes'] = now + datetime.timedelta(days=duration_days)
+    streams[stream_id, 'receiver'] = receiver
+    streams[stream_id, 'sender'] = sender
+    streams[stream_id, 'rate'] = rate
+    streams[stream_id, 'claimed'] = 0
+
+
 @export
 def transfer(amount: float, to: str):
-    assert amount > 0, 'Cannot send negative balances!'
+    assert amount > 0, 'Cannot send negative balances.'
+    assert balances[ctx.caller] >= amount, 'Not enough coins to send.'
 
-    sender = ctx.caller
-
-    assert balances[sender] >= amount, 'Not enough coins to send!'
-
-    balances[sender] -= amount
+    balances[ctx.caller] -= amount
     balances[to] += amount
 
-@export
-def balance_of(account: str):
-    return balances[account]
-
-@export
-def allowance(owner: str, spender: str):
-    return balances[owner, spender]
 
 @export
 def approve(amount: float, to: str):
-    assert amount > 0, 'Cannot send negative balances!'
+    assert amount > 0, 'Cannot send negative balances.'
+    balances[ctx.caller, to] += amount
 
-    sender = ctx.caller
-    balances[sender, to] += amount
-    return balances[sender, to]
 
 @export
 def transfer_from(amount: float, to: str, main_account: str):
-    assert amount > 0, 'Cannot send negative balances!'
+    assert amount > 0, 'Cannot send negative balances.'
+    assert balances[main_account, ctx.caller] >= amount, f'Not enough coins approved to send. You have {balances[main_account, ctx.caller]} and are trying to spend {amount}'
+    assert balances[main_account] >= amount, 'Not enough coins to send.'
 
+    balances[main_account, ctx.caller] -= amount
+    balances[main_account] -= amount
+    balances[to] += amount
+
+
+# XST002 / Permit
+
+@export
+def permit(owner: str, spender: str, value: float, deadline: dict, signature: str):
+    permit_msg = construct_permit_msg(owner, spender, value, deadline)
+    permit_hash = hashlib.sha3(permit_msg)
+
+    assert permits[permit_hash] is None, 'Permit can only be used once.'
+    assert now < deadline, 'Permit has expired.'
+    assert crypto.verify(owner, permit_msg, signature), 'Invalid signature.'
+
+    balances[owner, spender] += value
+    permits[permit_hash] = True
+
+    return f"Permit granted for {value} to {spender} from {owner}"
+
+
+def construct_permit_msg(owner: str, spender: str, value: float, deadline: dict):
+    return f"{owner}:{spender}:{value}:{deadline}:{ctx.this}"
+
+
+
+# Creates a new stream to a receiver from ctx.caller
+# Stream can begin at any point in past / present / future
+# Wrapper for perform_create_stream
+@export
+def create_stream(receiver: str, rate: float, begins: dict, closes: dict):
     sender = ctx.caller
 
-    assert balances[main_account, sender] >= amount, 'Not enough coins approved to send! You have {} and are trying to spend {}'\
-        .format(balances[main_account, sender], amount)
-    assert balances[main_account] >= amount, 'Not enough coins to send!'
+    stream_id = perform_create_stream(sender, receiver, rate, begins, closes)
+    return stream_id
 
-    balances[main_account, sender] -= amount
-    balances[main_account] -= amount
 
-    balances[to] += amount
+# Internal function used to create a stream from a permit or from a direct call from the sender
+def perform_create_stream(sender: str, receiver: str, rate: float, begins: dict, closes: dict):
+    stream_id = hashlib.sha3(f"{sender}:{receiver}:{begins}:{closes}:{rate}")
+
+    assert streams[stream_id, STATUS_KEY] is None, 'Stream already exists.'
+    assert begins < closes, 'Stream cannot begin after the close date.'
+    assert rate > 0, 'Rate must be greater than 0.'
+
+    streams[stream_id, STATUS_KEY] = STREAM_ACTIVE
+    streams[stream_id, BEGIN_KEY] = begins
+    streams[stream_id, CLOSE_KEY] = closes
+    streams[stream_id, RECEIVER_KEY] = receiver
+    streams[stream_id, SENDER_KEY] = sender
+    streams[stream_id, RATE_KEY] = rate
+    streams[stream_id, CLAIMED_KEY] = 0
+
+    return stream_id
+
+
+# Creates a payment stream from a valid signature of a permit message
+# Wrapper for perform_create_stream
+@export
+def create_stream_from_permit(sender: str, receiver: str, rate: float, begins: dict, closes: dict, deadline: dict, signature: str):
+    assert now < deadline, 'Permit has expired.'
+    permit_msg = construct_stream_permit_msg(sender, receiver, rate, begins, closes, deadline)
+    permit_hash = hashlib.sha3(permit_msg)
+
+    assert permits[permit_hash] is None, 'Permit can only be used once.'
+    assert crypto.verify(sender, permit_msg, signature), 'Invalid signature.'
+
+    permits[permit_hash] = True
+
+    return perform_create_stream(sender, receiver, rate, begins, closes)
+
+
+# Moves balance due from stream from sender to receiver.
+# Called by `sender` or `receiver`
+@export
+def balance_stream(stream_id: str):
+    assert streams[stream_id, STATUS_KEY], 'Stream does not exist.'
+    assert streams[stream_id, STATUS_KEY] == STREAM_ACTIVE, 'You can only balance active streams.'
+    assert now > streams[stream_id, BEGIN_KEY], 'Stream has not started yet.'
+
+    sender = streams[stream_id, SENDER_KEY]
+    receiver = streams[stream_id, RECEIVER_KEY]
+
+    assert ctx.caller in [sender, receiver], 'Only sender or receiver can balance a stream.'
+
+    closes = streams[stream_id, CLOSE_KEY]
+    begins = streams[stream_id, BEGIN_KEY]
+    rate = streams[stream_id, RATE_KEY]
+    claimed = streams[stream_id, CLAIMED_KEY]
+
+    # Calculate the amount of tokens that can be claimed
+    
+    outstanding_balance = calc_outstanding_balance(begins, closes, rate, claimed)
+    
+    assert outstanding_balance > 0, 'No amount due on this stream.'
+
+    claimable_amount = calc_claimable_amount(outstanding_balance, sender)
+
+    balances[sender] -= claimable_amount
+    balances[receiver] += claimable_amount
+
+    streams[stream_id, CLAIMED_KEY] += claimable_amount
+
+    return f"Claimed {claimable_amount} tokens from stream"
+
+
+# Sets a stream to expire at some point greater than or equal to the current time.
+# If the new closes time is in the past, the stream is closed immediately
+# If the new close time < begins, the stream is closed at begin time <invalidated>
+# Called by `sender`
+@export
+def change_close_time(stream_id: str, new_close_time: dict):
+    assert streams[stream_id, STATUS_KEY], 'Stream does not exist.'
+    assert streams[stream_id, STATUS_KEY] == STREAM_ACTIVE, 'Stream is not active.'
+
+    sender = streams[stream_id, SENDER_KEY]
+
+    assert ctx.caller == sender, 'Only sender can extend the close time of a stream.'
+
+    if new_close_time < streams[stream_id, BEGIN_KEY] and now < streams[stream_id, BEGIN_KEY]:
+        streams[stream_id, CLOSE_KEY] = streams[stream_id, BEGIN_KEY]
+    elif new_close_time <= now:
+        streams[stream_id, CLOSE_KEY] = now
+    else:
+        streams[stream_id, CLOSE_KEY] = new_close_time
+
+    return f"Changed close time of stream to {streams[stream_id, CLOSE_KEY]}"
+
+
+# Set the stream inactive.
+# A stream must be balanced before it can be finalized.
+# Closes must be <= now
+# Once a stream is finalized, it cannot be re-opened.
+# Called by : `sender` or `receiver`
+@export
+def finalize_stream(stream_id: str):
+    assert streams[stream_id, STATUS_KEY], 'Stream does not exist.'
+    assert streams[stream_id, STATUS_KEY] == STREAM_ACTIVE, 'Stream is not active.'
+
+    sender = streams[stream_id, "sender"]
+    receiver = streams[stream_id, "receiver"]
+
+    assert ctx.caller in [sender, receiver], 'Only sender or receiver can finalize a stream.'
+
+    begins = streams[stream_id, BEGIN_KEY]
+    closes = streams[stream_id, CLOSE_KEY]
+    rate = streams[stream_id, RATE_KEY]
+    claimed = streams[stream_id, CLAIMED_KEY]
+
+    assert now <= closes, 'Stream has not closed yet.'
+
+    outstanding_balance = calc_outstanding_balance(begins, closes, rate, claimed)
+
+    assert outstanding_balance == 0, 'Stream has outstanding balance.'
+
+    streams[stream_id, STATUS_KEY] = STREAM_FINALIZED
+
+    return f"Finalized stream {stream_id}"
+
+
+# Convenience method to close a stream, balance it and finalize it
+# Called by `sender`
+@export
+def close_balance_finalize(stream_id: str):
+    change_close_time(stream_id=stream_id, new_close_time=now)
+    balance_finalize(stream_id=stream_id)
+
+
+# Convenience method to balance a stream and finalize it
+# Called by `receiver` or `sender`
+@export
+def balance_finalize(stream_id: str):
+    balance_stream(stream_id=stream_id)
+    finalize_stream(stream_id=stream_id)
+
+
+# Forfeit a stream to the sender
+# Called by `receiver`
+@export
+def forfeit_stream(stream_id: str):
+    assert streams[stream_id, STATUS_KEY], 'Stream does not exist.'
+    assert streams[stream_id, STATUS_KEY] == STREAM_ACTIVE, 'Stream is not active.'
+
+    receiver = streams[stream_id, RECEIVER_KEY]
+
+    assert ctx.caller == receiver, 'Only receiver can forfeit a stream.'
+
+    streams[stream_id, STATUS_KEY] = STREAM_FORFEIT
+    streams[stream_id, CLOSE_KEY] = now
+
+    return f"Forfeit stream {stream_id}"
+
+
+def calc_outstanding_balance(begins: dict, closes: dict, rate: float, claimed: float):
+    claimable_end_point = now if now < closes else closes
+    claimable_period = claimable_end_point - begins
+    claimable_seconds = claimable_period.seconds
+    amount_due = (rate * claimable_seconds) - claimed
+    return amount_due
+
+
+def calc_claimable_amount(amount_due: float, sender:str):
+    return amount_due if amount_due < balances[sender] else balances[sender]
+
+
+def construct_stream_permit_msg(sender:str, receiver:str, rate:float, begins:dict, closes:dict, deadline:dict):
+    return f"{sender}:{receiver}:{rate}:{begins}:{closes}:{deadline}:{ctx.this}"
+
