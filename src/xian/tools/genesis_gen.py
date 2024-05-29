@@ -130,7 +130,7 @@ class GenesisGen:
         genesis_block = {
             'hash': block_hash,
             'number': block_number,
-            'abci_genesis': [],
+            'genesis': [],
             'origin': {
                 'signature': '',
                 'sender': ''
