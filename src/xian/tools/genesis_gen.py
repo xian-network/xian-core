@@ -144,7 +144,7 @@ class GenesisGen:
 
         for key, value in data.items():
             if not is_compiled_key(key):
-                genesis_block['abci_genesis'].append({
+                genesis_block['genesis'].append({
                     'key': key,
                     'value': value
                 })
