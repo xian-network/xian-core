@@ -1,4 +1,3 @@
-import binascii
 import json
 import struct
 import toml
