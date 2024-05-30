@@ -130,7 +130,7 @@ class GenesisGen:
         genesis_block = {
             'hash': block_hash,
             'number': block_number,
-            'abci_genesis': [],
+            'genesis': [],
             'origin': {
                 'signature': '',
                 'sender': ''
@@ -144,7 +144,7 @@ class GenesisGen:
 
         for key, value in data.items():
             if not is_compiled_key(key):
-                genesis_block['abci_genesis'].append({
+                genesis_block['genesis'].append({
                     'key': key,
                     'value': value
                 })

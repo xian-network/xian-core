@@ -27,6 +27,7 @@ from xian.validators import ValidatorHandler
 from xian.storage import NonceStorage
 from xian.services.stamp_estimator import StampEstimator
 from xian.processor import TxProcessor
+from xian.rewards import RewardsHandler
 
 from xian.utils import (
     load_tendermint_config,
@@ -73,6 +74,7 @@ class Xian:
         self.upgrader = UpgradeHandler(self)
         self.validator_handler = ValidatorHandler(self)
         self.tx_processor = TxProcessor(client=self.client)
+        self.rewards_handler = RewardsHandler(client=self.client)
         self.current_block_meta: dict = None
         self.fingerprint_hashes = []
         self.fingerprint_hash = None
