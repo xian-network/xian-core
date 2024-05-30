@@ -183,12 +183,10 @@ class ABCIServer:
             data.write(bits)
             data.seek(last_pos)
 
-            """
-            Tendermint prefixes each serialized protobuf message
-            with varint encoded length. We use the 'data' buffer to
-            keep track of where we are in the byte stream and progress
-            based on the length encoding
-            """
+            # Tendermint prefixes each serialized protobuf message
+            # with varint encoded length. We use the 'data' buffer to
+            # keep track of where we are in the byte stream and progress
+            # based on the length encoding
             for message in read_messages(data, Request):
                 req_type = message.WhichOneof("value")
                 response = self.protocol.process(req_type, message)
