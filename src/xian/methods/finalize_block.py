@@ -16,10 +16,6 @@ from xian.utils import (
     hash_from_rewards,
     hash_from_validator_updates
 )
-from xian.rewards import (
-    distribute_rewards,
-    distribute_static_rewards
-)
 from xian.constants import ErrorCode
 from loguru import logger
 import traceback
@@ -70,22 +66,22 @@ def finalize_block(self, req) -> ResponseFinalizeBlock:
 
     if self.static_rewards:
         try:
-            reward_writes.append(distribute_static_rewards(
-                client=self.client,
-                foundation_reward=self.static_rewards_amount_foundation,
+            reward_writes.append(self.rewards_handler.distribute_static_rewards(
                 master_reward=self.static_rewards_amount_validators,
+                foundation_reward=self.static_rewards_amount_foundation,
             ))
         except Exception as e:
             logger.error(f"STATIC REWARD ERROR: {e} for block")
 
     if self.current_block_rewards:
         for tx_hash, reward in self.current_block_rewards.items():
-        
-            reward_writes.append(distribute_rewards(
-                stamp_rewards_amount=reward["amount"],
-                stamp_rewards_contract=reward["contract"],
-                client=self.client
-            ))
+            try:
+                reward_writes.append(self.rewards_handler.distribute_rewards(
+                    stamp_rewards_amount=reward["amount"],
+                    stamp_rewards_contract=reward["contract"]
+                ))
+            except Exception as e:
+                logger.error(f"REWARD ERROR: {e} for block")
         
     reward_hash = hash_from_rewards(reward_writes)
     validator_updates = self.validator_handler.build_validator_updates()
