@@ -1,8 +1,8 @@
 from cometbft.abci.v1beta3.types_pb2 import ResponseCheckTx
+from xian_py.wallet import verify_msg
 from xian.utils import (
     decode_transaction_bytes,
     unpack_transaction,
-    verify,
     validate_transaction
 )
 from xian.constants import ErrorCode, OkCode
@@ -15,7 +15,7 @@ def check_tx(self, raw_tx) -> ResponseCheckTx:
         tx = decode_transaction_bytes(raw_tx)
         validate_transaction(self.client,self.nonce_storage,tx)
         sender, signature, payload = unpack_transaction(tx)
-        if not verify(sender, payload, signature):
+        if not verify_msg(sender, payload, signature):
             return ResponseCheckTx(code=ErrorCode, log="Bad signature")
         payload_json = json.loads(payload)
         if payload_json["chain_id"] != self.chain_id:

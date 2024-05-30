@@ -10,6 +10,7 @@ import binascii
 
 import xian.constants as c
 
+from xian_py.wallet import verify_msg
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 from contracting.stdlib.bridge.time import Datetime
 from contracting.storage.encoder import encode, decode, convert_dict
@@ -61,19 +62,6 @@ def z85_decode(z85bytes):
             value += Z85MAP[z85bytes[i + j]] * offset
         values.append(value)
     return struct.pack(">%dI" % nvalues, *values)
-
-
-def verify(vk: str, msg: str, signature: str):
-    vk = bytes.fromhex(vk)
-    msg = msg.encode()
-    signature = bytes.fromhex(signature)
-
-    vk = nacl.signing.VerifyKey(vk)
-    try:
-        vk.verify(msg, signature)
-    except nacl.exceptions.BadSignatureError:
-        return False
-    return True
 
 
 def hash_list(obj: list) -> bytes:
@@ -327,7 +315,7 @@ def check_tx_formatting(tx: dict):
     check_tx_keys(tx)
     check_format(tx, TRANSACTION_RULES)
 
-    if not verify(
+    if not verify_msg(
             tx["payload"]["sender"], encode(tx["payload"]), tx["metadata"]["signature"]
     ):
         raise TransactionException('Transaction is not signed by the sender')

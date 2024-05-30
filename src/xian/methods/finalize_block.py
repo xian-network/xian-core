@@ -1,5 +1,4 @@
 import json
-import traceback
 
 from cometbft.abci.v1beta3.types_pb2 import (
     ResponseFinalizeBlock,
@@ -12,13 +11,12 @@ from xian.utils import (
     get_nanotime_from_block_time,
     convert_binary_to_hex,
     stringify_decimals,
-    verify,
     hash_list,
     hash_from_rewards,
     hash_from_validator_updates
 )
-from xian.constants import ErrorCode
 from loguru import logger
+from xian_py.wallet import verify_msg
 
 
 def finalize_block(self, req) -> ResponseFinalizeBlock:
@@ -37,7 +35,7 @@ def finalize_block(self, req) -> ResponseFinalizeBlock:
     for tx in req.txs:
         tx = decode_transaction_bytes(tx)
         sender, signature, payload = unpack_transaction(tx)
-        if not verify(sender, payload, signature):
+        if not verify_msg(sender, payload, signature):
             # Not really needed, because check_tx should catch this first, but just in case
             raise Exception("Invalid Signature")
         # Attach metadata to the transaction
