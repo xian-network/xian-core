@@ -1,6 +1,8 @@
 import decimal
-from collections import defaultdict
 import xian.constants as c
+from collections import defaultdict
+from loguru import logger
+
 
 class RewardsHandler:
     
@@ -15,7 +17,7 @@ class RewardsHandler:
             reward = (decimal.Decimal(str(participant_ratio)) / number_of_participants) * decimal.Decimal(str(total_stamps_to_split))
             rounded_reward = round(reward, c.DUST_EXPONENT)
         except Exception as e:
-            print(f"Error in calculating reward: {e}")
+            logger.error(f"Error in calculating reward: {e}")
             rounded_reward = 0
         return rounded_reward
     
