@@ -1,4 +1,6 @@
 import json
+import ast
+import re
 
 from cometbft.abci.v1beta1.types_pb2 import ResponseQuery
 from xian.utils import encode_str
@@ -8,6 +10,7 @@ from xian.constants import (
 )
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 from contracting.compilation import parser
+from contracting.compilation.linter import Linter
 from contracting.storage.encoder import Encoder
 from loguru import logger
 
@@ -53,13 +56,37 @@ def query(self, req) -> ResponseQuery:
                 try:
                     code = base64.b64decode(path_parts[1]).decode("utf-8")
                     code = unquote(code)
+
+                    # Pyflakes linting
                     stdout = StringIO()
                     stderr = StringIO()
                     reporter = Reporter(stdout, stderr)
                     check(code, "<string>", reporter)
                     stdout_output = stdout.getvalue()
                     stderr_output = stderr.getvalue()
-                    result = {"stdout": stdout_output, "stderr": stderr_output}
+                    
+                    # Contracting linting
+                    try:
+                        linter = Linter()
+                        tree = ast.parse(code)
+                        violations = linter.check(tree)
+
+                        # Transform new linter output to match pyflakes format
+                        if violations:
+                            formatted_new_linter_output = ""
+                            for violation in violations:
+                                line = int(re.search(r"Line (\d+):", violation).group(1))
+                                message = re.search(r"Line \d+: (.+)", violation).group(1)
+                                formatted_violation_output = f"<string>:{line}:0: {message}\n"
+                                formatted_new_linter_output += formatted_violation_output
+                    except Exception as e:
+                        formatted_new_linter_output = ""
+                    
+
+                    # Combine stderr output
+                    combined_stderr_output = f"{stderr_output}{formatted_new_linter_output}"
+
+                    result = {"stdout": stdout_output, "stderr": combined_stderr_output}
                 except Exception as e:
                     result = {"stdout": "", "stderr": ""}
 
