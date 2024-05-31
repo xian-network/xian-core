@@ -70,10 +70,9 @@ def query(self, req) -> ResponseQuery:
                         linter = Linter()
                         tree = ast.parse(code)
                         violations = linter.check(tree)
-
+                        formatted_new_linter_output = ""
                         # Transform new linter output to match pyflakes format
                         if violations:
-                            formatted_new_linter_output = ""
                             for violation in violations:
                                 line = int(re.search(r"Line (\d+):", violation).group(1))
                                 message = re.search(r"Line \d+: (.+)", violation).group(1)
