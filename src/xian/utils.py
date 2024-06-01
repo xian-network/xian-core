@@ -1,9 +1,6 @@
 import json
 import struct
 import toml
-import nacl
-import nacl.encoding
-import nacl.signing
 import hashlib
 import marshal
 import binascii
