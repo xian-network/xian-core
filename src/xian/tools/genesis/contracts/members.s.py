@@ -1,151 +1,98 @@
-# Actions
-INTRODUCE_MOTION = 'introduce_motion'
-VOTE_ON_MOTION = 'vote_on_motion'
+import dao
+import rewards
+import stamp_cost
+import currency
 
-# Motions
-NO_MOTION = 0
-REMOVE_MEMBER = 1
-ADD_SEAT = 2
-REMOVE_SEAT = 3
+nodes = Variable()
+votes = Hash(default_value=False) # votes[id] = {"yes": int, "no": int, type: str, arg: Any, "voters": list, "finalized": bool}
+total_votes = Variable()
+types = Variable()
 
-VOTING_PERIOD = datetime.DAYS * 1
-
-S = Hash()
-minimum_nodes = Variable()
-candidate_contract = Variable()
+registration_fee = Variable()
+pending_registrations = Hash(default_value=False)
 
 @construct
-def seed(initial_members: list, minimum: int=1, candidate: str='elect_members'):
-    S['members'] = initial_members
-    minimum_nodes.set(minimum)
-    candidate_contract.set(candidate)
-
-    S['yays'] = 0
-    S['nays'] = 0
-
-    S['current_motion'] = NO_MOTION
-    S['motion_opened'] = now
+def seed(genesis_nodes: list, genesis_registration_fee: int):
+    nodes.set(genesis_nodes)
+    types.set(["add_member", "remove_member", "change_registration_fee", "reward_change", "dao_payout", "stamp_cost_change"])
+    total_votes.set(0)
+    registration_fee.set(genesis_registration_fee)
 
 @export
-def quorum_max():
-    return int(len(S['members']) * 2 / 3) + 1
+def propose_vote(type_of_vote: str, arg: Any):
+    assert ctx.caller in nodes.get(), "Only nodes can propose new votes"
+
+    if type_of_vote == "add_member":
+        assert pending_registrations[arg] == True, "Member must have pending registration"
+    
+    assert type_of_vote in types.get(), "Invalid type"
+    proposal_id = total_votes.get() + 1
+    votes[proposal_id] = {"yes": 0, "no": 0, "type": type_of_vote, "arg": arg, "voters": [ctx.caller], "finalized": False}
+    total_votes.set(proposal_id)
+    return proposal_id
 
 @export
-def quorum_min():
-    return min(quorum_max(), minimum_nodes.get())
+def vote(proposal_id: int, vote: str):
+    assert ctx.caller in nodes.get(), "Only nodes can vote"
+    assert votes[proposal_id], "Invalid proposal"
+    assert votes[proposal_id]["finalized"] == False, "Proposal already finalized"
+    assert vote in ["yes", "no"], "Invalid vote"
+    assert ctx.caller not in votes[proposal_id]["voters"], "Already voted"
+
+    # Do this because we can't modify a dict in a hash without reassigning it
+    cur_vote = votes[proposal_id]
+    cur_vote[vote] += 1
+    cur_vote["voters"].append(ctx.caller)
+    votes[proposal_id] = cur_vote
+
+    return cur_vote
 
 @export
-def current_value():
-    return S['members']
+def finalize_node(proposal_id: int):
+    assert ctx.caller in nodes.get(), "Only nodes can finalize votes"
+    assert votes[proposal_id], "Invalid proposal"
+    assert votes[proposal_id]["finalized"] == False, "Already finalized"
 
+    cur_vote = votes[proposal_id]
+
+    # Check if enough votes
+    assert len(cur_vote["voters"]) >= len(nodes.get()) // 2, "Not enough votes"
+
+    # Check if majority yes
+    if cur_vote["yes"] > cur_vote["no"]:
+        if cur_vote["type"] == "add_member":
+            nodes.set(nodes.get() + [cur_vote["arg"]])
+        elif cur_vote["type"] == "remove_member":
+            nodes.set([node for node in nodes.get() if node != cur_vote["arg"]])
+        elif cur_vote["type"] == "reward_change":
+            rewards.set_value(cur_vote["arg"])
+        elif cur_vote["type"] == "dao_payout":
+            currency.transfer_from_dao(cur_vote["arg"])
+        elif cur_vote["type"] == "stamp_cost_change":
+            stamp_cost.set_value(cur_vote["arg"])
+        elif cur_vote["type"] == "change_registration_fee":
+            registration_fee.set(cur_vote["arg"])
+    
+    cur_vote["finalized"] = True
+
+    votes[proposal_id] = cur_vote
+    return cur_vote
 
 @export
-def vote(vk: str, obj: list):
-    assert isinstance(obj, list), 'Pass a list!'
+def leave():
+    assert ctx.caller in nodes.get(), "Not a node"
+    nodes.set([node for node in nodes.get() if node != ctx.caller])
 
-    arg = None
+@export
+def register():
+    assert ctx.caller not in nodes.get(), "Already a node"
+    assert pending_registrations[ctx.caller] == False, "Already pending registration"
+    currency.transfer_from(registration_fee.get(), ctx.caller, ctx.this)
+    pending_registrations[ctx.caller] = True
 
-    if len(obj) == 3:
-        action, position, arg = obj
-    else:
-        action, position = obj
-
-    assert_vote_is_valid(vk, action, position, arg)
-
-    if action == INTRODUCE_MOTION:
-        introduce_motion(position, arg)
-
-    else:
-        assert S['current_motion'] != NO_MOTION, 'No motion proposed.'
-
-        if now - S['motion_opened'] >= VOTING_PERIOD:
-            reset()
-
-        assert S['positions', vk] is None, 'VK already voted.'
-
-        if position is True:
-            S['yays'] += 1
-            S['positions', vk] = position
-        else:
-            S['nays'] += 1
-            S['positions', vk] = position
-
-        if S['yays'] >= len(S['members']) // 2 + 1:
-            pass_current_motion()
-            reset()
-
-        elif S['nays'] >= len(S['members']) // 2 + 1:
-            reset()
-
-
-def assert_vote_is_valid(vk: str, action: str, position: bool, arg: Any=None):
-    assert vk in S['members'], 'Not a member.'
-
-    assert action in [INTRODUCE_MOTION, VOTE_ON_MOTION], 'Invalid action.'
-
-    if action == INTRODUCE_MOTION:
-        assert S['current_motion'] == NO_MOTION, 'Already in motion.'
-        assert 0 < position <= REMOVE_SEAT, 'Invalid motion.'
-        if position == REMOVE_MEMBER:
-            assert_vk_is_valid(arg)
-
-    elif action == VOTE_ON_MOTION:
-        assert isinstance(position, bool), 'Invalid position'
-
-
-def assert_vk_is_valid(vk: str):
-    assert vk is not None, 'No VK provided.'
-    assert isinstance(vk, str), 'VK not a string.'
-    assert len(vk) == 64, 'VK is not 64 characters.'
-    # assert vk == ctx.signer, 'Signer has to be the one voting to remove themselves.'
-    int(vk, 16)
-
-
-def introduce_motion(position: int, arg: Any):
-    # If remove member, must be a member that already exists
-    assert position <= REMOVE_SEAT, 'Invalid position.'
-    if position == REMOVE_MEMBER:
-        assert arg in S['members'], 'Member does not exist.'
-        assert len(S['members']) > minimum_nodes.get(), 'Cannot drop below current quorum.'
-        S['member_in_question'] = arg
-
-    S['current_motion'] = position
-    S['motion_opened'] = now
-
-
-def pass_current_motion():
-    current_motion = S['current_motion']
-    members = S['members']
-
-    if current_motion == REMOVE_MEMBER:
-        members.remove(S['member_in_question'])
-
-    elif current_motion == ADD_SEAT:
-        # Get the top member
-        member_candidates = importlib.import_module(candidate_contract.get())
-        new_mem = member_candidates.top_member()
-
-        # Append it to the list, and remove it from pending
-        if new_mem is not None:
-            members.append(new_mem)
-            member_candidates.pop_top()
-
-    elif current_motion == REMOVE_SEAT:
-        # Get least popular member
-        member_candidates = importlib.import_module(candidate_contract.get())
-        old_mem = member_candidates.last_member()
-
-        # Remove them from the list and pop them from deprecating
-        if old_mem is not None:
-            members.remove(old_mem)
-            member_candidates.pop_last()
-
-    S['members'] = members
-
-
-def reset():
-    S['current_motion'] = NO_MOTION
-    S['member_in_question'] = None
-    S['yays'] = 0
-    S['nays'] = 0
-    S.clear('positions')
+@export
+def unregister():
+    assert ctx.caller not in nodes.get(), "If you're a node already, you can't unregister. You need to leave or be removed."
+    assert pending_registrations[ctx.caller] == True, "No pending registration"
+    currency.transfer(registration_fee.get(), ctx.caller)
+    pending_registrations[ctx.caller] = False
