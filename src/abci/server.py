@@ -144,6 +144,8 @@ class ABCIServer:
         try:
             logger.info(" ~ running app - press CTRL-C to stop ~")
             loop.run_until_complete(self._start())
+        except asyncio.exceptions.CancelledError:
+            pass
         except Exception as e:
             logger.error(f" ... error: {e}")
             logger.warning(" ... shutting down")
@@ -199,8 +201,8 @@ class ABCIServer:
 
 async def _stop() -> None:
     """
-    Clean up all async tasks.  Called on a signal or a connection closed by
-    tendermint
+    Clean up all async tasks.
+    Called on a signal or a connection closed by tendermint
     """
     logger.warning(" ... received exit signal")
     tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
