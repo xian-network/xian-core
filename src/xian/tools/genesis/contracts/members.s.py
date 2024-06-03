@@ -65,11 +65,11 @@ def finalize_node(proposal_id: int):
         elif cur_vote["type"] == "remove_member":
             nodes.set([node for node in nodes.get() if node != cur_vote["arg"]])
         elif cur_vote["type"] == "reward_change":
-            rewards.set_value(cur_vote["arg"])
+            rewards.set_value(new_value=cur_vote["arg"])
         elif cur_vote["type"] == "dao_payout":
-            currency.transfer_from_dao(cur_vote["arg"])
+            currency.transfer_from_dao(args=cur_vote["arg"])
         elif cur_vote["type"] == "stamp_cost_change":
-            stamp_cost.set_value(cur_vote["arg"])
+            stamp_cost.set_value(new_value=cur_vote["arg"])
         elif cur_vote["type"] == "change_registration_fee":
             registration_fee.set(cur_vote["arg"])
     
