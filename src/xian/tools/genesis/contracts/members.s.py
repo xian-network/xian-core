@@ -100,11 +100,11 @@ def register():
     assert ctx.caller not in nodes.get(), "Already a node"
     assert pending_registrations[ctx.caller] == False, "Already pending registration"
     currency.transfer_from(registration_fee.get(), ctx.caller, ctx.this)
-    pending_registrations[ctx.caller] = True
+    pending_registrations[ctx.caller, registration_fee.get()] = True
 
 @export
 def unregister():
     assert ctx.caller not in nodes.get(), "If you're a node already, you can't unregister. You need to leave or be removed."
     assert pending_registrations[ctx.caller] == True, "No pending registration"
-    currency.transfer(registration_fee.get(), ctx.caller)
+    currency.transfer(pending_registrations[ctx.caller], ctx.caller)
     pending_registrations[ctx.caller] = False
