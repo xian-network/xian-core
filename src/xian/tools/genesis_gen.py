@@ -94,7 +94,7 @@ class GenesisGen:
                         for i, s in enumerate(v):
                             if type(s) is str:
                                 v[i] = self.replace_arg(s, locals())
-
+                                
             if contracting.get_contract(con_name) is None:
                 contracting.submit(
                     code,
@@ -102,24 +102,6 @@ class GenesisGen:
                     owner=contract['owner'],
                     constructor_args=contract['constructor_args']
                 )
-
-        # Set policies
-        election_house = contracting.get_contract('election_house')
-
-        policies = [
-            'masternodes',
-            'rewards',
-            'stamp_cost',
-            'dao'
-        ]
-
-        for policy in policies:
-            if contracting.get_var(
-                contract='election_house',
-                variable='policies',
-                arguments=[policy]
-            ) is None:
-                election_house.register_policy(contract=policy)
 
         block_number = "0"
         hlc_timestamp = '0000-00-00T00:00:00.000000000Z_0'
