@@ -10,6 +10,7 @@ types = Variable()
 
 registration_fee = Variable()
 pending_registrations = Hash(default_value=False)
+pending_leave = Hash(default_value=False)
 
 @construct
 def seed(genesis_nodes: list, genesis_registration_fee: int):
@@ -79,9 +80,18 @@ def finalize_node(proposal_id: int):
     return cur_vote
 
 @export
+def announce_leave():
+    assert ctx.caller in nodes.get(), "Not a node"
+    assert pending_leave[ctx.caller] == False, "Already pending leave"
+    pending_leave[ctx.caller] = now + datetime.timedelta(days=7)
+    
+@export
 def leave():
     assert ctx.caller in nodes.get(), "Not a node"
+    assert pending_leave[ctx.caller] != False, "No pending leave"
+    assert pending_leave[ctx.caller] < now, "Leave announcement period not over"
     nodes.set([node for node in nodes.get() if node != ctx.caller])
+    pending_leave[ctx.caller] = False
 
 @export
 def register():
