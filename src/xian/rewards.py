@@ -83,7 +83,7 @@ class RewardsHandler:
     
     def _distribute_masternode_rewards(self, driver, master_reward):
         rewards = []
-        for m in driver.get("masternodes.nodes"):
+        for m in driver.get("masternodes.S:members"):
             m_balance = driver.get(f"currency.balances:{m}") or 0
             m_balance_after = round(m_balance + master_reward, c.DUST_EXPONENT)
             rewards.append(driver.set(f"currency.balances:{m}", m_balance_after))
