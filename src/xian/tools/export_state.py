@@ -1,8 +1,8 @@
 import json
 import hashlib
+
 from pathlib import Path
 from argparse import ArgumentParser
-
 from xian.utils import is_compiled_key
 from contracting.storage.driver import Driver
 from contracting.storage.encoder import encode

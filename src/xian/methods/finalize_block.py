@@ -1,4 +1,5 @@
 import json
+import traceback
 
 from cometbft.abci.v1beta3.types_pb2 import (
     ResponseFinalizeBlock,
@@ -18,7 +19,6 @@ from xian.utils import (
 )
 from xian.constants import ErrorCode
 from loguru import logger
-import traceback
 
 
 def finalize_block(self, req) -> ResponseFinalizeBlock:
