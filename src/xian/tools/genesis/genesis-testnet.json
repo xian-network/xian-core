@@ -85,25 +85,25 @@
                 "value": {
                     "__time__": [
                         2024,
-                        5,
-                        29,
-                        11,
-                        18,
+                        6,
+                        3,
+                        6,
+                        45,
                         0,
                         0
                     ]
                 }
             },
             {
-                "key": "currency.balances:dao",
+                "key": "currency.balances:7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e",
                 "value": {
-                    "__fixed__": "33333333.3"
+                    "__fixed__": "61111111.05"
                 }
             },
             {
-                "key": "currency.balances:e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931",
+                "key": "currency.balances:dao",
                 "value": {
-                    "__fixed__": "61111111.05"
+                    "__fixed__": "33333333.3"
                 }
             },
             {
@@ -117,10 +117,10 @@
                 "value": {
                     "__time__": [
                         2024,
-                        5,
-                        29,
-                        11,
-                        18,
+                        6,
+                        3,
+                        6,
+                        45,
                         0,
                         0
                     ]
@@ -135,10 +135,10 @@
                 "value": {
                     "__time__": [
                         2029,
-                        5,
-                        27,
-                        11,
-                        18,
+                        6,
+                        1,
+                        6,
+                        45,
                         0,
                         0
                     ]
@@ -152,7 +152,7 @@
             },
             {
                 "key": "currency.streams:team_lock:receiver",
-                "value": "e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931"
+                "value": "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e"
             },
             {
                 "key": "currency.streams:team_lock:sender",
@@ -163,34 +163,8 @@
                 "value": "active"
             },
             {
-                "key": "dao.S:motion_delay",
-                "value": {
-                    "__delta__": [
-                        1,
-                        0
-                    ]
-                }
-            },
-            {
-                "key": "dao.S:motion_period",
-                "value": {
-                    "__delta__": [
-                        1,
-                        0
-                    ]
-                }
-            },
-            {
-                "key": "dao.S:nays",
-                "value": 0
-            },
-            {
-                "key": "dao.S:yays",
-                "value": 0
-            },
-            {
                 "key": "dao.__code__",
-                "value": "import currency\nimport election_house\n__S = Hash(contract='dao', name='S')\n__pending_motions = Variable(contract='dao', name='pending_motions')\n\n\ndef ____():\n    __S['motion_period'] = datetime.DAYS * 1\n    __S['motion_delay'] = datetime.DAYS * 1\n    __pending_motions.set({'pending_motions': []})\n    __reset()\n\n\n@__export('dao')\ndef current_value():\n    return __pending_motions.get()['pending_motions']\n\n\n@__export('dao')\ndef vote(vk: str, obj: list):\n    __finalize_pending_motions()\n    assert isinstance(obj, list), 'Pass a list!'\n    if len(obj) == 0:\n        return\n    assert vk in election_house.current_value_for_policy('masternodes'\n        ), 'Not a member.'\n    if __S['motion_start'] is None:\n        recipient_vk, amount = obj\n        __assert_recipient_vk_and_amount_is_valid(recipient_vk, amount)\n        __S['recipient_vk'] = recipient_vk\n        __S['amount'] = amount\n        __S['motion_start'] = now\n    else:\n        if now - __S['motion_start'] >= __S['motion_period']:\n            __reset()\n            return\n        position, = obj\n        __assert_vote_is_valid(vk, position)\n        __S['positions', vk] = position\n        if position:\n            __S['yays'] += 1\n        else:\n            __S['nays'] += 1\n        total_votes = __S['yays'] + __S['nays']\n        if total_votes >= len(election_house.current_value_for_policy(\n            'masternodes')) * 3 // 5 + 1:\n            if __S['yays'] >= total_votes * 7 // 10 + 1:\n                __pass_motion()\n            elif __S['nays'] >= total_votes * 7 // 10 + 1:\n                __reset()\n\n\ndef __pass_motion():\n    motions = __pending_motions.get()['pending_motions']\n    motions += [{'motion_passed': now, 'recipient_vk': __S['recipient_vk'],\n        'amount': __S['amount']}]\n    __pending_motions.set({'pending_motions': motions})\n    __reset()\n\n\ndef __finalize_pending_motions():\n    motions = __pending_motions.get()['pending_motions']\n    for motion in motions[:]:\n        if now - motion['motion_passed'] >= __S['motion_delay']:\n            currency.transfer(amount=motion['amount'], to=motion[\n                'recipient_vk'])\n            motions.remove(motion)\n    __pending_motions.set({'pending_motions': motions})\n\n\ndef __reset():\n    __S['yays'] = 0\n    __S['nays'] = 0\n    __S['motion_start'] = None\n    __S['recipient_vk'] = None\n    __S['amount'] = None\n    __S.clear('positions')\n\n\ndef __assert_recipient_vk_and_amount_is_valid(vk: str, amount: int):\n    assert vk is not None, 'No recipient VK provided.'\n    assert isinstance(vk, str), 'Recipient VK is not a string.'\n    assert len(vk) == 64, 'Recipient VK is not 64 characters.'\n    int(vk, 16)\n    assert amount is not None, 'No amount provided.'\n    assert isinstance(amount, int), 'Amount is not an integer.'\n    assert amount > 0, 'Amount is not greater than zero.'\n\n\ndef __assert_vote_is_valid(vk: str, position: bool):\n    assert __S['positions', vk] is None, 'VK already voted.'\n    assert isinstance(position, bool), 'Invalid position.'\n"
+                "value": "import currency\n\n\n@__export('dao')\ndef transfer_from_dao(args: dict):\n    amount = args.get('amount')\n    to = args.get('to')\n    assert amount > 0, 'Amount must be greater than 0'\n    assert ctx.caller == ctx.owner, 'Only the voting contract can transfer from DAO'\n    currency.transfer(amount=amount, to=to)\n"
             },
             {
                 "key": "dao.__developer__",
@@ -198,95 +172,21 @@
             },
             {
                 "key": "dao.__owner__",
-                "value": "election_house"
+                "value": "masternodes"
             },
             {
                 "key": "dao.__submitted__",
                 "value": {
                     "__time__": [
                         2024,
-                        5,
-                        29,
-                        11,
-                        18,
+                        6,
+                        3,
+                        6,
+                        45,
                         0,
                         0
                     ]
                 }
-            },
-            {
-                "key": "dao.pending_motions",
-                "value": {
-                    "pending_motions": []
-                }
-            },
-            {
-                "key": "elect_masternodes.__code__",
-                "value": "import currency\nimport election_house\n__candidate_state = Hash(contract='elect_masternodes', name='candidate_state')\n__top_candidate = Variable(contract='elect_masternodes', name='top_candidate')\n__no_confidence_state = Hash(contract='elect_masternodes', name=\n    'no_confidence_state')\n__last_candidate = Variable(contract='elect_masternodes', name='last_candidate'\n    )\n__to_be_relinquished = Variable(contract='elect_masternodes', name=\n    'to_be_relinquished')\nSTAMP_COST = 20\n__member_cost = Variable(contract='elect_masternodes', name='member_cost')\n__controller = Variable(contract='elect_masternodes', name='controller')\n\n\ndef ____(policy: str='members', cost: int=500000):\n    __controller.set(policy)\n    __member_cost.set(cost)\n\n\n@__export('elect_masternodes')\ndef register():\n    assert not __candidate_state['registered', ctx.caller\n        ], 'Already registered.'\n    currency.transfer_from(__member_cost.get(), ctx.this, ctx.caller)\n    __candidate_state['registered', ctx.caller] = True\n    __candidate_state['votes', ctx.caller] = 0\n    if __top_candidate.get() is None:\n        __top_candidate.set(ctx.caller)\n\n\n@__export('elect_masternodes')\ndef unregister():\n    mns = election_house.current_value_for_policy(__controller.get())\n    assert __candidate_state['registered', ctx.caller], 'Not registered.'\n    assert ctx.caller not in mns, \"Can't unstake if in governance.\"\n    currency.transfer(__member_cost.get(), ctx.caller)\n    __candidate_state['registered', ctx.caller] = False\n    __candidate_state['votes', ctx.caller] = 0\n\n\n@__export('elect_masternodes')\ndef vote_candidate(address: str):\n    assert __candidate_state['registered', address\n        ], 'Candidate not registered.'\n    v = __candidate_state['last_voted', ctx.caller]\n    assert v is None or now - v > datetime.DAYS * 1, 'Voting again too soon.'\n    vote_cost = STAMP_COST / election_house.current_value_for_policy(\n        'stamp_cost')\n    currency.transfer_from(vote_cost, 'blackhole', ctx.caller)\n    __candidate_state['last_voted', ctx.caller] = now\n    votes = __candidate_state['votes', address]\n    if votes is None:\n        __candidate_state['votes', address] = 1\n    else:\n        __candidate_state['votes', address] += 1\n    if __top_candidate.get() is not None:\n        if __candidate_state['votes', address] > __candidate_state['votes',\n            __top_candidate.get()]:\n            __top_candidate.set(address)\n\n\n@__export('elect_masternodes')\ndef top_member():\n    return __top_candidate.get()\n\n\n@__export('elect_masternodes')\ndef pop_top():\n    assert ctx.caller == __controller.get(), 'Wrong smart contract caller.'\n    top = top_member()\n    if top is None:\n        return None\n    __candidate_state.clear('votes')\n    __top_candidate.set(None)\n\n\n@__export('elect_masternodes')\ndef vote_no_confidence(address: str):\n    assert address in election_house.current_value_for_policy(__controller.\n        get()), 'Cannot vote against a non-committee member'\n    v = __no_confidence_state['last_voted', ctx.caller]\n    assert v is None or now - v > datetime.DAYS * 1, 'Voting again too soon.'\n    vote_cost = STAMP_COST / election_house.current_value_for_policy(\n        'stamp_cost')\n    currency.transfer_from(vote_cost, 'blackhole', ctx.caller)\n    __no_confidence_state['last_voted', ctx.caller] = now\n    if __no_confidence_state['votes', address] is None:\n        __no_confidence_state['votes', address] = 1\n    else:\n        __no_confidence_state['votes', address] += 1\n    if __last_candidate.get() is None:\n        __last_candidate.set(address)\n    elif __no_confidence_state['votes', address] > __no_confidence_state[\n        'votes', __last_candidate.get()]:\n        __last_candidate.set(address)\n\n\n@__export('elect_masternodes')\ndef last_member():\n    r = __to_be_relinquished.get()\n    if r is not None:\n        return r\n    return __last_candidate.get()\n\n\n@__export('elect_masternodes')\ndef pop_last():\n    assert ctx.caller == __controller.get(), 'Wrong smart contract caller.'\n    r = __to_be_relinquished.get()\n    if r is not None:\n        __no_confidence_state['votes', r] = 0\n        __to_be_relinquished.set(None)\n    else:\n        __no_confidence_state.clear('votes')\n        __candidate_state['registered', __last_candidate.get()] = False\n        __last_candidate.set(None)\n\n\n@__export('elect_masternodes')\ndef force_removal(address: str):\n    assert ctx.caller == __controller.get(), 'Wrong smart contract caller.'\n    __candidate_state['registered', address] = False\n\n\n@__export('elect_masternodes')\ndef relinquish():\n    assert ctx.caller in election_house.current_value_for_policy(__controller\n        .get())\n    r = __to_be_relinquished.get()\n    assert r is None, 'Someone is already trying to relinquish!'\n    __to_be_relinquished.set(ctx.caller)\n"
-            },
-            {
-                "key": "elect_masternodes.__developer__",
-                "value": "sys"
-            },
-            {
-                "key": "elect_masternodes.__submitted__",
-                "value": {
-                    "__time__": [
-                        2024,
-                        5,
-                        29,
-                        11,
-                        18,
-                        0,
-                        0
-                    ]
-                }
-            },
-            {
-                "key": "elect_masternodes.controller",
-                "value": "masternodes"
-            },
-            {
-                "key": "elect_masternodes.member_cost",
-                "value": 100000
-            },
-            {
-                "key": "election_house.__code__",
-                "value": "I = importlib\n__policies = Hash(contract='election_house', name='policies')\npolicy_interface = [I.Func('vote', args=('vk', 'obj')), I.Func('current_value')\n    ]\n\n\n@__export('election_house')\ndef register_policy(contract: str):\n    if __policies[contract] is None:\n        p = I.import_module(contract)\n        assert I.owner_of(p\n            ) == ctx.this, 'Election house must control the policy contract!'\n        assert I.enforce_interface(p, policy_interface\n            ), 'Policy contract does not follow the correct interface'\n        __policies[contract] = True\n    else:\n        raise Exception('Policy already registered')\n\n\n@__export('election_house')\ndef current_value_for_policy(policy: str):\n    assert __policies[policy] is not None, f'Invalid policy: {policy}.'\n    p = I.import_module(policy)\n    return p.current_value()\n\n\n@__export('election_house')\ndef vote(policy: str, value: Any):\n    assert __policies[policy] is not None, 'Invalid policy.'\n    p = I.import_module(policy)\n    p.vote(vk=ctx.caller, obj=value)\n"
-            },
-            {
-                "key": "election_house.__developer__",
-                "value": "sys"
-            },
-            {
-                "key": "election_house.__submitted__",
-                "value": {
-                    "__time__": [
-                        2024,
-                        5,
-                        29,
-                        11,
-                        18,
-                        0,
-                        0
-                    ]
-                }
-            },
-            {
-                "key": "election_house.policies:dao",
-                "value": true
-            },
-            {
-                "key": "election_house.policies:masternodes",
-                "value": true
-            },
-            {
-                "key": "election_house.policies:rewards",
-                "value": true
-            },
-            {
-                "key": "election_house.policies:stamp_cost",
-                "value": true
             },
             {
                 "key": "foundation.__code__",
@@ -301,10 +201,10 @@
                 "value": {
                     "__time__": [
                         2024,
-                        5,
-                        29,
-                        11,
-                        18,
+                        6,
+                        3,
+                        6,
+                        45,
                         0,
                         0
                     ]
@@ -312,14 +212,32 @@
             },
             {
                 "key": "foundation.owner",
-                "value": "e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931"
+                "value": "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e"
             },
             {
-                "key": "masternodes.S:current_motion",
-                "value": 0
+                "key": "masternodes.__code__",
+                "value": "import dao\nimport rewards\nimport stamp_cost\nimport currency\n__nodes = Variable(contract='masternodes', name='nodes')\n__votes = Hash(default_value=False, contract='masternodes', name='votes')\n__total_votes = Variable(contract='masternodes', name='total_votes')\n__types = Variable(contract='masternodes', name='types')\n__registration_fee = Variable(contract='masternodes', name='registration_fee')\n__pending_registrations = Hash(default_value=False, contract='masternodes',\n    name='pending_registrations')\n__pending_leave = Hash(default_value=False, contract='masternodes', name=\n    'pending_leave')\n\n\ndef ____(genesis_nodes: list, genesis_registration_fee: int):\n    __nodes.set(genesis_nodes)\n    __types.set(['add_member', 'remove_member', 'change_registration_fee',\n        'reward_change', 'dao_payout', 'stamp_cost_change', 'change_types'])\n    __total_votes.set(0)\n    __registration_fee.set(genesis_registration_fee)\n\n\n@__export('masternodes')\ndef propose_vote(type_of_vote: str, arg: Any):\n    assert ctx.caller in __nodes.get(), 'Only nodes can propose new votes'\n    if type_of_vote == 'add_member':\n        assert __pending_registrations[arg\n            ] == True, 'Member must have pending registration'\n    assert type_of_vote in __types.get(), 'Invalid type'\n    proposal_id = __total_votes.get() + 1\n    __votes[proposal_id] = {'yes': 0, 'no': 0, 'type': type_of_vote, 'arg':\n        arg, 'voters': [ctx.caller], 'finalized': False}\n    __total_votes.set(proposal_id)\n    return proposal_id\n\n\n@__export('masternodes')\ndef vote(proposal_id: int, vote: str):\n    assert ctx.caller in __nodes.get(), 'Only nodes can vote'\n    assert __votes[proposal_id], 'Invalid proposal'\n    assert __votes[proposal_id]['finalized'\n        ] == False, 'Proposal already finalized'\n    assert vote in ['yes', 'no'], 'Invalid vote'\n    assert ctx.caller not in __votes[proposal_id]['voters'], 'Already voted'\n    cur_vote = __votes[proposal_id]\n    cur_vote[vote] += 1\n    cur_vote['voters'].append(ctx.caller)\n    __votes[proposal_id] = cur_vote\n    return cur_vote\n\n\n@__export('masternodes')\ndef finalize_node(proposal_id: int):\n    assert ctx.caller in __nodes.get(), 'Only nodes can finalize votes'\n    assert __votes[proposal_id], 'Invalid proposal'\n    assert __votes[proposal_id]['finalized'] == False, 'Already finalized'\n    cur_vote = __votes[proposal_id]\n    assert len(cur_vote['voters']) >= len(__nodes.get()\n        ) // 2, 'Not enough votes'\n    if cur_vote['yes'] > cur_vote['no']:\n        if cur_vote['type'] == 'add_member':\n            __nodes.set(__nodes.get() + [cur_vote['arg']])\n        elif cur_vote['type'] == 'remove_member':\n            __nodes.set([node for node in __nodes.get() if node != cur_vote\n                ['arg']])\n        elif cur_vote['type'] == 'reward_change':\n            rewards.set_value(new_value=cur_vote['arg'])\n        elif cur_vote['type'] == 'dao_payout':\n            currency.transfer_from_dao(args=cur_vote['arg'])\n        elif cur_vote['type'] == 'stamp_cost_change':\n            stamp_cost.set_value(new_value=cur_vote['arg'])\n        elif cur_vote['type'] == 'change_registration_fee':\n            __registration_fee.set(cur_vote['arg'])\n        elif cur_vote['type'] == 'change_types':\n            __types.set(cur_vote['arg'])\n    cur_vote['finalized'] = True\n    __votes[proposal_id] = cur_vote\n    return cur_vote\n\n\n@__export('masternodes')\ndef announce_leave():\n    assert ctx.caller in __nodes.get(), 'Not a node'\n    assert __pending_leave[ctx.caller] == False, 'Already pending leave'\n    __pending_leave[ctx.caller] = now + datetime.timedelta(days=7)\n\n\n@__export('masternodes')\ndef leave():\n    assert ctx.caller in __nodes.get(), 'Not a node'\n    assert __pending_leave[ctx.caller] != False, 'No pending leave'\n    assert __pending_leave[ctx.caller\n        ] < now, 'Leave announcement period not over'\n    __nodes.set([node for node in __nodes.get() if node != ctx.caller])\n    __pending_leave[ctx.caller] = False\n\n\n@__export('masternodes')\ndef register():\n    assert ctx.caller not in __nodes.get(), 'Already a node'\n    assert __pending_registrations[ctx.caller\n        ] == False, 'Already pending registration'\n    currency.transfer_from(__registration_fee.get(), ctx.caller, ctx.this)\n    __pending_registrations[ctx.caller] = True\n\n\n@__export('masternodes')\ndef unregister():\n    assert ctx.caller not in __nodes.get(\n        ), \"If you're a node already, you can't unregister. You need to leave or be removed.\"\n    assert __pending_registrations[ctx.caller\n        ] == True, 'No pending registration'\n    currency.transfer(__registration_fee.get(), ctx.caller)\n    __pending_registrations[ctx.caller] = False\n"
             },
             {
-                "key": "masternodes.S:members",
+                "key": "masternodes.__developer__",
+                "value": "sys"
+            },
+            {
+                "key": "masternodes.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        6,
+                        3,
+                        6,
+                        45,
+                        0,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "masternodes.nodes",
                 "value": [
                     "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e",
                     "dff5d54d9c3cdb04d279c3c0a123d6a73a94e0725d7eac955fdf87298dbe45a6",
@@ -329,89 +247,24 @@
                 ]
             },
             {
-                "key": "masternodes.S:motion_opened",
-                "value": {
-                    "__time__": [
-                        2024,
-                        5,
-                        29,
-                        11,
-                        18,
-                        0,
-                        0
-                    ]
-                }
+                "key": "masternodes.registration_fee",
+                "value": 100000
             },
             {
-                "key": "masternodes.S:nays",
+                "key": "masternodes.total_votes",
                 "value": 0
             },
             {
-                "key": "masternodes.S:yays",
-                "value": 0
-            },
-            {
-                "key": "masternodes.__code__",
-                "value": "INTRODUCE_MOTION = 'introduce_motion'\nVOTE_ON_MOTION = 'vote_on_motion'\nNO_MOTION = 0\nREMOVE_MEMBER = 1\nADD_SEAT = 2\nREMOVE_SEAT = 3\nVOTING_PERIOD = datetime.DAYS * 1\n__S = Hash(contract='masternodes', name='S')\n__minimum_nodes = Variable(contract='masternodes', name='minimum_nodes')\n__candidate_contract = Variable(contract='masternodes', name=\n    'candidate_contract')\n\n\ndef ____(initial_members: list, minimum: int=1, candidate: str='elect_members'\n    ):\n    __S['members'] = initial_members\n    __minimum_nodes.set(minimum)\n    __candidate_contract.set(candidate)\n    __S['yays'] = 0\n    __S['nays'] = 0\n    __S['current_motion'] = NO_MOTION\n    __S['motion_opened'] = now\n\n\n@__export('masternodes')\ndef quorum_max():\n    return int(len(__S['members']) * 2 / 3) + 1\n\n\n@__export('masternodes')\ndef quorum_min():\n    return min(quorum_max(), __minimum_nodes.get())\n\n\n@__export('masternodes')\ndef current_value():\n    return __S['members']\n\n\n@__export('masternodes')\ndef vote(vk: str, obj: list):\n    assert isinstance(obj, list), 'Pass a list!'\n    arg = None\n    if len(obj) == 3:\n        action, position, arg = obj\n    else:\n        action, position = obj\n    __assert_vote_is_valid(vk, action, position, arg)\n    if action == INTRODUCE_MOTION:\n        __introduce_motion(position, arg)\n    else:\n        assert __S['current_motion'] != NO_MOTION, 'No motion proposed.'\n        if now - __S['motion_opened'] >= VOTING_PERIOD:\n            __reset()\n        assert __S['positions', vk] is None, 'VK already voted.'\n        if position is True:\n            __S['yays'] += 1\n            __S['positions', vk] = position\n        else:\n            __S['nays'] += 1\n            __S['positions', vk] = position\n        if __S['yays'] >= len(__S['members']) // 2 + 1:\n            __pass_current_motion()\n            __reset()\n        elif __S['nays'] >= len(__S['members']) // 2 + 1:\n            __reset()\n\n\ndef __assert_vote_is_valid(vk: str, action: str, position: bool, arg: Any=None\n    ):\n    assert vk in __S['members'], 'Not a member.'\n    assert action in [INTRODUCE_MOTION, VOTE_ON_MOTION], 'Invalid action.'\n    if action == INTRODUCE_MOTION:\n        assert __S['current_motion'] == NO_MOTION, 'Already in motion.'\n        assert 0 < position <= REMOVE_SEAT, 'Invalid motion.'\n        if position == REMOVE_MEMBER:\n            __assert_vk_is_valid(arg)\n    elif action == VOTE_ON_MOTION:\n        assert isinstance(position, bool), 'Invalid position'\n\n\ndef __assert_vk_is_valid(vk: str):\n    assert vk is not None, 'No VK provided.'\n    assert isinstance(vk, str), 'VK not a string.'\n    assert len(vk) == 64, 'VK is not 64 characters.'\n    int(vk, 16)\n\n\ndef __introduce_motion(position: int, arg: Any):\n    assert position <= REMOVE_SEAT, 'Invalid position.'\n    if position == REMOVE_MEMBER:\n        assert arg in __S['members'], 'Member does not exist.'\n        assert len(__S['members']) > __minimum_nodes.get(\n            ), 'Cannot drop below current quorum.'\n        __S['member_in_question'] = arg\n    __S['current_motion'] = position\n    __S['motion_opened'] = now\n\n\ndef __pass_current_motion():\n    current_motion = __S['current_motion']\n    members = __S['members']\n    if current_motion == REMOVE_MEMBER:\n        members.remove(__S['member_in_question'])\n    elif current_motion == ADD_SEAT:\n        member_candidates = importlib.import_module(__candidate_contract.get())\n        new_mem = member_candidates.top_member()\n        if new_mem is not None:\n            members.append(new_mem)\n            member_candidates.pop_top()\n    elif current_motion == REMOVE_SEAT:\n        member_candidates = importlib.import_module(__candidate_contract.get())\n        old_mem = member_candidates.last_member()\n        if old_mem is not None:\n            members.remove(old_mem)\n            member_candidates.pop_last()\n    __S['members'] = members\n\n\ndef __reset():\n    __S['current_motion'] = NO_MOTION\n    __S['member_in_question'] = None\n    __S['yays'] = 0\n    __S['nays'] = 0\n    __S.clear('positions')\n"
-            },
-            {
-                "key": "masternodes.__developer__",
-                "value": "sys"
-            },
-            {
-                "key": "masternodes.__owner__",
-                "value": "election_house"
-            },
-            {
-                "key": "masternodes.__submitted__",
-                "value": {
-                    "__time__": [
-                        2024,
-                        5,
-                        29,
-                        11,
-                        18,
-                        0,
-                        0
-                    ]
-                }
-            },
-            {
-                "key": "masternodes.candidate_contract",
-                "value": "elect_masternodes"
-            },
-            {
-                "key": "masternodes.minimum_nodes",
-                "value": 1
-            },
-            {
-                "key": "rewards.S:current_votes:blackhole",
-                "value": 0
-            },
-            {
-                "key": "rewards.S:current_votes:developer",
-                "value": 0
-            },
-            {
-                "key": "rewards.S:current_votes:foundation",
-                "value": 0
-            },
-            {
-                "key": "rewards.S:current_votes:masternodes",
-                "value": 0
-            },
-            {
-                "key": "rewards.S:election_max_length",
-                "value": {
-                    "__delta__": [
-                        1,
-                        0
-                    ]
-                }
-            },
-            {
-                "key": "rewards.S:master_contract",
-                "value": "masternodes"
+                "key": "masternodes.types",
+                "value": [
+                    "add_member",
+                    "remove_member",
+                    "change_registration_fee",
+                    "reward_change",
+                    "dao_payout",
+                    "stamp_cost_change",
+                    "change_types"
+                ]
             },
             {
                 "key": "rewards.S:value",
@@ -431,12 +284,8 @@
                 ]
             },
             {
-                "key": "rewards.S:vote_count",
-                "value": 0
-            },
-            {
                 "key": "rewards.__code__",
-                "value": "import election_house\n__S = Hash(contract='rewards', name='S')\n\n\ndef ____(initial_split: list=[decimal('0.88'), decimal('0.01'), decimal(\n    '0.01'), decimal('0.1')], master_contract='masternodes',\n    election_max_length=datetime.DAYS * 1):\n    __S['value'] = initial_split\n    __S['master_contract'] = master_contract\n    __S['election_max_length'] = election_max_length\n    __S['vote_count'] = 0\n    __reset_current_votes()\n\n\ndef __reset_current_votes():\n    __S['current_votes', 'masternodes'] = 0\n    __S['current_votes', 'blackhole'] = 0\n    __S['current_votes', 'foundation'] = 0\n    __S['current_votes', 'developer'] = 0\n\n\n@__export('rewards')\ndef current_value():\n    return __S['value']\n\n\n@__export('rewards')\ndef vote(vk: str, obj: list):\n    if __S['election_start'] is None:\n        total_nodes = len(election_house.current_value_for_policy(__S[\n            'master_contract']))\n        __S['vote_count'] = 0\n        __S['min_votes_required'] = total_nodes * 2 // 3 + 1\n        __S['election_start'] = now\n        __S.clear('has_voted')\n        __reset_current_votes()\n        __tally_vote(vk, obj)\n    else:\n        __tally_vote(vk, obj)\n        if __election_is_over():\n            __update_value()\n            __S['election_start'] = None\n\n\ndef __update_value():\n    masternode_votes = __S['current_votes', 'masternodes'] or 1\n    blackhole_votes = __S['current_votes', 'blackhole'] or 1\n    foundation_votes = __S['current_votes', 'foundation'] or 1\n    developer_votes = __S['current_votes', 'developer'] or 1\n    total_votes = (masternode_votes + blackhole_votes + foundation_votes +\n        developer_votes)\n    mn = masternode_votes / total_votes\n    bh = blackhole_votes / total_votes\n    fd = foundation_votes / total_votes\n    dv = developer_votes / total_votes\n    __S['value'] = [mn, bh, fd, dv]\n\n\ndef __election_is_over():\n    return __S['vote_count'] >= __S['min_votes_required'] or now - __S[\n        'election_start'] >= __S['election_max_length']\n\n\ndef __tally_vote(vk: str, obj: list):\n    __validate_vote(vk, obj)\n    a, b, c, d = obj\n    __S['current_votes', 'masternodes'] += a\n    __S['current_votes', 'blackhole'] += b\n    __S['current_votes', 'foundation'] += c\n    __S['current_votes', 'developer'] += d\n    __S['has_voted', vk] = True\n    __S['vote_count'] += 1\n\n\ndef __validate_vote(vk: str, obj: list):\n    assert vk in election_house.current_value_for_policy(__S['master_contract']\n        ), 'Not allowed to vote!'\n    assert isinstance(obj, list), 'Pass a list!'\n    assert len(obj) == 4, 'Must have 4 elements!'\n    s = 0\n    for o in obj:\n        assert int(o) >= 0, 'No non-negative numbers!'\n        s += o\n    assert s == 100, 'Elements must add to 100!'\n    assert __S['has_voted', vk] is None, 'VK has already voted!'\n"
+                "value": "__S = Hash(contract='rewards', name='S')\n\n\ndef ____(initial_split: list=[decimal('0.88'), decimal('0.01'), decimal(\n    '0.01'), decimal('0.1')]):\n    __S['value'] = initial_split\n\n\n@__export('rewards')\ndef current_value():\n    return __S['value']\n\n\n@__export('rewards')\ndef set_value(new_value: list):\n    assert len(new_value) == 4, 'New value must be a list of 4 elements'\n    assert sum(new_value) == 1, 'Sum of new value must be 1'\n    assert ctx.caller == ctx.owner, 'Only the voting contract can set the value'\n    __S['value'] = new_value\n"
             },
             {
                 "key": "rewards.__developer__",
@@ -444,50 +293,29 @@
             },
             {
                 "key": "rewards.__owner__",
-                "value": "election_house"
+                "value": "masternodes"
             },
             {
                 "key": "rewards.__submitted__",
                 "value": {
                     "__time__": [
                         2024,
-                        5,
-                        29,
-                        11,
-                        18,
+                        6,
+                        3,
+                        6,
+                        45,
                         0,
                         0
                     ]
                 }
             },
             {
-                "key": "stamp_cost.S:current_total",
-                "value": 20
-            },
-            {
-                "key": "stamp_cost.S:election_max_length",
-                "value": {
-                    "__delta__": [
-                        1,
-                        0
-                    ]
-                }
-            },
-            {
-                "key": "stamp_cost.S:master_contract",
-                "value": "masternodes"
-            },
-            {
                 "key": "stamp_cost.S:value",
                 "value": 20
             },
             {
-                "key": "stamp_cost.S:vote_count",
-                "value": 1
-            },
-            {
                 "key": "stamp_cost.__code__",
-                "value": "import election_house\n__S = Hash(contract='stamp_cost', name='S')\n\n\ndef ____(initial_rate: int=100, master_contract='masternodes',\n    election_max_length=datetime.DAYS * 1):\n    __S['value'] = initial_rate\n    __S['master_contract'] = master_contract\n    __S['election_max_length'] = election_max_length\n    __S['vote_count'] = 1\n    __reset_current_votes()\n\n\ndef __reset_current_votes():\n    __S['current_total'] = __S['value']\n\n\n@__export('stamp_cost')\ndef current_value():\n    return __S['value']\n\n\n@__export('stamp_cost')\ndef vote(vk: str, obj: int):\n    if __S['election_start'] is None:\n        total_nodes = len(election_house.current_value_for_policy(__S[\n            'master_contract']))\n        __S['vote_count'] = 1\n        __S['min_votes_required'] = total_nodes * 2 // 3 + 1\n        __S['election_start'] = now\n        __S.clear('has_voted')\n        __reset_current_votes()\n        __tally_vote(vk, obj)\n    else:\n        __tally_vote(vk, obj)\n        if __election_is_over():\n            __update_value()\n            __S['election_start'] = None\n\n\ndef __update_value():\n    __S['value'] = int(__S['current_total'] / __S['vote_count']) or 1\n\n\ndef __election_is_over():\n    return __S['vote_count'] >= __S['min_votes_required'] or now - __S[\n        'election_start'] >= __S['election_max_length']\n\n\ndef __tally_vote(vk: str, obj: int):\n    __validate_vote(vk, obj)\n    __S['current_total'] += obj\n    __S['has_voted', vk] = True\n    __S['vote_count'] += 1\n\n\ndef __validate_vote(vk: str, obj: int):\n    assert vk in election_house.current_value_for_policy(__S['master_contract']\n        ), 'Not allowed to vote!'\n    assert isinstance(obj, int), 'Pass an int!'\n    assert obj > 0, 'No negatives!'\n    assert __S['value'] / 2 <= obj <= __S['value'] * 2, 'Out of range!'\n    assert __S['has_voted', vk] is None, 'Already voted!'\n"
+                "value": "__S = Hash(contract='stamp_cost', name='S')\n\n\ndef ____(initial_rate: int=100):\n    __S['value'] = initial_rate\n\n\n@__export('stamp_cost')\ndef current_value():\n    return __S['value']\n\n\n@__export('stamp_cost')\ndef set_value(new_value: int):\n    assert new_value > 0, 'New value must be greater than 0'\n    assert ctx.caller == ctx.owner, 'Only the voting contract can set the value'\n    __S['value'] = new_value\n"
             },
             {
                 "key": "stamp_cost.__developer__",
@@ -495,17 +323,17 @@
             },
             {
                 "key": "stamp_cost.__owner__",
-                "value": "election_house"
+                "value": "masternodes"
             },
             {
                 "key": "stamp_cost.__submitted__",
                 "value": {
                     "__time__": [
                         2024,
-                        5,
-                        29,
-                        11,
-                        18,
+                        6,
+                        3,
+                        6,
+                        45,
                         0,
                         0
                     ]
@@ -513,8 +341,8 @@
             }
         ],
         "origin": {
-            "signature": "c7defff94082601d9389df01a162b1bf4232475e4a5be154733ba55233334da0c2aa5816bbbae7edcc4e08e1259b71387db534a6dbfc505c53757370f2a25306",
-            "sender": "e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931"
+            "signature": "c9d161de42f37075afe3cfffaf90ed7acd34dd837b3b820db79f52dc3783c2264568c75e984c6923a9235ec2f82a694d2120603b30e68fc79be0ea8927c7180f",
+            "sender": "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e"
         }
     }
 }
