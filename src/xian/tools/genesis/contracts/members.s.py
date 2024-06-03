@@ -15,7 +15,7 @@ pending_leave = Hash(default_value=False)
 @construct
 def seed(genesis_nodes: list, genesis_registration_fee: int):
     nodes.set(genesis_nodes)
-    types.set(["add_member", "remove_member", "change_registration_fee", "reward_change", "dao_payout", "stamp_cost_change"])
+    types.set(["add_member", "remove_member", "change_registration_fee", "reward_change", "dao_payout", "stamp_cost_change", "change_types"])
     total_votes.set(0)
     registration_fee.set(genesis_registration_fee)
 
@@ -73,6 +73,8 @@ def finalize_node(proposal_id: int):
             stamp_cost.set_value(new_value=cur_vote["arg"])
         elif cur_vote["type"] == "change_registration_fee":
             registration_fee.set(cur_vote["arg"])
+        elif cur_vote["type"] == "change_types":
+            types.set(cur_vote["arg"])
     
     cur_vote["finalized"] = True
 
