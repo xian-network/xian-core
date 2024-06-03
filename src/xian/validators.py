@@ -10,7 +10,7 @@ class ValidatorHandler:
         self.client = app.client
        
     def get_validators_from_state(self) -> list[str]:
-        validators = self.client.raw_driver.get("masternodes.S:members")
+        validators = self.client.raw_driver.get("masternodes.nodes")
         return validators
     
     def get_tendermint_validators(self) -> list[str]:
