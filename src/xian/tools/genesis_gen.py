@@ -94,7 +94,7 @@ class GenesisGen:
                         for i, s in enumerate(v):
                             if type(s) is str:
                                 v[i] = self.replace_arg(s, locals())
-
+                                
             if contracting.get_contract(con_name) is None:
                 contracting.submit(
                     code,
