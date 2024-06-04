@@ -1,6 +1,6 @@
 {
     "genesis_time": "2024-02-08T00:17:23.342520258Z",
-    "chain_id": "xian-testnet-4",
+    "chain_id": "xian-testnet-5",
     "initial_height": "0",
     "consensus_params": {
         "block": {
@@ -87,8 +87,8 @@
                         2024,
                         6,
                         4,
-                        9,
-                        50,
+                        11,
+                        58,
                         0,
                         0
                     ]
@@ -119,8 +119,8 @@
                         2024,
                         6,
                         4,
-                        9,
-                        50,
+                        11,
+                        58,
                         0,
                         0
                     ]
@@ -137,8 +137,8 @@
                         2029,
                         6,
                         2,
-                        9,
-                        50,
+                        11,
+                        58,
                         0,
                         0
                     ]
@@ -181,8 +181,8 @@
                         2024,
                         6,
                         4,
-                        9,
-                        50,
+                        11,
+                        58,
                         0,
                         0
                     ]
@@ -203,8 +203,8 @@
                         2024,
                         6,
                         4,
-                        9,
-                        50,
+                        11,
+                        58,
                         0,
                         0
                     ]
@@ -216,7 +216,7 @@
             },
             {
                 "key": "masternodes.__code__",
-                "value": "import dao\nimport rewards\nimport stamp_cost\nimport currency\n__nodes = Variable(contract='masternodes', name='nodes')\n__votes = Hash(default_value=False, contract='masternodes', name='votes')\n__total_votes = Variable(contract='masternodes', name='total_votes')\n__types = Variable(contract='masternodes', name='types')\n__registration_fee = Variable(contract='masternodes', name='registration_fee')\n__pending_registrations = Hash(default_value=False, contract='masternodes',\n    name='pending_registrations')\n__pending_leave = Hash(default_value=False, contract='masternodes', name=\n    'pending_leave')\n\n\ndef ____(genesis_nodes: list, genesis_registration_fee: int):\n    __nodes.set(genesis_nodes)\n    __types.set(['add_member', 'remove_member', 'change_registration_fee',\n        'reward_change', 'dao_payout', 'stamp_cost_change', 'change_types'])\n    __total_votes.set(0)\n    __registration_fee.set(genesis_registration_fee)\n\n\n@__export('masternodes')\ndef propose_vote(type_of_vote: str, arg: Any):\n    assert ctx.caller in __nodes.get(), 'Only nodes can propose new votes'\n    if type_of_vote == 'add_member':\n        assert __pending_registrations[arg\n            ] == True, 'Member must have pending registration'\n    assert type_of_vote in __types.get(), 'Invalid type'\n    proposal_id = __total_votes.get() + 1\n    __votes[proposal_id] = {'yes': 1, 'no': 0, 'type': type_of_vote, 'arg':\n        arg, 'voters': [ctx.caller], 'finalized': False}\n    __total_votes.set(proposal_id)\n    return proposal_id\n\n\n@__export('masternodes')\ndef vote(proposal_id: int, vote: str):\n    assert ctx.caller in __nodes.get(), 'Only nodes can vote'\n    assert __votes[proposal_id], 'Invalid proposal'\n    assert __votes[proposal_id]['finalized'\n        ] == False, 'Proposal already finalized'\n    assert vote in ['yes', 'no'], 'Invalid vote'\n    assert ctx.caller not in __votes[proposal_id]['voters'], 'Already voted'\n    cur_vote = __votes[proposal_id]\n    cur_vote[vote] += 1\n    cur_vote['voters'].append(ctx.caller)\n    __votes[proposal_id] = cur_vote\n    if __votes[proposal_id]['voters'] >= len(__nodes.get()) // 2:\n        if not __votes[proposal_id]['finalized']:\n            __finalize_vote(proposal_id)\n    return cur_vote\n\n\ndef __finalize_vote(proposal_id: int):\n    cur_vote = __votes[proposal_id]\n    if cur_vote['yes'] > cur_vote['no']:\n        if cur_vote['type'] == 'add_member':\n            __nodes.set(__nodes.get() + [cur_vote['arg']])\n        elif cur_vote['type'] == 'remove_member':\n            __nodes.set([node for node in __nodes.get() if node != cur_vote\n                ['arg']])\n        elif cur_vote['type'] == 'reward_change':\n            rewards.set_value(new_value=cur_vote['arg'])\n        elif cur_vote['type'] == 'dao_payout':\n            currency.transfer_from_dao(args=cur_vote['arg'])\n        elif cur_vote['type'] == 'stamp_cost_change':\n            stamp_cost.set_value(new_value=cur_vote['arg'])\n        elif cur_vote['type'] == 'change_registration_fee':\n            __registration_fee.set(cur_vote['arg'])\n        elif cur_vote['type'] == 'change_types':\n            __types.set(cur_vote['arg'])\n    cur_vote['finalized'] = True\n    __votes[proposal_id] = cur_vote\n    return cur_vote\n\n\n@__export('masternodes')\ndef announce_leave():\n    assert ctx.caller in __nodes.get(), 'Not a node'\n    assert __pending_leave[ctx.caller] == False, 'Already pending leave'\n    __pending_leave[ctx.caller] = now + datetime.timedelta(days=7)\n\n\n@__export('masternodes')\ndef leave():\n    assert ctx.caller in __nodes.get(), 'Not a node'\n    assert __pending_leave[ctx.caller] != False, 'No pending leave'\n    assert __pending_leave[ctx.caller\n        ] < now, 'Leave announcement period not over'\n    __nodes.set([node for node in __nodes.get() if node != ctx.caller])\n    __pending_leave[ctx.caller] = False\n\n\n@__export('masternodes')\ndef register():\n    assert ctx.caller not in __nodes.get(), 'Already a node'\n    assert __pending_registrations[ctx.caller\n        ] == False, 'Already pending registration'\n    currency.transfer_from(__registration_fee.get(), ctx.caller, ctx.this)\n    __pending_registrations[ctx.caller, __registration_fee.get()] = True\n\n\n@__export('masternodes')\ndef unregister():\n    assert ctx.caller not in __nodes.get(\n        ), \"If you're a node already, you can't unregister. You need to leave or be removed.\"\n    assert __pending_registrations[ctx.caller\n        ] == True, 'No pending registration'\n    currency.transfer(__pending_registrations[ctx.caller], ctx.caller)\n    __pending_registrations[ctx.caller] = False\n"
+                "value": "import dao\nimport rewards\nimport stamp_cost\nimport currency\n__nodes = Variable(contract='masternodes', name='nodes')\n__votes = Hash(default_value=False, contract='masternodes', name='votes')\n__total_votes = Variable(contract='masternodes', name='total_votes')\n__types = Variable(contract='masternodes', name='types')\n__registration_fee = Variable(contract='masternodes', name='registration_fee')\n__pending_registrations = Hash(default_value=False, contract='masternodes',\n    name='pending_registrations')\n__pending_leave = Hash(default_value=False, contract='masternodes', name=\n    'pending_leave')\n\n\ndef ____(genesis_nodes: list, genesis_registration_fee: int):\n    __nodes.set(genesis_nodes)\n    __types.set(['add_member', 'remove_member', 'change_registration_fee',\n        'reward_change', 'dao_payout', 'stamp_cost_change', 'change_types'])\n    __total_votes.set(0)\n    __registration_fee.set(genesis_registration_fee)\n\n\n@__export('masternodes')\ndef propose_vote(type_of_vote: str, arg: Any):\n    assert ctx.caller in __nodes.get(), 'Only nodes can propose new votes'\n    if type_of_vote == 'add_member':\n        assert __pending_registrations[arg\n            ] == True, 'Member must have pending registration'\n    assert type_of_vote in __types.get(), 'Invalid type'\n    proposal_id = __total_votes.get() + 1\n    __votes[proposal_id] = {'yes': 1, 'no': 0, 'type': type_of_vote, 'arg':\n        arg, 'voters': [ctx.caller], 'finalized': False}\n    __total_votes.set(proposal_id)\n    if len(__votes[proposal_id]['voters']) >= len(__nodes.get()) // 2:\n        if not __votes[proposal_id]['finalized']:\n            __finalize_vote(proposal_id)\n    return proposal_id\n\n\n@__export('masternodes')\ndef vote(proposal_id: int, vote: str):\n    assert ctx.caller in __nodes.get(), 'Only nodes can vote'\n    assert __votes[proposal_id], 'Invalid proposal'\n    assert __votes[proposal_id]['finalized'\n        ] == False, 'Proposal already finalized'\n    assert vote in ['yes', 'no'], 'Invalid vote'\n    assert ctx.caller not in __votes[proposal_id]['voters'], 'Already voted'\n    cur_vote = __votes[proposal_id]\n    cur_vote[vote] += 1\n    cur_vote['voters'].append(ctx.caller)\n    __votes[proposal_id] = cur_vote\n    if len(__votes[proposal_id]['voters']) >= len(__nodes.get()) // 2:\n        if not __votes[proposal_id]['finalized']:\n            __finalize_vote(proposal_id)\n    return cur_vote\n\n\ndef __finalize_vote(proposal_id: int):\n    cur_vote = __votes[proposal_id]\n    if cur_vote['yes'] > cur_vote['no']:\n        if cur_vote['type'] == 'add_member':\n            __nodes.set(__nodes.get() + [cur_vote['arg']])\n        elif cur_vote['type'] == 'remove_member':\n            __nodes.set([node for node in __nodes.get() if node != cur_vote\n                ['arg']])\n        elif cur_vote['type'] == 'reward_change':\n            rewards.set_value(new_value=cur_vote['arg'])\n        elif cur_vote['type'] == 'dao_payout':\n            currency.transfer_from_dao(args=cur_vote['arg'])\n        elif cur_vote['type'] == 'stamp_cost_change':\n            stamp_cost.set_value(new_value=cur_vote['arg'])\n        elif cur_vote['type'] == 'change_registration_fee':\n            __registration_fee.set(cur_vote['arg'])\n        elif cur_vote['type'] == 'change_types':\n            __types.set(cur_vote['arg'])\n    cur_vote['finalized'] = True\n    __votes[proposal_id] = cur_vote\n    return cur_vote\n\n\n@__export('masternodes')\ndef announce_leave():\n    assert ctx.caller in __nodes.get(), 'Not a node'\n    assert __pending_leave[ctx.caller] == False, 'Already pending leave'\n    __pending_leave[ctx.caller] = now + datetime.timedelta(days=7)\n\n\n@__export('masternodes')\ndef leave():\n    assert ctx.caller in __nodes.get(), 'Not a node'\n    assert __pending_leave[ctx.caller] != False, 'No pending leave'\n    assert __pending_leave[ctx.caller\n        ] < now, 'Leave announcement period not over'\n    __nodes.set([node for node in __nodes.get() if node != ctx.caller])\n    __pending_leave[ctx.caller] = False\n\n\n@__export('masternodes')\ndef register():\n    assert ctx.caller not in __nodes.get(), 'Already a node'\n    assert __pending_registrations[ctx.caller\n        ] == False, 'Already pending registration'\n    currency.transfer_from(__registration_fee.get(), ctx.caller, ctx.this)\n    __pending_registrations[ctx.caller, __registration_fee.get()] = True\n\n\n@__export('masternodes')\ndef unregister():\n    assert ctx.caller not in __nodes.get(\n        ), \"If you're a node already, you can't unregister. You need to leave or be removed.\"\n    assert __pending_registrations[ctx.caller\n        ] == True, 'No pending registration'\n    currency.transfer(__pending_registrations[ctx.caller], ctx.caller)\n    __pending_registrations[ctx.caller] = False\n"
             },
             {
                 "key": "masternodes.__developer__",
@@ -229,8 +229,8 @@
                         2024,
                         6,
                         4,
-                        9,
-                        50,
+                        11,
+                        58,
                         0,
                         0
                     ]
@@ -302,8 +302,8 @@
                         2024,
                         6,
                         4,
-                        9,
-                        50,
+                        11,
+                        58,
                         0,
                         0
                     ]
@@ -332,8 +332,8 @@
                         2024,
                         6,
                         4,
-                        9,
-                        50,
+                        11,
+                        58,
                         0,
                         0
                     ]
@@ -341,7 +341,7 @@
             }
         ],
         "origin": {
-            "signature": "4a04a2339ee70607f9a7cfdc0ec68dc8181d696e5b27705a6fa0c87994534bf6c1b4c5ce7f3c3c0b493b84680ec5e394b33fefe9261d02b67e3fb99bf5f6dd06",
+            "signature": "a3444fba8d02a8f1601e076696a72d3e003bfe70d082a043d80619b8dc6ba2714066283f9bc6fcaa0ea2f48197a46f218b93be02cc0961700895faabfe5fbf01",
             "sender": "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e"
         }
     }

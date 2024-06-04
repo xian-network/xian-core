@@ -30,6 +30,11 @@ def propose_vote(type_of_vote: str, arg: Any):
     proposal_id = total_votes.get() + 1
     votes[proposal_id] = {"yes": 1, "no": 0, "type": type_of_vote, "arg": arg, "voters": [ctx.caller], "finalized": False}
     total_votes.set(proposal_id)
+
+    if len(votes[proposal_id]["voters"]) >= len(nodes.get()) // 2: # Single node network edge case
+        if not votes[proposal_id]["finalized"]:
+            finalize_vote(proposal_id)
+
     return proposal_id
 
 @export
@@ -46,7 +51,7 @@ def vote(proposal_id: int, vote: str):
     cur_vote["voters"].append(ctx.caller)
     votes[proposal_id] = cur_vote
 
-    if votes[proposal_id]["voters"] >= len(nodes.get()) // 2:
+    if len(votes[proposal_id]["voters"]) >= len(nodes.get()) // 2:
         if not votes[proposal_id]["finalized"]:
             finalize_vote(proposal_id)
 
