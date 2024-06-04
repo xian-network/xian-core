@@ -28,7 +28,7 @@ def propose_vote(type_of_vote: str, arg: Any):
     
     assert type_of_vote in types.get(), "Invalid type"
     proposal_id = total_votes.get() + 1
-    votes[proposal_id] = {"yes": 0, "no": 0, "type": type_of_vote, "arg": arg, "voters": [ctx.caller], "finalized": False}
+    votes[proposal_id] = {"yes": 1, "no": 0, "type": type_of_vote, "arg": arg, "voters": [ctx.caller], "finalized": False}
     total_votes.set(proposal_id)
     return proposal_id
 
@@ -46,18 +46,15 @@ def vote(proposal_id: int, vote: str):
     cur_vote["voters"].append(ctx.caller)
     votes[proposal_id] = cur_vote
 
+    if votes[proposal_id]["voters"] >= len(nodes.get()) // 2:
+        if not votes[proposal_id]["finalized"]:
+            finalize_vote(proposal_id)
+
     return cur_vote
 
-@export
-def finalize_node(proposal_id: int):
-    assert ctx.caller in nodes.get(), "Only nodes can finalize votes"
-    assert votes[proposal_id], "Invalid proposal"
-    assert votes[proposal_id]["finalized"] == False, "Already finalized"
 
+def finalize_vote(proposal_id: int):
     cur_vote = votes[proposal_id]
-
-    # Check if enough votes
-    assert len(cur_vote["voters"]) >= len(nodes.get()) // 2, "Not enough votes"
 
     # Check if majority yes
     if cur_vote["yes"] > cur_vote["no"]:
