@@ -68,7 +68,7 @@ class GenesisGen:
         contracting = ContractingClient(driver=Driver())
         contracting.set_submission_contract(commit=False)
 
-        con_cfg_path = self.CONTRACT_DIR / 'contracts.json'
+        con_cfg_path = self.CONTRACT_DIR / 'contracts_local.json'
 
         with open(con_cfg_path) as f:
             con_cfg = json.load(f)
