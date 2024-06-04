@@ -51,23 +51,23 @@
                         2024,
                         6,
                         4,
-                        7,
                         8,
+                        18,
                         0,
                         0
                     ]
                 }
             },
             {
-                "key": "currency.balances:7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e",
-                "value": {
-                    "__fixed__": "61111111.05"
-                }
-            },
-            {
                 "key": "currency.balances:dao",
                 "value": {
                     "__fixed__": "33333333.3"
+                }
+            },
+            {
+                "key": "currency.balances:ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9",
+                "value": {
+                    "__fixed__": "61111111.05"
                 }
             },
             {
@@ -83,8 +83,8 @@
                         2024,
                         6,
                         4,
-                        7,
                         8,
+                        18,
                         0,
                         0
                     ]
@@ -101,8 +101,8 @@
                         2029,
                         6,
                         2,
-                        7,
                         8,
+                        18,
                         0,
                         0
                     ]
@@ -116,7 +116,7 @@
             },
             {
                 "key": "currency.streams:team_lock:receiver",
-                "value": "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e"
+                "value": "ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9"
             },
             {
                 "key": "currency.streams:team_lock:sender",
@@ -145,8 +145,8 @@
                         2024,
                         6,
                         4,
-                        7,
                         8,
+                        18,
                         0,
                         0
                     ]
@@ -167,8 +167,8 @@
                         2024,
                         6,
                         4,
-                        7,
                         8,
+                        18,
                         0,
                         0
                     ]
@@ -176,7 +176,7 @@
             },
             {
                 "key": "foundation.owner",
-                "value": "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e"
+                "value": "ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9"
             },
             {
                 "key": "masternodes.__code__",
@@ -193,8 +193,8 @@
                         2024,
                         6,
                         4,
-                        7,
                         8,
+                        18,
                         0,
                         0
                     ]
@@ -203,11 +203,7 @@
             {
                 "key": "masternodes.nodes",
                 "value": [
-                    "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e",
-                    "dff5d54d9c3cdb04d279c3c0a123d6a73a94e0725d7eac955fdf87298dbe45a6",
-                    "6d2476cd66fa277b6077c76cdcd92733040dada2e12a28c3ebb08af44e12be76",
-                    "b4d1967e6264bbcd61fd487caf3cafaffdc34be31d0994bf02afdcc2056c053c",
-                    "db21a73137672f075f9a8ee142a1aa4839a5deb28ef03a10f3e7e16c87db8f24"
+                    "ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9"
                 ]
             },
             {
@@ -266,8 +262,8 @@
                         2024,
                         6,
                         4,
-                        7,
                         8,
+                        18,
                         0,
                         0
                     ]
@@ -296,8 +292,8 @@
                         2024,
                         6,
                         4,
-                        7,
                         8,
+                        18,
                         0,
                         0
                     ]
@@ -305,7 +301,7 @@
             }
         ],
         "origin": {
-            "signature": "70e9ccdf8e77f97eba60b8df05674ce1fa3bf09b1f2376fe65a64b5e00e292a9763946d297a208f0b06d434988e6b48efaa11d1a701dd7aadbf3995c13112e0b",
+            "signature": "ee295cb2ca35d9d8e7d2b177f2dd17143da76ee8f5c8140d18afa00909c14152ddf6056bde8c360007445c808907cdb63a05d732696e8ad9f6617925babc110a",
             "sender": "63cd30b3f0f10ce1c08f678cd2f7fd2109654cb4f5943391d1bec20f997ed5c8"
         }
     }
