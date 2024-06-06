@@ -13,8 +13,8 @@ class Explorer:
         self.top = urwid.Overlay(
             urwid.LineBox(self.main_widget),
             urwid.SolidFill(u'\N{MEDIUM SHADE}'),
-            align='center', width=('relative', 80),
-            valign='middle', height=('relative', 80),
+            align='center', width=('relative', 100),
+            valign='middle', height=('relative', 100),
             min_width=20, min_height=9
         )
         self.loop = urwid.MainLoop(self.top, unhandled_input=self.unhandled_keypress)
@@ -89,7 +89,7 @@ class Explorer:
 
     def show_value(self, button, key):
         value = driver.get(key)
-        text = urwid.Text(f"Key: {key}\n\nValue: {value}")
+        text = urwid.Text(f"Key: {key}\n\nValue:\n{value}")
         back_button = urwid.Button("Back")
         urwid.connect_signal(back_button, 'click', self.back_to_menu)
         list_walker = urwid.SimpleFocusListWalker([text, urwid.AttrMap(back_button, None, focus_map='reversed')])
