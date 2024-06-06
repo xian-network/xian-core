@@ -1,7 +1,8 @@
 import urwid
-from contracting.storage.driver import Driver
 import json
 import datetime
+
+from contracting.storage.driver import Driver
 
 driver = Driver()
 DIMENSION_SEPARATORS = ['.', ':']
