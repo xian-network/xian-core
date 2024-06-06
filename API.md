@@ -70,7 +70,7 @@ Retrieves the next nonce for a given address.
   - `id`: The request ID
   - `result`: The query result
     - `response`: The response data
-      - `value`: The next nonce value
+      - `value`: Hex-encoded nonce
 
 ### 3. Get Values from State
 #### Query State
