@@ -1,5 +1,6 @@
 import urwid
 from contracting.storage.driver import Driver
+import json
 
 driver = Driver()
 DIMENSION_SEPARATORS = ['.', ':']
@@ -87,12 +88,44 @@ class Explorer:
         self.current_prefix = key_prefix
         self.main_widget.original_widget = self.menu(key_prefix)
 
+    def edit_value(self, button, key, current_value):
+        edit = urwid.Edit(("I say", u"New value:\n"), edit_text=str(current_value))
+        save_button = urwid.Button("Save")
+        urwid.connect_signal(save_button, 'click', lambda button: self.save_value(button, key, edit))
+        cancel_button = urwid.Button("Cancel")
+        urwid.connect_signal(cancel_button, 'click', self.back_to_menu)
+        list_walker = urwid.SimpleFocusListWalker([edit, urwid.AttrMap(save_button, None, focus_map='reversed'), urwid.AttrMap(cancel_button, None, focus_map='reversed')])
+        self.main_widget.original_widget = urwid.ListBox(list_walker)
+
+    def save_value(self, button, key, edit):
+        new_value = self.parse_value(edit.get_edit_text())
+        driver.set(key, new_value)
+        driver.commit()
+        self.back_to_menu(button)
+
+    def parse_value(self, value):
+        try:
+            parsed_value = json.loads(value)
+            return parsed_value
+        except json.JSONDecodeError:
+            pass
+        
+        try:
+            if '.' in value:
+                return float(value)
+            else:
+                return int(value)
+        except ValueError:
+            return value
+
     def show_value(self, button, key):
         value = driver.get(key)
         text = urwid.Text(f"Key: {key}\n\nValue:\n{value}")
+        edit_button = urwid.Button("Edit Value")
+        urwid.connect_signal(edit_button, 'click', lambda button: self.edit_value(button, key, value))
         back_button = urwid.Button("Back")
         urwid.connect_signal(back_button, 'click', self.back_to_menu)
-        list_walker = urwid.SimpleFocusListWalker([text, urwid.AttrMap(back_button, None, focus_map='reversed')])
+        list_walker = urwid.SimpleFocusListWalker([text, urwid.AttrMap(edit_button, None, focus_map='reversed'), urwid.AttrMap(back_button, None, focus_map='reversed')])
         self.main_widget.original_widget = urwid.ListBox(list_walker)
 
     def back_to_parent(self, button):
