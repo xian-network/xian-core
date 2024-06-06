@@ -1,6 +1,7 @@
 import urwid
 from contracting.storage.driver import Driver
 import json
+import datetime
 
 driver = Driver()
 DIMENSION_SEPARATORS = ['.', ':']
@@ -108,6 +109,11 @@ class Explorer:
             parsed_value = json.loads(value)
             return parsed_value
         except json.JSONDecodeError:
+            pass
+
+        try:
+            return datetime.datetime.fromisoformat(value)
+        except ValueError:
             pass
         
         try:
