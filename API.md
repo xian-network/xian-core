@@ -11,7 +11,7 @@ Broadcasts a signed transaction to the network.
 
 ##### Request
 - Method: GET
-- URL: `/broadcast-tx-sync`
+- URL: `/broadcast_tx_sync`
 - Query Parameters:
   - `tx`: The transaction to broadcast (hex-encoded JSON string)
 
