@@ -7,6 +7,7 @@ from contracting.storage.driver import Driver
 driver = Driver()
 DIMENSION_SEPARATORS = ['.', ':']
 
+
 class Explorer:
     def __init__(self):
         self.current_prefix = ""
@@ -58,12 +59,26 @@ class Explorer:
 
         for subdir, count in sorted(subdirs.items()):
             button = urwid.Button(f"{subdir}/ ({count})")
-            urwid.connect_signal(button, 'click', self.navigate_to, prefix + subdir + self.add_separator(prefix))
+
+            urwid.connect_signal(
+                button,
+                'click',
+                self.navigate_to,
+                user_args=[prefix + subdir + self.add_separator(prefix)]
+            )
+
             body.append(urwid.AttrMap(button, None, focus_map='reversed'))
 
         for key in sorted(leaf_keys):
             button = urwid.Button(key)
-            urwid.connect_signal(button, 'click', self.show_value, prefix + key)
+
+            urwid.connect_signal(
+                button,
+                'click',
+                self.show_value,
+                user_args=[prefix + key]
+            )
+
             body.append(urwid.AttrMap(button, None, focus_map='reversed'))
 
         return urwid.ListBox(urwid.SimpleFocusListWalker(body))
@@ -85,7 +100,7 @@ class Explorer:
 
     def navigate_to(self, button, key_prefix):
         if key_prefix == "":
-            self.previous_key_stack.append(".") # Add placeholder to stack for root level
+            self.previous_key_stack.append(".")  # Add placeholder to stack for root level
         self.previous_key_stack.append(self.current_prefix)
         self.current_prefix = key_prefix
         self.main_widget.original_widget = self.menu(key_prefix)
@@ -96,7 +111,13 @@ class Explorer:
         urwid.connect_signal(save_button, 'click', lambda button: self.save_value(button, key, edit))
         cancel_button = urwid.Button("Cancel")
         urwid.connect_signal(cancel_button, 'click', self.back_to_menu)
-        list_walker = urwid.SimpleFocusListWalker([edit, urwid.AttrMap(save_button, None, focus_map='reversed'), urwid.AttrMap(cancel_button, None, focus_map='reversed')])
+        list_walker = urwid.SimpleFocusListWalker(
+            [
+                edit,
+                urwid.AttrMap(save_button, None, focus_map='reversed'),
+                urwid.AttrMap(cancel_button, None, focus_map='reversed')
+            ]
+        )
         self.main_widget.original_widget = urwid.ListBox(list_walker)
 
     def save_value(self, button, key, edit):
@@ -116,7 +137,7 @@ class Explorer:
             return datetime.datetime.fromisoformat(value)
         except ValueError:
             pass
-        
+
         try:
             if '.' in value:
                 return float(value)
@@ -132,7 +153,13 @@ class Explorer:
         urwid.connect_signal(edit_button, 'click', lambda button: self.edit_value(button, key, value))
         back_button = urwid.Button("Back")
         urwid.connect_signal(back_button, 'click', self.back_to_menu)
-        list_walker = urwid.SimpleFocusListWalker([text, urwid.AttrMap(edit_button, None, focus_map='reversed'), urwid.AttrMap(back_button, None, focus_map='reversed')])
+        list_walker = urwid.SimpleFocusListWalker(
+            [
+                text,
+                urwid.AttrMap(edit_button, None, focus_map='reversed'),
+                urwid.AttrMap(back_button, None, focus_map='reversed')
+            ]
+        )
         self.main_widget.original_widget = urwid.ListBox(list_walker)
 
     def back_to_parent(self, button):
@@ -152,6 +179,7 @@ class Explorer:
 
     def run(self):
         self.loop.run()
+
 
 if __name__ == "__main__":
     Explorer().run()
