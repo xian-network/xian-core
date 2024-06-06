@@ -187,4 +187,3 @@ Lints the code for a given contract
     - `response`: The response data
       - `value`: Hex-encoded JSON string with lint result
 
-
