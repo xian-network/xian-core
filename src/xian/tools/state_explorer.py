@@ -4,12 +4,18 @@ import datetime
 import warnings
 
 from contracting.storage.driver import Driver
+from xian.tools.genesis_gen import GenesisGen
 from pathlib import Path
 
 driver = Driver()
 DIMENSION_SEPARATORS = ['.', ':']
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+palette = [
+    ('red', 'light red', ''),  # Define the red color for text
+    ('reversed', 'standout', ''),  # Focus map for buttons
+]
 
 class Explorer:
     def __init__(self):
@@ -27,7 +33,7 @@ class Explorer:
             valign='middle', height=('relative', 100),
             min_width=20, min_height=9
         )
-        self.loop = urwid.MainLoop(self.top, unhandled_input=self.unhandled_keypress)
+        self.loop = urwid.MainLoop(self.top,palette=palette, unhandled_input=self.unhandled_keypress)
 
     def get_database_size_readable(self):
         path = Path().home().joinpath(".cometbft/xian")
@@ -71,6 +77,12 @@ class Explorer:
             back_button = urwid.Button("Back")
             urwid.connect_signal(back_button, 'click', self.back_to_parent)
             body.append(urwid.AttrMap(back_button, None, focus_map='reversed'))
+
+        if not prefix:
+            # Red Text
+            genesis_create_button = urwid.Button("Export Genesis Block From State")
+            urwid.connect_signal(genesis_create_button, 'click', lambda button: self.ask_signing_key())
+            body.append(urwid.AttrMap(genesis_create_button, 'red', focus_map='reversed'))
 
         if not subdirs and not leaf_keys:
             body.append(urwid.Text("No keys found."))
@@ -163,6 +175,46 @@ class Explorer:
     def unhandled_keypress(self, key):
         if key == 'q':
             raise urwid.ExitMainLoop()
+
+    def ask_signing_key(self, genesis_create_button=None):
+        sk_input = urwid.Edit("Enter founder's signing key: ")
+        sk_button = urwid.Button("Next")
+        urwid.connect_signal(sk_button, 'click', lambda button: self.ask_validator_key(sk_input, genesis_create_button))
+        back_button = urwid.Button("Back")
+        urwid.connect_signal(back_button, 'click', self.back_to_menu)
+        list_walker = urwid.SimpleFocusListWalker([sk_input, urwid.AttrMap(sk_button, None, focus_map='reversed'), urwid.AttrMap(back_button, None, focus_map='reversed')])
+        self.main_widget.original_widget = urwid.ListBox(list_walker)
+
+    def ask_validator_key(self, sk_input, genesis_create_button=None):
+        # Now we have the signing key, ask for the validator key
+        vk_input = urwid.Edit("Enter validator's public key: ")
+        vk_button = urwid.Button("Export")
+        urwid.connect_signal(vk_button, 'click', lambda button: self.export_genesis_block(sk_input, vk_input, genesis_create_button))
+        back_button = urwid.Button("Back")
+        urwid.connect_signal(back_button, 'click', self.ask_signing_key)
+        list_walker = urwid.SimpleFocusListWalker([vk_input, urwid.AttrMap(vk_button, None, focus_map='reversed'), urwid.AttrMap(back_button, None, focus_map='reversed')])
+        self.main_widget.original_widget = urwid.ListBox(list_walker)
+        
+
+    def export_genesis_block(self, sk_input, vk_input, button=None):
+        genesis_gen = GenesisGen()
+        try:
+            genesis = genesis_gen.build_genesis(sk_input.get_edit_text(), vk_input.get_edit_text())
+        except Exception as e:
+            error_text = urwid.Text(str(e))
+            back_button = urwid.Button("Back")
+            urwid.connect_signal(back_button, 'click', self.ask_signing_key)
+            list_walker = urwid.SimpleFocusListWalker([error_text, urwid.AttrMap(back_button, None, focus_map='reversed')])
+            self.main_widget.original_widget = urwid.ListBox(list_walker)
+            return
+        output_path = Path.cwd() / 'genesis_block.json'
+        with open(output_path, 'w') as f:
+            f.write(json.dumps(genesis, indent=4))
+        success_text = urwid.Text(f"Genesis block exported to {output_path}")
+        back_button = urwid.Button("Back to menu")
+        urwid.connect_signal(back_button, 'click', self.back_to_menu)
+        list_walker = urwid.SimpleFocusListWalker([success_text, urwid.AttrMap(back_button, None, focus_map='reversed')])
+        self.main_widget.original_widget = urwid.ListBox(list_walker)
 
     def run(self):
         self.loop.run()
