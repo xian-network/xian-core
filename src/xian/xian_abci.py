@@ -79,7 +79,7 @@ class Xian:
         self.fingerprint_hashes = []
         self.fingerprint_hash = None
         self.chain_id = self.genesis.get("chain_id", None)
-        self.block_service_mode = self.config.get("block_service_mode", True)
+        self.block_service_mode = self.config.get("block_service_mode", False)
         self.stamp_estimator = StampEstimator() if self.block_service_mode else None
         self.pruning_enabled = self.config.get("pruning_enabled", False)
         # If pruning is enabled, this is the number of blocks to keep history for
