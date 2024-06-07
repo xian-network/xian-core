@@ -40,8 +40,8 @@ def fetch_filebased_state():
 
 
 def build_genesis_block(founder_sk: str, contract_state: dict, run_state: dict):
-    hash = run_state["__latest_block.hash"].hex()
-    block_number = run_state["__latest_block.height"]
+    hash = run_state["__latest_block.hash.__latest_block.hash"].hex()
+    block_number = run_state["__latest_block.height.__latest_block.height"]
 
     genesis_block = {
         'hash': hash,
