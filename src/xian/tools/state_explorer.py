@@ -114,11 +114,6 @@ class Explorer:
             return parsed_value
         except json.JSONDecodeError:
             pass
-
-        try:
-            return datetime.datetime.fromisoformat(value)
-        except ValueError:
-            pass
         
         try:
             if '.' in value:
