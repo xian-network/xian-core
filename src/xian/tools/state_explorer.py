@@ -1,11 +1,14 @@
 import urwid
 import json
 import datetime
+import warnings
 
 from contracting.storage.driver import Driver
 
 driver = Driver()
 DIMENSION_SEPARATORS = ['.', ':']
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 class Explorer:
     def __init__(self):
