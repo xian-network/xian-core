@@ -4,7 +4,7 @@ import datetime
 import warnings
 
 from contracting.storage.driver import Driver
-from xian.tools.genesis_gen import GenesisGen
+from xian.tools.export_state import main as export_state
 from pathlib import Path
 
 driver = Driver()
@@ -197,24 +197,21 @@ class Explorer:
         
 
     def export_genesis_block(self, sk_input, vk_input, button=None):
-        genesis_gen = GenesisGen()
         try:
-            genesis = genesis_gen.build_genesis(sk_input.get_edit_text(), vk_input.get_edit_text())
+            output_path = Path.cwd() / 'genesis_block.json'
+            export_state(sk_input.get_edit_text(), output_path)
+            success_text = urwid.Text(f"Genesis block exported to {output_path}")
+            back_button = urwid.Button("Back to menu")
+            urwid.connect_signal(back_button, 'click', self.back_to_menu)
+            list_walker = urwid.SimpleFocusListWalker([success_text, urwid.AttrMap(back_button, None, focus_map='reversed')])
+            self.main_widget.original_widget = urwid.ListBox(list_walker)
         except Exception as e:
-            error_text = urwid.Text(str(e))
+            error_text = urwid.Text(f"Error: {e}")
             back_button = urwid.Button("Back")
             urwid.connect_signal(back_button, 'click', self.ask_signing_key)
             list_walker = urwid.SimpleFocusListWalker([error_text, urwid.AttrMap(back_button, None, focus_map='reversed')])
             self.main_widget.original_widget = urwid.ListBox(list_walker)
             return
-        output_path = Path.cwd() / 'genesis_block.json'
-        with open(output_path, 'w') as f:
-            f.write(json.dumps(genesis, indent=4))
-        success_text = urwid.Text(f"Genesis block exported to {output_path}")
-        back_button = urwid.Button("Back to menu")
-        urwid.connect_signal(back_button, 'click', self.back_to_menu)
-        list_walker = urwid.SimpleFocusListWalker([success_text, urwid.AttrMap(back_button, None, focus_map='reversed')])
-        self.main_widget.original_widget = urwid.ListBox(list_walker)
 
     def run(self):
         self.loop.run()
