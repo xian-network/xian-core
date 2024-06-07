@@ -33,12 +33,6 @@ class Configure:
     def __init__(self):
         parser = ArgumentParser(description='Configure CometBFT')
         parser.add_argument(
-            '--seed-node',
-            type=str,
-            help='IP of Seed Node e.g. 91.108.112.184 (without port, but 26657 & 26656 need to be open)',
-            required=False
-        )
-        parser.add_argument(
             '--moniker',
             type=str,
             help='Name of your node',
@@ -96,7 +90,19 @@ class Configure:
             required=False,
             default=True
         )
-        parser.add_argument('--seed-node-address', type=str, help='If the full seed node address is provided w/o port e.g. ', required=False)
+        parser.add_argument(
+            '--seed-node-address',
+             type=str,
+             help='If the full seed node address is provided w/o port e.g. ',
+             required=False
+        )
+        parser.add_argument(
+            '--is-service-node',
+             type=bool,
+             help='If the node is a service node',
+             required=False,
+             default=False
+        )
 
         self.args = parser.parse_args()
     
@@ -208,6 +214,9 @@ class Configure:
                 config['p2p']['seeds'] = f'{id}@{self.args.seed_node}:26656'
             else:
                 print("Failed to get node information after 10 attempts.")
+
+        if self.args.is_service_node:
+            config['p2p']['block_service_mode'] = True
 
         config['proxy_app'] = self.UNIX_SOCKET_PATH
 
