@@ -80,7 +80,7 @@ class Explorer:
 
         if not prefix:
             # Red Text
-            genesis_create_button = urwid.Button("Export Genesis Block From State")
+            genesis_create_button = urwid.Button("Export State")
             urwid.connect_signal(genesis_create_button, 'click', lambda button: self.ask_signing_key())
             body.append(urwid.AttrMap(genesis_create_button, 'red', focus_map='reversed'))
 
