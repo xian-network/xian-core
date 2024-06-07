@@ -4,6 +4,7 @@ import datetime
 import warnings
 
 from contracting.storage.driver import Driver
+from pathlib import Path
 
 driver = Driver()
 DIMENSION_SEPARATORS = ['.', ':']
@@ -16,14 +17,29 @@ class Explorer:
         self.previous_key_stack = []
         self.body = []
         self.main_widget = urwid.Padding(self.menu(self.current_prefix), left=2, right=2)
+        self.footer = urwid.Columns([urwid.Text("Press 'q' to quit"), urwid.Text(self.get_database_size_readable(), align='right')])
         self.top = urwid.Overlay(
-            urwid.LineBox(self.main_widget),
+            urwid.LineBox(urwid.Frame(
+                self.main_widget,
+                footer=self.footer), title="State Explorer"),
             urwid.SolidFill(u'\N{MEDIUM SHADE}'),
             align='center', width=('relative', 100),
             valign='middle', height=('relative', 100),
             min_width=20, min_height=9
         )
         self.loop = urwid.MainLoop(self.top, unhandled_input=self.unhandled_keypress)
+
+    def get_database_size_readable(self):
+        path = Path().home().joinpath(".cometbft/xian")
+        if not path.exists():
+            return "Database Size: 0 B"
+        size = sum(f.stat().st_size for f in path.glob('**/*') if f.is_file())
+        # Make size human readable
+        for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+            if size < 1024.0:
+                return f"Database Size: {size:.2f} {unit} ({len(driver.keys_from_disk(''))} keys)"
+            size /= 1024.0
+
 
     def get_subdirs_and_keys(self, keys, prefix):
         subdirs = {}
