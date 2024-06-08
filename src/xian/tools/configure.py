@@ -131,6 +131,29 @@ class Configure:
         
         os.remove(tar_path)
 
+    def get_node_info(self, seed_node):
+        attempts = 0
+        max_attempts = 10
+        timeout = 3  # seconds
+        while attempts < max_attempts:
+            try:
+                response = requests.get(f'http://{seed_node}:26657/status', timeout=timeout)
+                response.raise_for_status()  # Raises stored HTTPError, if one occurred.
+                return response.json()
+            except requests.exceptions.HTTPError as err:
+                print(f"HTTP error: {err}")
+            except requests.exceptions.ConnectionError as err:
+                print(f"Connection error: {err}")
+            except requests.exceptions.Timeout as err:
+                print(f"Timeout error: {err}")
+            except requests.exceptions.RequestException as err:
+                print(f"Error: {err}")
+            
+            attempts += 1
+            sleep(1)  # wait 1 second before trying again
+
+        return None  # or raise an Exception indicating the request ultimately failed
+    
     def generate_keys(self):
         pk_hex = self.args.validator_privkey
 
@@ -178,6 +201,19 @@ class Configure:
             config = toml.load(f)
 
         config['consensus']['create_empty_blocks'] = False
+
+        # If seed node address is provided, use it
+        if self.args.seed_node_address:
+            config['p2p']['seeds'] = f'{self.args.seed_node_address}:26656'
+        # Otherwise construct the seed node address from the IP
+        if self.args.seed_node:
+            info = self.get_node_info(self.args.seed_node)
+
+            if info:
+                id = info['result']['node_info']['id']
+                config['p2p']['seeds'] = f'{id}@{self.args.seed_node}:26656'
+            else:
+                print("Failed to get node information after 10 attempts.")
 
         if self.args.is_service_node:
             config['p2p']['block_service_mode'] = True
