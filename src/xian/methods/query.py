@@ -1,3 +1,4 @@
+import warnings
 import base64
 import json
 import ast
@@ -14,11 +15,9 @@ from contracting.compilation import parser
 from contracting.compilation.linter import Linter
 from contracting.storage.encoder import Encoder
 from loguru import logger
-
 from pyflakes.api import check
 from pyflakes.reporter import Reporter
 from urllib.parse import unquote
-
 from io import StringIO
 
 
@@ -120,8 +119,20 @@ def query(self, req) -> ResponseQuery:
                 except:
                     result = {"stdout": "", "stderr": ""}
 
-            # http://localhost:26657/abci_query?path="/calculate_stamps/<encoded_txn>"
+            # http://localhost:26657/abci_query?path="/calculate_stamps/<encoded_tx>"
             elif path_parts[0] == "calculate_stamps":
+                raw_tx = path_parts[1]
+                byte_data = bytes.fromhex(raw_tx)
+                tx_hex = byte_data.decode("utf-8")
+                tx = json.loads(tx_hex)
+                result = self.stamp_calculator.execute(tx)
+
+            # http://localhost:26657/abci_query?path="/estimate_stamps/<encoded_tx>"
+            elif path_parts[0] == "estimate_stamps":
+                warnings.warn(
+                    "The 'estimate_stamps' endpoint is deprecated and will be removed in a future version.",
+                    DeprecationWarning
+                )
                 raw_tx = path_parts[1]
                 byte_data = bytes.fromhex(raw_tx)
                 tx_hex = byte_data.decode("utf-8")
