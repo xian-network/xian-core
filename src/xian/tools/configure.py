@@ -103,11 +103,11 @@ class Configure:
             default=True
         )
         parser.add_argument(
-            '--is-service-node',
-             type=bool,
-             help='If the node is a service node',
-             required=False,
-             default=False
+            '--service-node',
+            type=bool,
+            help='If the node is a service node',
+            required=False,
+            default=False
         )
 
         self.args = parser.parse_args()
@@ -134,7 +134,6 @@ class Configure:
             sleep(1)  # wait 1 second before trying again
 
         return None  # or raise an Exception indicating the request ultimately failed
-
     
     def download_and_extract(self, url, target_path):
         # Download the file from the URL
@@ -203,7 +202,6 @@ class Configure:
         if not os.path.exists(self.CONFIG_PATH):
             print('Initialize CometBFT first')
             return
-        
 
         with open(self.CONFIG_PATH, 'r') as f:
             config = toml.load(f)
@@ -222,9 +220,7 @@ class Configure:
             else:
                 print("Failed to get node information after 10 attempts.")
 
-
-        if self.args.is_service_node:
-            config['p2p']['block_service_mode'] = True
+        config['p2p']['block_service_mode'] = self.args.is_service_node
 
         config['proxy_app'] = self.UNIX_SOCKET_PATH
 
@@ -299,7 +295,6 @@ class Configure:
 
             with open(target_path, 'w') as f:
                 f.write(json.dumps(keys, indent=2))
-
 
         if self.args.prometheus:
             config['instrumentation']['prometheus'] = True
