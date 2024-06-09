@@ -6,7 +6,7 @@ from xian.utils import format_dictionary, stringify_decimals
 import secrets
 
 
-class StampEstimator:
+class StampCalculator:
     def __init__(self):
         self.executor = Executor(metering=False, bypass_balance_amount=True, bypass_cache=True)
 
