@@ -234,9 +234,11 @@ class Configure:
             else:
                 print("Failed to get node information after 10 attempts.")
 
-        config['xian']['block_service_mode'] = self.args.service_node
-        config['xian']['pruning_enabled'] = self.args.enable_pruning
-        config['xian']['blocks_to_keep'] = self.args.blocks_to_keep
+        config['xian'] = {
+            'block_service_mode': self.args.service_node,
+            'pruning_enabled': self.args.enable_pruning,
+            'blocks_to_keep': self.args.blocks_to_keep
+        }
 
         config['proxy_app'] = self.UNIX_SOCKET_PATH
 
