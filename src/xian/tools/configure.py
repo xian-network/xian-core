@@ -10,6 +10,7 @@ from pathlib import Path
 from argparse import ArgumentParser
 from nacl.signing import SigningKey
 from nacl.encoding import HexEncoder, Base64Encoder
+from argparse import BooleanOptionalAction
 
 """
 Configure CometBFT node
@@ -52,7 +53,7 @@ class Configure:
         )
         parser.add_argument(
             '--allow-cors',
-            type=bool,
+            action=BooleanOptionalAction,
             help='Allow CORS',
             required=False,
             default=True
@@ -61,20 +62,20 @@ class Configure:
             '--snapshot-url',
             type=str,
             help='URL of snapshot in tar.gz format',
-            required=False)
+            required=False
+        )
         parser.add_argument(
             '--generate-genesis',
-            type=bool,
+            action=BooleanOptionalAction,
             help='Generate genesis file',
             required=False,
             default=False
         )
         parser.add_argument(
             '--copy-genesis',
-            type=bool,
+            action=BooleanOptionalAction,
             help='Copy genesis file',
-            required=True,
-            default=True
+            required=True
         )
         parser.add_argument(
             '--genesis-file-name',
@@ -97,21 +98,21 @@ class Configure:
         )
         parser.add_argument(
             '--prometheus',
-            type=bool,
+            action=BooleanOptionalAction,
             help='Enable Prometheus',
             required=False,
             default=True
         )
         parser.add_argument(
             '--service-node',
-            type=bool,
+            action=BooleanOptionalAction,
             help='If the node is a service node',
             required=False,
             default=False
         )
         parser.add_argument(
             '--enable-pruning',
-            type=bool,
+            action=BooleanOptionalAction,
             help='Prune blocks. Related to "blocks-to-keep" value',
             required=False,
             default=False
