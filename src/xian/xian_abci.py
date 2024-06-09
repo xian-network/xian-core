@@ -79,11 +79,11 @@ class Xian:
         self.fingerprint_hashes = []
         self.fingerprint_hash = None
         self.chain_id = self.genesis.get("chain_id", None)
-        self.block_service_mode = self.config["p2p"]["block_service_mode"]
+        self.block_service_mode = self.config["xian"]["block_service_mode"]
         self.stamp_calculator = StampCalculator() if self.block_service_mode else None
-        self.pruning_enabled = self.config.get("pruning_enabled", False)
+        self.pruning_enabled = self.config["xian"]["pruning_enabled"]
         # If pruning is enabled, this is the number of blocks to keep history for
-        self.blocks_to_keep = self.config.get("blocks_to_keep", 100000)
+        self.blocks_to_keep = self.config["xian"]["blocks_to_keep"]
         self.app_version = 1
 
         if self.chain_id is None:

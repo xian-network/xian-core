@@ -109,6 +109,20 @@ class Configure:
             required=False,
             default=False
         )
+        parser.add_argument(
+            '--enable-pruning',
+            type=bool,
+            help='Prune blocks. Related to "blocks-to-keep" value',
+            required=False,
+            default=False
+        )
+        parser.add_argument(
+            '--blocks-to-keep',
+            type=int,
+            help='Number of blocks to keep. Related to "enable-pruning" value',
+            required=False,
+            default=100000
+        )
 
         self.args = parser.parse_args()
 
@@ -220,7 +234,9 @@ class Configure:
             else:
                 print("Failed to get node information after 10 attempts.")
 
-        config['p2p']['block_service_mode'] = self.args.is_service_node
+        config['xian']['block_service_mode'] = self.args.service_node
+        config['xian']['pruning_enabled'] = self.args.enable_pruning
+        config['xian']['blocks_to_keep'] = self.args.blocks_to_keep
 
         config['proxy_app'] = self.UNIX_SOCKET_PATH
 
