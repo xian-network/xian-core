@@ -55,7 +55,7 @@ Follow these steps to set up the environment on Ubuntu 22.04:
    - **For starting your own local network:**
 
      ```bash
-     python src/xian/tools/configure.py --moniker "Node" --copy-genesis True --genesis-file-name genesis.json --validator-privkey "cd6cc45ffe7cebf09c6c6025575d50bb42c6c70c07e1dbc5150aaadc98705c2b"
+     python src/xian/tools/configure.py --moniker "Node" --copy-genesis --genesis-file-name "genesis.json" --validator-privkey "cd6cc45ffe7cebf09c6c6025575d50bb42c6c70c07e1dbc5150aaadc98705c2b"
      ```
 
      The `--validator-privkey` flag should be set to your validator's private key. The example above uses a key from the genesis file for testing purposes so you can start developing directly. `--moniker` is the node name in the CometBFT network.
@@ -63,7 +63,7 @@ Follow these steps to set up the environment on Ubuntu 22.04:
    - **For joining an existing network:**
 
      ```bash
-     python src/xian/tools/configure.py --moniker "Node" --copy-genesis True --genesis-file-name genesis-testnet.json --seed-node "91.108.112.184" --validator-privkey "ENTER YOUR WALLET PRIVATE KEY HERE"
+     python src/xian/tools/configure.py --moniker "Node" --copy-genesis --genesis-file-name "genesis-testnet.json" --seed-node "91.108.112.184" --validator-privkey "ENTER YOUR WALLET PRIVATE KEY HERE"
      ```
 
      Use `--seed-node` to specify the seed node's IP address you want to connect to. `--validator-privkey` is your validator wallet's private key. Ensure ports 26657 (REST API), 26656 (Node Communication), and 26660 (Prometheus Metrics) are open on your firewall.
