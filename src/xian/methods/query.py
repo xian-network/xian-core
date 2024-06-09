@@ -1,4 +1,3 @@
-import warnings
 import base64
 import json
 import ast
@@ -127,12 +126,9 @@ def query(self, req) -> ResponseQuery:
                 tx = json.loads(tx_hex)
                 result = self.stamp_calculator.execute(tx)
 
+            # TODO: Deprecated - Remove after tooling adjusted to 'calculate_stamps' endpoint
             # http://localhost:26657/abci_query?path="/estimate_stamps/<encoded_tx>"
             elif path_parts[0] == "estimate_stamps":
-                warnings.warn(
-                    "The 'estimate_stamps' endpoint is deprecated and will be removed in a future version.",
-                    DeprecationWarning
-                )
                 raw_tx = path_parts[1]
                 byte_data = bytes.fromhex(raw_tx)
                 tx_hex = byte_data.decode("utf-8")
