@@ -113,6 +113,7 @@ def register():
 def unregister():
     assert ctx.caller not in nodes.get(), "If you're a node already, you can't unregister. You need to leave or be removed."
     assert pending_registrations[ctx.caller] == True, "No pending registration"
-    currency.transfer(holdings[ctx.caller], ctx.caller)
+    if holdings[ctx.caller] > 0:
+        currency.transfer(holdings[ctx.caller], ctx.caller)
     pending_registrations[ctx.caller] = False
     holdings[ctx.caller] = 0
