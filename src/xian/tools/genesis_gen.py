@@ -15,7 +15,7 @@ Generate genesis_block.json file for CometBFT genesis.json
 Usage : 
     Run from an environment where xian-contracting & xian-core are installed.
     Xian state must be blank. You may wish to temporarily rename .cometbft and call `make init` before hand to achieve this.
-    `python genesis_gen.py --validator-pubkey "your_validator_public_key" --founder-privkey "your_founder_private_key" --output-path "path_to_output_file"`
+    `python genesis_gen.py --founder-privkey "your_founder_private_key" --output-path "path_to_output_file"`
 """
 
 
@@ -24,12 +24,6 @@ class GenesisGen:
 
     def __init__(self):
         parser = ArgumentParser(description='Genesis File Generator')
-        parser.add_argument(
-            '--validator-pubkey',
-            type=str,
-            required=True,
-            help="Validator's public key"
-        )
         parser.add_argument(
             '--founder-privkey',
             type=str,
@@ -41,6 +35,13 @@ class GenesisGen:
             type=Path,
             default=None,
             help="Path to save generated file"
+        )
+        parser.add_argument(
+            '--network',
+            type=str,
+            required=False,
+            default="devnet",
+            help='Network to generate genesis for. Maps to a config file, e.g. genesis/contracts/contracts_<network>.json'
         )
         self.args = parser.parse_args()
 
@@ -64,11 +65,11 @@ class GenesisGen:
         else:
             return arg
 
-    def build_genesis(self, founder_privkey: str, validator_pubkey: str):
+    def build_genesis(self, founder_privkey: str):
         contracting = ContractingClient(driver=Driver())
         contracting.set_submission_contract(commit=False)
 
-        con_cfg_path = self.CONTRACT_DIR / 'contracts_testnet.json'
+        con_cfg_path = self.CONTRACT_DIR / f'contracts_{self.args.network}.json'
 
         with open(con_cfg_path) as f:
             con_cfg = json.load(f)
@@ -145,7 +146,7 @@ class GenesisGen:
         output_path = self.args.output_path if self.args.output_path else (Path.cwd() / 'genesis')
         output_file = output_path / Path('genesis_block.json')
 
-        genesis = self.build_genesis(self.args.founder_privkey, self.args.validator_pubkey)
+        genesis = self.build_genesis(self.args.founder_privkey)
 
         with open(output_file, 'w') as f:
             f.write(encode(genesis))
