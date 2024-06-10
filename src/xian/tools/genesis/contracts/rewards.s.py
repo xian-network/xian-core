@@ -12,5 +12,4 @@ def current_value():
 def set_value(new_value: list):
     assert len(new_value) == 4, 'New value must be a list of 4 elements'
     assert sum(new_value) == 1, 'Sum of new value must be 1'
-    assert ctx.caller == ctx.owner, 'Only the voting contract can set the value'
     S['value'] = new_value

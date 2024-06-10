@@ -13,7 +13,6 @@ def commit(self) -> ResponseCommit:
     self.client.raw_driver.hard_apply(str(self.current_block_meta["nanos"]))
 
     # unset current_block_meta & cleanup
-    self.current_block_meta = None
     self.fingerprint_hashes = []
     self.fingerprint_hash = None
     self.current_block_rewards = {}
@@ -22,5 +21,7 @@ def commit(self) -> ResponseCommit:
     if self.pruning_enabled:
         if self.current_block_meta["height"] > self.blocks_to_keep:
             retain_height = self.current_block_meta["height"] - self.blocks_to_keep
+
+    self.current_block_meta = None
 
     return ResponseCommit(retain_height=retain_height)

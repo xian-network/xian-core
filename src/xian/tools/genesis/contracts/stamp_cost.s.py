@@ -11,5 +11,4 @@ def current_value():
 @export
 def set_value(new_value: int):
     assert new_value > 0, 'New value must be greater than 0'
-    assert ctx.caller == ctx.owner, 'Only the voting contract can set the value'
     S['value'] = new_value

@@ -11,6 +11,7 @@ types = Variable()
 registration_fee = Variable()
 pending_registrations = Hash(default_value=False)
 pending_leave = Hash(default_value=False)
+holdings = Hash(default_value=0)
 
 @construct
 def seed(genesis_nodes: list, genesis_registration_fee: int):
@@ -67,10 +68,11 @@ def finalize_vote(proposal_id: int):
             nodes.set(nodes.get() + [cur_vote["arg"]])
         elif cur_vote["type"] == "remove_member":
             nodes.set([node for node in nodes.get() if node != cur_vote["arg"]])
+            force_leave(cur_vote["arg"])
         elif cur_vote["type"] == "reward_change":
             rewards.set_value(new_value=cur_vote["arg"])
         elif cur_vote["type"] == "dao_payout":
-            currency.transfer_from_dao(args=cur_vote["arg"])
+            dao.transfer_from_dao(args=cur_vote["arg"])
         elif cur_vote["type"] == "stamp_cost_change":
             stamp_cost.set_value(new_value=cur_vote["arg"])
         elif cur_vote["type"] == "change_registration_fee":
@@ -83,6 +85,9 @@ def finalize_vote(proposal_id: int):
     votes[proposal_id] = cur_vote
     return cur_vote
 
+def force_leave(node: str):
+    pending_leave[node] = now + datetime.timedelta(days=7)
+
 @export
 def announce_leave():
     assert ctx.caller in nodes.get(), "Not a node"
@@ -91,22 +96,24 @@ def announce_leave():
     
 @export
 def leave():
-    assert ctx.caller in nodes.get(), "Not a node"
-    assert pending_leave[ctx.caller] != False, "No pending leave"
     assert pending_leave[ctx.caller] < now, "Leave announcement period not over"
-    nodes.set([node for node in nodes.get() if node != ctx.caller])
+    if ctx.caller in nodes.get():
+        nodes.set([node for node in nodes.get() if node != ctx.caller])
     pending_leave[ctx.caller] = False
 
 @export
 def register():
     assert ctx.caller not in nodes.get(), "Already a node"
     assert pending_registrations[ctx.caller] == False, "Already pending registration"
-    currency.transfer_from(registration_fee.get(), ctx.caller, ctx.this)
-    pending_registrations[ctx.caller, registration_fee.get()] = True
+    currency.transfer_from(amount=registration_fee.get(), to=ctx.this, main_account=ctx.caller)
+    holdings[ctx.caller] = registration_fee.get()
+    pending_registrations[ctx.caller] = True
 
 @export
 def unregister():
     assert ctx.caller not in nodes.get(), "If you're a node already, you can't unregister. You need to leave or be removed."
     assert pending_registrations[ctx.caller] == True, "No pending registration"
-    currency.transfer(pending_registrations[ctx.caller], ctx.caller)
+    if holdings[ctx.caller] > 0:
+        currency.transfer(holdings[ctx.caller], ctx.caller)
     pending_registrations[ctx.caller] = False
+    holdings[ctx.caller] = 0

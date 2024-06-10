@@ -10,6 +10,7 @@ from pathlib import Path
 from argparse import ArgumentParser
 from nacl.signing import SigningKey
 from nacl.encoding import HexEncoder, Base64Encoder
+from argparse import BooleanOptionalAction
 
 """
 Configure CometBFT node
@@ -33,6 +34,18 @@ class Configure:
     def __init__(self):
         parser = ArgumentParser(description='Configure CometBFT')
         parser.add_argument(
+            '--seed-node',
+            type=str,
+            help='IP of Seed Node e.g. 91.108.112.184 (without port, but 26657 & 26656 need to be open). For joining an existing network, populates node id from querying node.',
+            required=False
+        )
+        parser.add_argument(
+            '--seed-node-address',
+             type=str,
+             help='Seed node address e.g. <node_id>@91.108.112.184 . For cold booting a test network.',
+             required=False
+        )
+        parser.add_argument(
             '--moniker',
             type=str,
             help='Name of your node',
@@ -40,7 +53,7 @@ class Configure:
         )
         parser.add_argument(
             '--allow-cors',
-            type=bool,
+            action=BooleanOptionalAction,
             help='Allow CORS',
             required=False,
             default=True
@@ -49,20 +62,20 @@ class Configure:
             '--snapshot-url',
             type=str,
             help='URL of snapshot in tar.gz format',
-            required=False)
+            required=False
+        )
         parser.add_argument(
             '--generate-genesis',
-            type=bool,
+            action=BooleanOptionalAction,
             help='Generate genesis file',
             required=False,
             default=False
         )
         parser.add_argument(
             '--copy-genesis',
-            type=bool,
+            action=BooleanOptionalAction,
             help='Copy genesis file',
-            required=True,
-            default=True
+            required=True
         )
         parser.add_argument(
             '--genesis-file-name',
@@ -85,26 +98,57 @@ class Configure:
         )
         parser.add_argument(
             '--prometheus',
-            type=bool,
+            action=BooleanOptionalAction,
             help='Enable Prometheus',
             required=False,
             default=True
         )
         parser.add_argument(
-            '--seed-node-address',
-             type=str,
-             help='If the full seed node address is provided w/o port e.g. ',
-             required=False
+            '--service-node',
+            action=BooleanOptionalAction,
+            help='If the node is a service node',
+            required=False,
+            default=False
         )
         parser.add_argument(
-            '--is-service-node',
-             type=bool,
-             help='If the node is a service node',
-             required=False,
-             default=False
+            '--enable-pruning',
+            action=BooleanOptionalAction,
+            help='Prune blocks. Related to "blocks-to-keep" value',
+            required=False,
+            default=False
+        )
+        parser.add_argument(
+            '--blocks-to-keep',
+            type=int,
+            help='Number of blocks to keep. Related to "enable-pruning" value',
+            required=False,
+            default=100000
         )
 
         self.args = parser.parse_args()
+
+    def get_node_info(self, seed_node):
+        attempts = 0
+        max_attempts = 10
+        timeout = 3  # seconds
+        while attempts < max_attempts:
+            try:
+                response = requests.get(f'http://{seed_node}:26657/status', timeout=timeout)
+                response.raise_for_status()  # Raises stored HTTPError, if one occurred.
+                return response.json()
+            except requests.exceptions.HTTPError as err:
+                print(f"HTTP error: {err}")
+            except requests.exceptions.ConnectionError as err:
+                print(f"Connection error: {err}")
+            except requests.exceptions.Timeout as err:
+                print(f"Timeout error: {err}")
+            except requests.exceptions.RequestException as err:
+                print(f"Error: {err}")
+
+            attempts += 1
+            sleep(1)  # wait 1 second before trying again
+
+        return None  # or raise an Exception indicating the request ultimately failed
     
     def download_and_extract(self, url, target_path):
         # Download the file from the URL
@@ -131,29 +175,6 @@ class Configure:
         
         os.remove(tar_path)
 
-    def get_node_info(self, seed_node):
-        attempts = 0
-        max_attempts = 10
-        timeout = 3  # seconds
-        while attempts < max_attempts:
-            try:
-                response = requests.get(f'http://{seed_node}:26657/status', timeout=timeout)
-                response.raise_for_status()  # Raises stored HTTPError, if one occurred.
-                return response.json()
-            except requests.exceptions.HTTPError as err:
-                print(f"HTTP error: {err}")
-            except requests.exceptions.ConnectionError as err:
-                print(f"Connection error: {err}")
-            except requests.exceptions.Timeout as err:
-                print(f"Timeout error: {err}")
-            except requests.exceptions.RequestException as err:
-                print(f"Error: {err}")
-            
-            attempts += 1
-            sleep(1)  # wait 1 second before trying again
-
-        return None  # or raise an Exception indicating the request ultimately failed
-    
     def generate_keys(self):
         pk_hex = self.args.validator_privkey
 
@@ -202,7 +223,6 @@ class Configure:
 
         config['consensus']['create_empty_blocks'] = False
 
-        # If seed node address is provided, use it
         if self.args.seed_node_address:
             config['p2p']['seeds'] = f'{self.args.seed_node_address}:26656'
         # Otherwise construct the seed node address from the IP
@@ -215,8 +235,11 @@ class Configure:
             else:
                 print("Failed to get node information after 10 attempts.")
 
-        if self.args.is_service_node:
-            config['p2p']['block_service_mode'] = True
+        config['xian'] = {
+            'block_service_mode': self.args.service_node,
+            'pruning_enabled': self.args.enable_pruning,
+            'blocks_to_keep': self.args.blocks_to_keep
+        }
 
         config['proxy_app'] = self.UNIX_SOCKET_PATH
 
@@ -291,7 +314,6 @@ class Configure:
 
             with open(target_path, 'w') as f:
                 f.write(json.dumps(keys, indent=2))
-
 
         if self.args.prometheus:
             config['instrumentation']['prometheus'] = True
