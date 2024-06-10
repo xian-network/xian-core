@@ -244,6 +244,9 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(self.masternodes.votes[1]['finalized'], True)
         self.assertEqual(self.masternodes.types.get(), ["new_type1","new_type2","new_type3","new_type4"])
 
+    def test_ownership(self):
+        self.dao.transfer_from_dao(args={"amount":100000,"to":"new_node"})
+
 
 
 if __name__ == '__main__':
