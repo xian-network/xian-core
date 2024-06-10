@@ -1,0 +1,45 @@
+{
+	"extension": ".s.py",
+	"contracts": [
+		{
+			"name": "currency",
+			"owner": null,
+			"constructor_args": {
+				"vk": "b4d1967e6264bbcd61fd487caf3cafaffdc34be31d0994bf02afdcc2056c053c"
+			}
+		},
+		{
+			"name": "stamp_cost",
+			"owner": "masternodes",
+			"constructor_args": {
+				"initial_rate": 20
+			}
+		},
+		{
+			"name": "rewards",
+			"owner": "masternodes",
+			"constructor_args": null
+		},
+		{
+			"name": "foundation",
+			"owner": null,
+			"constructor_args": {
+				"vk": "b4d1967e6264bbcd61fd487caf3cafaffdc34be31d0994bf02afdcc2056c053c"
+			}
+		},
+        {
+            "name": "dao",
+            "owner": "masternodes",
+            "constructor_args": null
+        },
+		{
+            "name": "members",
+			"submit_as": "masternodes",
+			"owner": null,
+            "constructor_args": {
+				"genesis_nodes": ["b4d1967e6264bbcd61fd487caf3cafaffdc34be31d0994bf02afdcc2056c053c","db21a73137672f075f9a8ee142a1aa4839a5deb28ef03a10f3e7e16c87db8f24"],
+				"genesis_registration_fee": 100000
+			}
+		}
+	]
+}
