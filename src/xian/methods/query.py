@@ -1,3 +1,4 @@
+import base64
 import json
 import ast
 import re
@@ -13,13 +14,10 @@ from contracting.compilation import parser
 from contracting.compilation.linter import Linter
 from contracting.storage.encoder import Encoder
 from loguru import logger
-
 from pyflakes.api import check
 from pyflakes.reporter import Reporter
 from urllib.parse import unquote
-
 from io import StringIO
-import base64
 
 
 def query(self, req) -> ResponseQuery:
@@ -33,6 +31,7 @@ def query(self, req) -> ResponseQuery:
     key = ""
 
     try:
+        logger.debug(req.path)
         request_path = req.path
         path_parts = [part for part in request_path.split("/") if part]
 
@@ -41,18 +40,49 @@ def query(self, req) -> ResponseQuery:
             result = self.client.raw_driver.get(path_parts[1])
             key = path_parts[1]
 
-        # http://localhost:26657/abci_query?path="/keys/currency.balances" BLOCK SERVICE MODE ONLY
+        # http://localhost:26657/abci_query?path="/health"
+        elif path_parts[0] == "health":
+            result = "OK"
+
+        # http://localhost:26657/abci_query?path="/get_next_nonce/ddd326fddb5d1677595311f298b744a4e9f415b577ac179a6afbf38483dc0791"
+        elif path_parts[0] == "get_next_nonce":
+            result = self.nonce_storage.get_next_nonce(sender=path_parts[1])
+
+        # http://localhost:26657/abci_query?path="/contract/con_some_contract"
+        elif path_parts[0] == "contract":
+            result = self.client.raw_driver.get_contract(path_parts[1])
+
+        # http://localhost:26657/abci_query?path="/contract_methods/con_some_contract"
+        elif path_parts[0] == "contract_methods":
+            contract_code = self.client.raw_driver.get_contract(path_parts[1])
+            if contract_code is not None:
+                funcs = parser.methods_for_contract(contract_code)
+                result = {"methods": funcs}
+
+        # http://localhost:26657/abci_query?path="/contract_vars/con_some_contract"
+        elif path_parts[0] == "contract_vars":
+            contract_code = self.client.raw_driver.get_contract(path_parts[1])
+            if contract_code is not None:
+                result = parser.variables_for_contract(contract_code)
+
+        # http://localhost:26657/abci_query?path="/ping"
+        elif path_parts[0] == "ping":
+            result = {'status': 'online'}
+
+        # BLOCK SERVICE MODE
         if self.block_service_mode:
+            # http://localhost:26657/abci_query?path="/keys/currency.balances"
             if path_parts[0] == "keys":
                 list_of_keys = self.client.raw_driver.keys(prefix=path_parts[1])
                 result = [key.split(":")[1] for key in list_of_keys]
                 key = path_parts[1]
 
-            if path_parts[0] == "contracts":
+            # http://localhost:26657/abci_query?path="/contracts"
+            elif path_parts[0] == "contracts":
                 result = self.client.raw_driver.get_contract_files()
 
             # http://localhost:26657/abci_query?path="/lint/<code>"
-            if path_parts[0] == "lint":
+            elif path_parts[0] == "lint":
                 try:
                     code = base64.b64decode(path_parts[1]).decode("utf-8")
                     code = unquote(code)
@@ -64,7 +94,7 @@ def query(self, req) -> ResponseQuery:
                     check(code, "<string>", reporter)
                     stdout_output = stdout.getvalue()
                     stderr_output = stderr.getvalue()
-                    
+
                     # Contracting linting
                     try:
                         linter = Linter()
@@ -78,54 +108,32 @@ def query(self, req) -> ResponseQuery:
                                 message = re.search(r"Line \d+: (.+)", violation).group(1)
                                 formatted_violation_output = f"<string>:{line}:0: {message}\n"
                                 formatted_new_linter_output += formatted_violation_output
-                    except Exception as e:
+                    except:
                         formatted_new_linter_output = ""
-                    
 
                     # Combine stderr output
                     combined_stderr_output = f"{stderr_output}{formatted_new_linter_output}"
 
                     result = {"stdout": stdout_output, "stderr": combined_stderr_output}
-                except Exception as e:
+                except:
                     result = {"stdout": "", "stderr": ""}
 
-        # http://localhost:26657/abci_query?path="/estimate_stamps/<encoded_txn>" BLOCK SERVICE MODE ONLY
-        if self.block_service_mode:
-            if path_parts[0] == "estimate_stamps":
+            # http://localhost:26657/abci_query?path="/calculate_stamps/<encoded_tx>"
+            elif path_parts[0] == "calculate_stamps":
                 raw_tx = path_parts[1]
                 byte_data = bytes.fromhex(raw_tx)
                 tx_hex = byte_data.decode("utf-8")
                 tx = json.loads(tx_hex)
-                result = self.stamp_estimator.execute(tx)
+                result = self.stamp_calculator.execute(tx)
 
-        # http://localhost:26657/abci_query?path="/health"
-        if path_parts[0] == "health":
-            result = "OK"
-
-        # http://localhost:26657/abci_query?path="/get_next_nonce/ddd326fddb5d1677595311f298b744a4e9f415b577ac179a6afbf38483dc0791"
-        if path_parts[0] == "get_next_nonce":
-            result = self.nonce_storage.get_next_nonce(sender=path_parts[1])
-
-        # http://localhost:26657/abci_query?path="/contract/con_some_contract"
-        if path_parts[0] == "contract":
-            result = self.client.raw_driver.get_contract(path_parts[1])
-
-        # http://localhost:26657/abci_query?path="/contract_methods/con_some_contract"
-        if path_parts[0] == "contract_methods":
-            contract_code = self.client.raw_driver.get_contract(path_parts[1])
-            if contract_code is not None:
-                funcs = parser.methods_for_contract(contract_code)
-                result = {"methods": funcs}
-
-        # http://localhost:26657/abci_query?path="/contract_vars/con_some_contract"
-        if path_parts[0] == "contract_vars":
-            contract_code = self.client.raw_driver.get_contract(path_parts[1])
-            if contract_code is not None:
-                result = parser.variables_for_contract(contract_code)
-
-        # http://localhost:26657/abci_query?path="/ping"
-        if path_parts[0] == "ping":
-            result = {'status': 'online'}
+            # TODO: Deprecated - Remove after tooling adjusted to 'calculate_stamps' endpoint
+            # http://localhost:26657/abci_query?path="/estimate_stamps/<encoded_tx>"
+            elif path_parts[0] == "estimate_stamps":
+                raw_tx = path_parts[1]
+                byte_data = bytes.fromhex(raw_tx)
+                tx_hex = byte_data.decode("utf-8")
+                tx = json.loads(tx_hex)
+                result = self.stamp_calculator.execute(tx)
 
         if result is not None:
             if isinstance(result, str):
@@ -144,14 +152,12 @@ def query(self, req) -> ResponseQuery:
                 v = encode_str(str(result))
                 type_of_data = "str"
         else:
-            # If no result, return a byte string representing None
-            v = b"\x00"
-            type_of_data = "None"
+            error = f'Unknown query path: {path_parts[0]}'
+            logger.error(error)
+            return ResponseQuery(code=ErrorCode, value=b"\x00", info=None, log=error)
 
     except Exception as err:
-        import traceback
-        traceback.print_exc()
-        logger.error(f"QUERY ERROR: {err}")
-        return ResponseQuery(code=ErrorCode, log=f"QUERY ERROR")
+        logger.error(err)
+        return ResponseQuery(code=ErrorCode, log=err)
 
     return ResponseQuery(code=OkCode, value=v, info=type_of_data, key=encode_str(key))

@@ -10,6 +10,7 @@ from pathlib import Path
 from argparse import ArgumentParser
 from nacl.signing import SigningKey
 from nacl.encoding import HexEncoder, Base64Encoder
+from argparse import BooleanOptionalAction
 
 """
 Configure CometBFT node
@@ -52,7 +53,7 @@ class Configure:
         )
         parser.add_argument(
             '--allow-cors',
-            type=bool,
+            action=BooleanOptionalAction,
             help='Allow CORS',
             required=False,
             default=True
@@ -61,20 +62,20 @@ class Configure:
             '--snapshot-url',
             type=str,
             help='URL of snapshot in tar.gz format',
-            required=False)
+            required=False
+        )
         parser.add_argument(
             '--generate-genesis',
-            type=bool,
+            action=BooleanOptionalAction,
             help='Generate genesis file',
             required=False,
             default=False
         )
         parser.add_argument(
             '--copy-genesis',
-            type=bool,
+            action=BooleanOptionalAction,
             help='Copy genesis file',
-            required=True,
-            default=True
+            required=True
         )
         parser.add_argument(
             '--genesis-file-name',
@@ -97,17 +98,31 @@ class Configure:
         )
         parser.add_argument(
             '--prometheus',
-            type=bool,
+            action=BooleanOptionalAction,
             help='Enable Prometheus',
             required=False,
             default=True
         )
         parser.add_argument(
-            '--is-service-node',
-             type=bool,
-             help='If the node is a service node',
-             required=False,
-             default=False
+            '--service-node',
+            action=BooleanOptionalAction,
+            help='If the node is a service node',
+            required=False,
+            default=False
+        )
+        parser.add_argument(
+            '--enable-pruning',
+            action=BooleanOptionalAction,
+            help='Prune blocks. Related to "blocks-to-keep" value',
+            required=False,
+            default=False
+        )
+        parser.add_argument(
+            '--blocks-to-keep',
+            type=int,
+            help='Number of blocks to keep. Related to "enable-pruning" value',
+            required=False,
+            default=100000
         )
 
         self.args = parser.parse_args()
@@ -134,7 +149,6 @@ class Configure:
             sleep(1)  # wait 1 second before trying again
 
         return None  # or raise an Exception indicating the request ultimately failed
-
     
     def download_and_extract(self, url, target_path):
         # Download the file from the URL
@@ -203,7 +217,6 @@ class Configure:
         if not os.path.exists(self.CONFIG_PATH):
             print('Initialize CometBFT first')
             return
-        
 
         with open(self.CONFIG_PATH, 'r') as f:
             config = toml.load(f)
@@ -222,9 +235,11 @@ class Configure:
             else:
                 print("Failed to get node information after 10 attempts.")
 
-
-        if self.args.is_service_node:
-            config['p2p']['block_service_mode'] = True
+        config['xian'] = {
+            'block_service_mode': self.args.service_node,
+            'pruning_enabled': self.args.enable_pruning,
+            'blocks_to_keep': self.args.blocks_to_keep
+        }
 
         config['proxy_app'] = self.UNIX_SOCKET_PATH
 
@@ -299,7 +314,6 @@ class Configure:
 
             with open(target_path, 'w') as f:
                 f.write(json.dumps(keys, indent=2))
-
 
         if self.args.prometheus:
             config['instrumentation']['prometheus'] = True
