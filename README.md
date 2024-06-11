@@ -68,6 +68,15 @@ Follow these steps to set up the environment on Ubuntu 22.04:
 
      Use `--seed-node` to specify the seed node's IP address you want to connect to. `--validator-privkey` is your validator wallet's private key. Ensure ports 26657 (REST API), 26656 (Node Communication), and 26660 (Prometheus Metrics) are open on your firewall.
 
+   - **Other arguments**
+      - `--prometheus` Enables export of prometheus metrics
+      - `--service-node` Enables service_node mode for features such as Stamp Calculation and more.
+      - `--enable-pruning` Prune blocks. Related to "blocks-to-keep" value
+      - `--blocks-to-keep` Number of blocks to keep. Related to "enable-pruning" value
+      - `--allow-cors` Allow CORS
+      - `--snapshot-url` URL of snapshot in tar.gz format
+      - `--seed-node-address` Seed node address e.g. <node_id>@91.108.112.184 . For cold booting a test network.
+
 8. **Run CometBFT and Xian:**
 
    Run CometBFT:
