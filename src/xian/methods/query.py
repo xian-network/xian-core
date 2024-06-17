@@ -2,7 +2,7 @@ import base64
 import json
 import ast
 import re
-
+import asyncio
 from cometbft.abci.v1beta1.types_pb2 import ResponseQuery
 from xian.utils import encode_str
 from xian.constants import (
@@ -20,13 +20,14 @@ from urllib.parse import unquote
 from io import StringIO
 
 
-def query(self, req) -> ResponseQuery:
+async def query(self, req) -> ResponseQuery:
     """
     Query the application state
     Request Ex. http://localhost:26657/abci_query?path="path"
     (Yes you need to quote the path)
     """
 
+    loop = asyncio.get_event_loop()
     result = None
     key = ""
 
@@ -46,22 +47,22 @@ def query(self, req) -> ResponseQuery:
 
         # http://localhost:26657/abci_query?path="/get_next_nonce/ddd326fddb5d1677595311f298b744a4e9f415b577ac179a6afbf38483dc0791"
         elif path_parts[0] == "get_next_nonce":
-            result = self.nonce_storage.get_next_nonce(sender=path_parts[1])
+            result = await loop.run_in_executor(None, self.nonce_storage.get_next_nonce, path_parts[1])
 
         # http://localhost:26657/abci_query?path="/contract/con_some_contract"
         elif path_parts[0] == "contract":
-            result = self.client.raw_driver.get_contract(path_parts[1])
+            result = await loop.run_in_executor(None, self.client.raw_driver.get_contract, path_parts[1])
 
         # http://localhost:26657/abci_query?path="/contract_methods/con_some_contract"
         elif path_parts[0] == "contract_methods":
-            contract_code = self.client.raw_driver.get_contract(path_parts[1])
+            contract_code = await loop.run_in_executor(None, self.client.raw_driver.get_contract, path_parts[1])
             if contract_code is not None:
                 funcs = parser.methods_for_contract(contract_code)
                 result = {"methods": funcs}
 
         # http://localhost:26657/abci_query?path="/contract_vars/con_some_contract"
         elif path_parts[0] == "contract_vars":
-            contract_code = self.client.raw_driver.get_contract(path_parts[1])
+            contract_code = await loop.run_in_executor(None, self.client.raw_driver.get_contract, path_parts[1])
             if contract_code is not None:
                 result = parser.variables_for_contract(contract_code)
 
@@ -73,13 +74,13 @@ def query(self, req) -> ResponseQuery:
         if self.block_service_mode:
             # http://localhost:26657/abci_query?path="/keys/currency.balances"
             if path_parts[0] == "keys":
-                list_of_keys = self.client.raw_driver.keys(prefix=path_parts[1])
+                list_of_keys = await loop.run_in_executor(None, self.client.raw_driver.keys, path_parts[1])
                 result = [key.split(":")[1] for key in list_of_keys]
                 key = path_parts[1]
 
             # http://localhost:26657/abci_query?path="/contracts"
             elif path_parts[0] == "contracts":
-                result = self.client.raw_driver.get_contract_files()
+                result = await loop.run_in_executor(None, self.client.raw_driver.get_contract_files)
 
             # http://localhost:26657/abci_query?path="/lint/<code>"
             elif path_parts[0] == "lint":
@@ -91,15 +92,15 @@ def query(self, req) -> ResponseQuery:
                     stdout = StringIO()
                     stderr = StringIO()
                     reporter = Reporter(stdout, stderr)
-                    check(code, "<string>", reporter)
+                    await loop.run_in_executor(None, check, code, "<string>", reporter)
                     stdout_output = stdout.getvalue()
                     stderr_output = stderr.getvalue()
 
                     # Contracting linting
                     try:
                         linter = Linter()
-                        tree = ast.parse(code)
-                        violations = linter.check(tree)
+                        tree = await loop.run_in_executor(None, ast.parse, code)
+                        violations = await loop.run_in_executor(None, linter.check, tree)
                         formatted_new_linter_output = ""
                         # Transform new linter output to match pyflakes format
                         if violations:
@@ -118,22 +119,14 @@ def query(self, req) -> ResponseQuery:
                 except:
                     result = {"stdout": "", "stderr": ""}
 
-            # http://localhost:26657/abci_query?path="/calculate_stamps/<encoded_tx>"
-            elif path_parts[0] == "calculate_stamps":
-                raw_tx = path_parts[1]
-                byte_data = bytes.fromhex(raw_tx)
-                tx_hex = byte_data.decode("utf-8")
-                tx = json.loads(tx_hex)
-                result = self.stamp_calculator.execute(tx)
-
             # TODO: Deprecated - Remove after tooling adjusted to 'calculate_stamps' endpoint
             # http://localhost:26657/abci_query?path="/estimate_stamps/<encoded_tx>"
-            elif path_parts[0] == "estimate_stamps":
+            elif path_parts[0] == "calculate_stamps" or path_parts[0] == "estimate_stamps":
                 raw_tx = path_parts[1]
                 byte_data = bytes.fromhex(raw_tx)
                 tx_hex = byte_data.decode("utf-8")
                 tx = json.loads(tx_hex)
-                result = self.stamp_calculator.execute(tx)
+                result = await loop.run_in_executor(None, self.stamp_calculator.execute, tx)
 
         if result is not None:
             if isinstance(result, str):
