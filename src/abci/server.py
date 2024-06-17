@@ -30,9 +30,12 @@ class ProtocolHandler:
     def __init__(self, app):
         self.app = app
 
-    def process(self, req_type: str, req) -> bytes:
+    async def process(self, req_type: str, req) -> bytes:
         handler = getattr(self, req_type, self.no_match)
-        return handler(req)
+        if asyncio.iscoroutinefunction(handler):
+            return await handler(req)
+        else:
+            return handler(req)
 
     def flush(self, req) -> bytes:
         response = Response(flush=ResponseFlush())
@@ -53,8 +56,8 @@ class ProtocolHandler:
         response = Response(check_tx=result)
         return write_message(response)
 
-    def query(self, req) -> bytes:
-        result = self.app.query(req.query)
+    async def query(self, req) -> bytes:
+        result = await self.app.query(req.query)
         response = Response(query=result)
         return write_message(response)
 
@@ -191,7 +194,7 @@ class ABCIServer:
             # based on the length encoding
             for message in read_messages(data, Request):
                 req_type = message.WhichOneof("value")
-                response = self.protocol.process(req_type, message)
+                response = await self.protocol.process(req_type, message)
                 writer.write(response)
                 last_pos = data.tell()
 

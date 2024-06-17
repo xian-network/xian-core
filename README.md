@@ -12,7 +12,7 @@ Follow these steps to set up the environment on Ubuntu 22.04:
 
    ```bash
    sudo apt-get update
-   sudo apt-get update
+   sudo apt-get upgrade
    ```
 
 2. **Install necessary packages:**
@@ -55,7 +55,7 @@ Follow these steps to set up the environment on Ubuntu 22.04:
    - **For starting your own local network:**
 
      ```bash
-     python src/xian/tools/configure.py --moniker "Node" --copy-genesis --genesis-file-name "genesis.json" --validator-privkey "cd6cc45ffe7cebf09c6c6025575d50bb42c6c70c07e1dbc5150aaadc98705c2b"
+     python src/xian/tools/configure.py --moniker "Node" --copy-genesis --service-node --genesis-file-name "genesis.json" --validator-privkey "cd6cc45ffe7cebf09c6c6025575d50bb42c6c70c07e1dbc5150aaadc98705c2b"
      ```
 
      The `--validator-privkey` flag should be set to your validator's private key. The example above uses a key from the genesis file for testing purposes so you can start developing directly. `--moniker` is the node name in the CometBFT network.
@@ -67,6 +67,15 @@ Follow these steps to set up the environment on Ubuntu 22.04:
      ```
 
      Use `--seed-node` to specify the seed node's IP address you want to connect to. `--validator-privkey` is your validator wallet's private key. Ensure ports 26657 (REST API), 26656 (Node Communication), and 26660 (Prometheus Metrics) are open on your firewall.
+
+   - **Other arguments**
+      - `--prometheus` Enables export of prometheus metrics
+      - `--service-node` Enables service_node mode for features such as Stamp Calculation and more.
+      - `--enable-pruning` Prune blocks. Related to "blocks-to-keep" value
+      - `--blocks-to-keep` Number of blocks to keep. Related to "enable-pruning" value
+      - `--allow-cors` Allow CORS
+      - `--snapshot-url` URL of snapshot in tar.gz format
+      - `--seed-node-address` Seed node address e.g. <node_id>@91.108.112.184 . For cold booting a test network.
 
 8. **Run CometBFT and Xian:**
 
