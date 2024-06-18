@@ -108,17 +108,6 @@ class TxProcessor:
 
         tx_hash = tx_hash_from_tx(transaction)
 
-        writes = self.determine_writes_from_output(
-            status_code=output['status_code'],
-            ouput_writes=output['writes'],
-            stamps_used=output['stamps_used'],
-            stamp_cost=stamp_cost,
-            tx_sender=transaction['payload']['sender']
-        )
-
-        for write in writes:
-            self.client.raw_driver.set(key=write['key'], value=write['value'])
-
         rewards = None
         if rewards_handler is not None:
             calculated_rewards = rewards_handler.calculate_tx_output_rewards(
@@ -136,7 +125,46 @@ class TxProcessor:
                 if developer == 'sys' or developer == None:
                     developer = self.client.get_var(contract='foundation', variable='owner')
                 rewards['developer_rewards'][developer] = reward / stamp_rate
-        
+
+            state_change_key = "currency.balances"
+            for address in rewards['masternode_reward'].keys():
+                # If state change to key already exists, add to it
+                # Otherwise, create a new state change key
+                for write in output['writes'].keys():
+                    if f"{state_change_key}:{address}" in write:
+                        output['writes'][write] += rewards['masternode_reward'][address]
+                        break
+                else:
+                    output['writes'][f"{state_change_key}:{address}"] = rewards['masternode_reward'][address]
+
+            for write in output['writes'].keys():
+                if f"{state_change_key}:{self.client.get_var(contract='foundation', variable='owner')}" in write:
+                    output['writes'][write] += rewards['foundation_reward']
+                    break
+            else:
+                output['writes'][f"{state_change_key}:{self.client.get_var(contract='foundation', variable='owner')}"] = rewards['foundation_reward']
+
+            for address in rewards['developer_rewards'].keys():
+                # If state change to key already exists, add to it
+                # Otherwise, create a new state change key
+                for write in output['writes'].keys():
+                    if f"{state_change_key}:{address}" in write:
+                        output['writes'][write] += rewards['developer_rewards'][address]
+                        break
+                else:
+                    output['writes'][f"{state_change_key}:{address}"] = rewards['developer_rewards'][address]
+                    
+        writes = self.determine_writes_from_output(
+            status_code=output['status_code'],
+            ouput_writes=output['writes'],
+            stamps_used=output['stamps_used'],
+            stamp_cost=stamp_cost,
+            tx_sender=transaction['payload']['sender'],
+            rewards=rewards
+        )
+
+        for write in writes:
+            self.client.raw_driver.set(key=write['key'], value=write['value'])        
 
         tx_output = {
             'hash': tx_hash,
@@ -152,7 +180,7 @@ class TxProcessor:
 
         return tx_output
 
-    def determine_writes_from_output(self, status_code, ouput_writes, stamps_used, stamp_cost, tx_sender):
+    def determine_writes_from_output(self, status_code, ouput_writes, stamps_used, stamp_cost, tx_sender, rewards=None):
         # Only apply the writes if the tx passes
         if status_code == 0:
             writes = [{'key': k, 'value': v} for k, v in ouput_writes.items()]
