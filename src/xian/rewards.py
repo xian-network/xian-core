@@ -1,3 +1,4 @@
+from contracting.stdlib.bridge.decimal import ContractingDecimal
 import decimal
 import xian.constants as c
 from collections import defaultdict
@@ -19,7 +20,7 @@ class RewardsHandler:
         except Exception as e:
             logger.error(f"Error in calculating reward: {e}")
             rounded_reward = 0
-        return rounded_reward
+        return ContractingDecimal(str(rounded_reward))
     
     def find_developer_and_reward(self, total_stamps_to_split, contract, developer_ratio):
         if isinstance(developer_ratio, dict):
@@ -29,12 +30,15 @@ class RewardsHandler:
         
         send_map = defaultdict(lambda: 0)
         recipient = self.client.get_var(contract=contract, variable="__developer__")
-        send_map[recipient] += total_stamps_to_split * developer_ratio
+        if not recipient:
+            return {self.client.get_var(contract="foundation", variable="owner"): ContractingDecimal(str(total_stamps_to_split * developer_ratio))}
+        send_map[recipient] += ContractingDecimal(str(total_stamps_to_split * developer_ratio))
         send_map[recipient] /= len(send_map)
-        return send_map
+        return dict(send_map)
     
     def calculate_tx_output_rewards(self, total_stamps_to_split, contract):
-        if not self.client.raw_driver.get("rewards"):
+        if not self.client.get_var(contract="rewards", variable="S", arguments=["value"]):
+            logger.error("Rewards not set up.")
             return 0, 0, {}
         try:
             master_ratio, burn_ratio, foundation_ratio, developer_ratio = self.client.get_var(contract="rewards", variable="S", arguments=["value"])
@@ -43,7 +47,7 @@ class RewardsHandler:
         
         master_reward = self.calculate_participant_reward(
             participant_ratio=master_ratio,
-            number_of_participants=len(self.client.get_var(contract="masternodes", variable="S", arguments=["members"])),
+            number_of_participants=len(self.client.get_var(contract="masternodes", variable="nodes")),
             total_stamps_to_split=total_stamps_to_split
         )
         
@@ -62,7 +66,7 @@ class RewardsHandler:
         return master_reward, foundation_reward, developer_mapping
     
     def distribute_rewards(self, stamp_rewards_amount, stamp_rewards_contract):
-        if not self.client.raw_driver.get("rewards") or stamp_rewards_amount <= 0:
+        if not self.client.get_var(contract="rewards", variable="S", arguments=["value"]) or stamp_rewards_amount <= 0:
             return []
         
         driver = self.client.raw_driver

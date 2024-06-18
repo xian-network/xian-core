@@ -39,17 +39,14 @@ def finalize_block(self, req) -> ResponseFinalizeBlock:
         sender, signature, payload = unpack_transaction(tx)
         if not verify(sender, payload, signature):
             # Not really needed, because check_tx should catch this first, but just in case
-            raise Exception("Invalid Signature")
+            continue # Skip this transaction
         # Attach metadata to the transaction
         tx["b_meta"] = self.current_block_meta
-        result = self.tx_processor.process_tx(tx, enabled_fees=self.enable_tx_fee)
-
-        if self.enable_tx_fee:
-            self.current_block_rewards[tx['b_meta']['hash']] = {
-                "amount": result["stamp_rewards_amount"],
-                "contract": result["stamp_rewards_contract"]
-            }
-
+        try:
+            result = self.tx_processor.process_tx(tx, enabled_fees=self.enable_tx_fee, rewards_handler=self.rewards_handler)
+        except Exception as e:
+            logger.error(f"Error processing tx: {e}")
+            continue # Skip this transaction
         self.nonce_storage.set_nonce_by_tx(tx)
         tx_hash = result["tx_result"]["hash"]
         self.fingerprint_hashes.append(tx_hash)
@@ -72,16 +69,6 @@ def finalize_block(self, req) -> ResponseFinalizeBlock:
             ))
         except Exception as e:
             logger.error(f"STATIC REWARD ERROR: {e} for block")
-
-    if self.current_block_rewards:
-        for tx_hash, reward in self.current_block_rewards.items():
-            try:
-                reward_writes.append(self.rewards_handler.distribute_rewards(
-                    stamp_rewards_amount=reward["amount"],
-                    stamp_rewards_contract=reward["contract"]
-                ))
-            except Exception as e:
-                logger.error(f"REWARD ERROR: {e} for block")
         
     reward_hash = hash_from_rewards(reward_writes)
     validator_updates = self.validator_handler.build_validator_updates()

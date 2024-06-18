@@ -14,7 +14,7 @@ class TxProcessor:
         self.client = client
         self.executor = Executor(driver=self.client.raw_driver, metering=metering)
 
-    def process_tx(self, tx, enabled_fees=False):
+    def process_tx(self, tx, enabled_fees=False, rewards_handler=None):
         environment = self.get_environment(tx=tx)
 
         stamp_cost = self.client.get_var(contract='stamp_cost', variable='S', arguments=['value']) or 1
@@ -39,7 +39,8 @@ class TxProcessor:
             tx_result = self.process_tx_output(
                 output=output,
                 transaction=tx,
-                stamp_cost=stamp_cost
+                stamp_cost=stamp_cost,
+                rewards_handler=rewards_handler
             )
 
             tx_result = self.prune_tx_result(tx_result)
@@ -92,10 +93,8 @@ class TxProcessor:
             })
             return None
 
-    def process_tx_output(self, output, transaction, stamp_cost):
-        # Clear pending writes, stu said to comment this out
+    def process_tx_output(self, output, transaction, stamp_cost, rewards_handler):
         # self.executor.driver.pending_writes.clear()
-
         # Log out to the node logs if the tx fails
         logger.debug(f"status code = {output['status_code']}")
 
@@ -109,30 +108,81 @@ class TxProcessor:
 
         tx_hash = tx_hash_from_tx(transaction)
 
+        rewards = None
+        if output['status_code'] == 0 and rewards_handler is not None:
+            calculated_rewards = rewards_handler.calculate_tx_output_rewards(
+                total_stamps_to_split=output['stamps_used'],
+                contract=transaction['payload']['contract']
+            )
+            stamp_rate = self.client.get_var(contract='stamp_cost', variable='S', arguments=['value'])
+            rewards = {
+                'masternode_reward': {},
+                'foundation_reward': calculated_rewards[1] / stamp_rate,
+                'developer_rewards': {}
+            }
+
+            for masternode in self.client.get_var(contract='masternodes', variable='nodes'):
+                rewards['masternode_reward'][masternode] = calculated_rewards[0] / stamp_rate
+
+            for developer, reward in calculated_rewards[2].items():
+                if developer == 'sys' or developer is None:
+                    developer = self.client.get_var(contract='foundation', variable='owner')
+                rewards['developer_rewards'][developer] = reward / stamp_rate
+
+            state_change_key = "currency.balances"
+
+            # Update masternode rewards in output writes
+            for address, reward in rewards['masternode_reward'].items():
+                write_key = f"{state_change_key}:{address}"
+                if write_key in output['writes']:
+                    output['writes'][write_key] += reward
+                else:
+                    output['writes'][write_key] = reward
+
+            # Update foundation reward in output writes
+            foundation_owner = self.client.get_var(contract='foundation', variable='owner')
+            foundation_write_key = f"{state_change_key}:{foundation_owner}"
+            if foundation_write_key in output['writes']:
+                output['writes'][foundation_write_key] += rewards['foundation_reward']
+            else:
+                output['writes'][foundation_write_key] = rewards['foundation_reward']
+
+            # Update developer rewards in output writes
+            for address, reward in rewards['developer_rewards'].items():
+                write_key = f"{state_change_key}:{address}"
+                if write_key in output['writes']:
+                    output['writes'][write_key] += reward
+                else:
+                    output['writes'][write_key] = reward
+
+                    
         writes = self.determine_writes_from_output(
             status_code=output['status_code'],
             ouput_writes=output['writes'],
             stamps_used=output['stamps_used'],
             stamp_cost=stamp_cost,
-            tx_sender=transaction['payload']['sender']
+            tx_sender=transaction['payload']['sender'],
+            rewards=rewards
         )
 
         for write in writes:
-            self.client.raw_driver.set(key=write['key'], value=write['value'])
+            self.client.raw_driver.set(key=write['key'], value=write['value'])        
+
         tx_output = {
             'hash': tx_hash,
             'transaction': transaction,
             'status': output['status_code'],
             'state': writes,
             'stamps_used': output['stamps_used'],
-            'result': safe_repr(output['result'])
+            'result': safe_repr(output['result']),
+            'rewards': rewards if rewards else None
         }
 
         tx_output = format_dictionary(tx_output)
 
         return tx_output
 
-    def determine_writes_from_output(self, status_code, ouput_writes, stamps_used, stamp_cost, tx_sender):
+    def determine_writes_from_output(self, status_code, ouput_writes, stamps_used, stamp_cost, tx_sender, rewards=None):
         # Only apply the writes if the tx passes
         if status_code == 0:
             writes = [{'key': k, 'value': v} for k, v in ouput_writes.items()]
