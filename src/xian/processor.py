@@ -115,44 +115,46 @@ class TxProcessor:
                 contract=transaction['payload']['contract']
             )
             stamp_rate = self.client.get_var(contract='stamp_cost', variable='S', arguments=['value'])
-            rewards = {}
-            rewards['masternode_reward'] = {}
+            rewards = {
+                'masternode_reward': {},
+                'foundation_reward': calculated_rewards[1] / stamp_rate,
+                'developer_rewards': {}
+            }
+
             for masternode in self.client.get_var(contract='masternodes', variable='nodes'):
                 rewards['masternode_reward'][masternode] = calculated_rewards[0] / stamp_rate
-            rewards['foundation_reward'] = calculated_rewards[1] / stamp_rate
-            rewards['developer_rewards'] = {}
+
             for developer, reward in calculated_rewards[2].items():
-                if developer == 'sys' or developer == None:
+                if developer == 'sys' or developer is None:
                     developer = self.client.get_var(contract='foundation', variable='owner')
                 rewards['developer_rewards'][developer] = reward / stamp_rate
 
             state_change_key = "currency.balances"
-            for address in rewards['masternode_reward'].keys():
-                # If state change to key already exists, add to it
-                # Otherwise, create a new state change key
-                for write in output['writes'].keys():
-                    if f"{state_change_key}:{address}" in write:
-                        output['writes'][write] += rewards['masternode_reward'][address]
-                        break
-                else:
-                    output['writes'][f"{state_change_key}:{address}"] = rewards['masternode_reward'][address]
 
-            for write in output['writes'].keys():
-                if f"{state_change_key}:{self.client.get_var(contract='foundation', variable='owner')}" in write:
-                    output['writes'][write] += rewards['foundation_reward']
-                    break
+            # Update masternode rewards in output writes
+            for address, reward in rewards['masternode_reward'].items():
+                write_key = f"{state_change_key}:{address}"
+                if write_key in output['writes']:
+                    output['writes'][write_key] += reward
+                else:
+                    output['writes'][write_key] = reward
+
+            # Update foundation reward in output writes
+            foundation_owner = self.client.get_var(contract='foundation', variable='owner')
+            foundation_write_key = f"{state_change_key}:{foundation_owner}"
+            if foundation_write_key in output['writes']:
+                output['writes'][foundation_write_key] += rewards['foundation_reward']
             else:
-                output['writes'][f"{state_change_key}:{self.client.get_var(contract='foundation', variable='owner')}"] = rewards['foundation_reward']
+                output['writes'][foundation_write_key] = rewards['foundation_reward']
 
-            for address in rewards['developer_rewards'].keys():
-                # If state change to key already exists, add to it
-                # Otherwise, create a new state change key
-                for write in output['writes'].keys():
-                    if f"{state_change_key}:{address}" in write:
-                        output['writes'][write] += rewards['developer_rewards'][address]
-                        break
+            # Update developer rewards in output writes
+            for address, reward in rewards['developer_rewards'].items():
+                write_key = f"{state_change_key}:{address}"
+                if write_key in output['writes']:
+                    output['writes'][write_key] += reward
                 else:
-                    output['writes'][f"{state_change_key}:{address}"] = rewards['developer_rewards'][address]
+                    output['writes'][write_key] = reward
+
                     
         writes = self.determine_writes_from_output(
             status_code=output['status_code'],
