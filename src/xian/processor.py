@@ -109,7 +109,7 @@ class TxProcessor:
         tx_hash = tx_hash_from_tx(transaction)
 
         rewards = None
-        if rewards_handler is not None:
+        if output['status_code'] == 0 and rewards_handler is not None:
             calculated_rewards = rewards_handler.calculate_tx_output_rewards(
                 total_stamps_to_split=output['stamps_used'],
                 contract=transaction['payload']['contract']
