@@ -7,6 +7,7 @@ from xian.utils import format_dictionary, tx_hash_from_tx, is_compiled_key
 from contracting.execution.executor import Executor
 from contracting.storage.encoder import convert_dict, safe_repr
 from contracting.stdlib.bridge.time import Datetime
+from contracting.stdlib.bridge.decimal import ContractingDecimal
 
 
 class TxProcessor:
@@ -122,12 +123,12 @@ class TxProcessor:
             }
 
             for masternode in self.client.get_var(contract='masternodes', variable='nodes'):
-                rewards['masternode_reward'][masternode] = calculated_rewards[0] / stamp_rate
+                rewards['masternode_reward'][masternode] = ContractingDecimal(str(calculated_rewards[0] / stamp_rate))
 
             for developer, reward in calculated_rewards[2].items():
                 if developer == 'sys' or developer is None:
                     developer = self.client.get_var(contract='foundation', variable='owner')
-                rewards['developer_rewards'][developer] = reward / stamp_rate
+                rewards['developer_rewards'][developer] = ContractingDecimal(str(reward / stamp_rate))
 
             state_change_key = "currency.balances"
 
@@ -135,25 +136,25 @@ class TxProcessor:
             for address, reward in rewards['masternode_reward'].items():
                 write_key = f"{state_change_key}:{address}"
                 if write_key in output['writes']:
-                    output['writes'][write_key] += reward
+                    output['writes'][write_key] += ContractingDecimal(str(reward))
                 else:
-                    output['writes'][write_key] = reward
+                    output['writes'][write_key] = ContractingDecimal(str(reward))
 
             # Update foundation reward in output writes
             foundation_owner = self.client.get_var(contract='foundation', variable='owner')
             foundation_write_key = f"{state_change_key}:{foundation_owner}"
             if foundation_write_key in output['writes']:
-                output['writes'][foundation_write_key] += rewards['foundation_reward']
+                output['writes'][foundation_write_key] += ContractingDecimal(str(rewards['foundation_reward']))
             else:
-                output['writes'][foundation_write_key] = rewards['foundation_reward']
+                output['writes'][foundation_write_key] = ContractingDecimal(str(rewards['foundation_reward']))
 
             # Update developer rewards in output writes
             for address, reward in rewards['developer_rewards'].items():
                 write_key = f"{state_change_key}:{address}"
                 if write_key in output['writes']:
-                    output['writes'][write_key] += reward
+                    output['writes'][write_key] += ContractingDecimal(str(reward))
                 else:
-                    output['writes'][write_key] = reward
+                    output['writes'][write_key] = ContractingDecimal(str(reward))
 
                     
         writes = self.determine_writes_from_output(

@@ -1,6 +1,6 @@
 {
     "genesis_time": "2024-02-08T00:17:23.342520258Z",
-    "chain_id": "xian-devnet-1",
+    "chain_id": "xian-testnet-5",
     "initial_height": "0",
     "consensus_params": {
         "block": {
@@ -42,9 +42,419 @@
     ],
     "app_hash": "",
     "abci_genesis": {
-        "hash": "2bb4e112aca11805538842bd993470f18f337797ec3f2f6ab02c47385caf088e",
-        "number": "0",
+        "hash": "34633133323664303538343437623063353236643438363938653962306635313030633666346430373835623365633634393165396562326330376237353830",
+        "number": 365,
+        "origin": {
+            "signature": "",
+            "sender": ""
+        },
         "genesis": [
+            {
+                "key": "con_counter.__code__",
+                "value": "__counter = Variable(contract='con_counter', name='counter')\n__address_to_counter = Hash(default_value=0, contract='con_counter', name=\n    'address_to_counter')\n__owner = Variable(contract='con_counter', name='owner')\n__stopped = Variable(contract='con_counter', name='stopped')\n\n\ndef ____():\n    __counter.set(0)\n    __owner.set(ctx.caller)\n    __stopped.set(False)\n\n\n@__export('con_counter')\ndef increment_counter():\n    assert not __stopped.get(), 'Contract is stopped'\n    assert 'con_' not in ctx.caller, 'Contracts cannot call this function'\n    __counter.set(__counter.get() + 1)\n    __address_to_counter[ctx.caller] = __address_to_counter[ctx.caller] + 1\n    return __counter.get()\n\n\n@__export('con_counter')\ndef get_counter():\n    return __counter.get()\n\n\n@__export('con_counter')\ndef get_address_counter(address: str):\n    return __address_to_counter[address]\n\n\n@__export('con_counter')\ndef stop():\n    assert ctx.caller == __owner.get(), 'Only the owner can stop the contract'\n    __stopped.set(True)\n    return True\n\n\n@__export('con_counter')\ndef start():\n    assert ctx.caller == __owner.get(), 'Only the owner can start the contract'\n    __stopped.set(False)\n    return True\n\n\n@__export('con_counter')\ndef reset():\n    assert ctx.caller == __owner.get(), 'Only the owner can reset the contract'\n    __counter.set(0)\n    __address_to_counter.clear()\n    return True\n"
+            },
+            {
+                "key": "con_counter.__developer__",
+                "value": "ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9"
+            },
+            {
+                "key": "con_counter.__owner__",
+                "value": null
+            },
+            {
+                "key": "con_counter.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        6,
+                        17,
+                        8,
+                        20,
+                        14,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_counter.address_to_counter:1e9043a943ec2985200029add5d031cbcc012ca8dc0b8ab6e7694bb475924c9b",
+                "value": 1
+            },
+            {
+                "key": "con_counter.address_to_counter:5fa1b314468832fb9d391e8af756140e85325a565d8b411ae2f2001d37c30ef4",
+                "value": 2
+            },
+            {
+                "key": "con_counter.address_to_counter:7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e",
+                "value": 3
+            },
+            {
+                "key": "con_counter.address_to_counter:8ce11ec41a14ba8a3545b3214f5913bb129bd686b392d496359fc98f89da490a",
+                "value": 8
+            },
+            {
+                "key": "con_counter.address_to_counter:ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9",
+                "value": 3
+            },
+            {
+                "key": "con_counter.counter",
+                "value": 17
+            },
+            {
+                "key": "con_counter.owner",
+                "value": "ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9"
+            },
+            {
+                "key": "con_counter.stopped",
+                "value": false
+            },
+            {
+                "key": "con_daq.__code__",
+                "value": "__balances = Hash(default_value=0, contract='con_daq', name='balances')\n__metadata = Hash(contract='con_daq', name='metadata')\n\n\ndef ____():\n    __balances[ctx.caller] = 1000000\n    __metadata['token_name'] = 'TEST TOKEN'\n    __metadata['token_symbol'] = 'TST'\n    __metadata['token_logo_url'] = 'https://some.token.url/test-token.png'\n    __metadata['token_website'] = 'https://some.token.url'\n    __metadata['operator'] = ctx.caller\n\n\n@__export('con_daq')\ndef change_metadata(key: str, value: Any):\n    assert ctx.caller == __metadata['operator'\n        ], 'Only operator can set metadata!'\n    __metadata[key] = value\n\n\n@__export('con_daq')\ndef transfer(amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    assert __balances[ctx.caller] >= amount, 'Not enough coins to send!'\n    __balances[ctx.caller] -= amount\n    __balances[to] += amount\n    return f'Sent {amount} to {to}'\n\n\n@__export('con_daq')\ndef approve(amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    __balances[ctx.caller, to] += amount\n    return f'Approved {amount} for {to}'\n\n\n@__export('con_daq')\ndef transfer_from(amount: float, to: str, main_account: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    assert __balances[main_account, ctx.caller\n        ] >= amount, 'Not enough coins approved to send! You have {} and are trying to spend {}'.format(\n        __balances[main_account, ctx.caller], amount)\n    assert __balances[main_account] >= amount, 'Not enough coins to send!'\n    __balances[main_account, ctx.caller] -= amount\n    __balances[main_account] -= amount\n    __balances[to] += amount\n    return f'Sent {amount} to {to} from {main_account}'\n"
+            },
+            {
+                "key": "con_daq.__developer__",
+                "value": "e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931"
+            },
+            {
+                "key": "con_daq.__owner__",
+                "value": null
+            },
+            {
+                "key": "con_daq.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        6,
+                        13,
+                        17,
+                        23,
+                        2,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_daq.balances:e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931",
+                "value": 1000000
+            },
+            {
+                "key": "con_daq.metadata:operator",
+                "value": "e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931"
+            },
+            {
+                "key": "con_daq.metadata:token_logo_url",
+                "value": "https://some.token.url/test-token.png"
+            },
+            {
+                "key": "con_daq.metadata:token_name",
+                "value": "TEST TOKEN"
+            },
+            {
+                "key": "con_daq.metadata:token_symbol",
+                "value": "TST"
+            },
+            {
+                "key": "con_daq.metadata:token_website",
+                "value": "https://some.token.url"
+            },
+            {
+                "key": "con_multisend.__code__",
+                "value": "I = importlib\n\n\n@__export('con_multisend')\ndef send(addresses: list, amount: float, contract: str):\n    token = I.import_module(contract)\n    for address in addresses:\n        token.transfer_from(amount=amount, to=address, main_account=ctx.signer)\n"
+            },
+            {
+                "key": "con_multisend.__developer__",
+                "value": "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e"
+            },
+            {
+                "key": "con_multisend.__owner__",
+                "value": null
+            },
+            {
+                "key": "con_multisend.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        6,
+                        11,
+                        11,
+                        40,
+                        57,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_my_cool_contract.__code__",
+                "value": "random.seed()\n__game = Hash(contract='con_my_cool_contract', name='game')\n__rolls = Hash(default_value=False, contract='con_my_cool_contract', name=\n    'rolls')\n\n\ndef ____():\n    __game['owner'] = ctx.caller\n    __game['total_wins'] = 0\n    __game['total_losses'] = 0\n    __game['total_rolls'] = 0\n    __game['allowed_tokens'] = ['currency']\n    __game['max_token_bet', 'currency'] = 1000\n    __game['house_edge'] = decimal('0.03')\n\n\n@__export('con_my_cool_contract')\ndef roll(bet_size: float, token_contract: str, roll_type: str, roll_target: int\n    ):\n    __balances = ForeignHash(foreign_contract=token_contract, foreign_name=\n        'balances', contract='con_my_cool_contract', name='balances')\n    assert bet_size > 0, 'Bet size must be greater than 0'\n    assert token_contract in __game['allowed_tokens'], 'Token not allowed'\n    assert bet_size <= __game['max_token_bet', token_contract\n        ], 'Bet size exceeds the maximum allowed bet'\n    assert roll_type in ['over', 'under'], 'Invalid roll type'\n    if roll_type == 'over':\n        assert 1 <= roll_target < 100, 'Roll target must be between 1 and 99 for over rolls'\n    else:\n        assert 2 <= roll_target <= 100, 'Roll target must be between 2 and 100 for under rolls'\n    token = importlib.import_module(token_contract)\n    token.transfer_from(amount=bet_size, to=ctx.this, main_account=ctx.caller)\n    roll_range = (1, roll_target) if roll_type == 'under' else (roll_target,\n        100)\n    roll_range_size = roll_range[1] - roll_range[0] + 1\n    fair_multiplier = 100 / roll_range_size\n    adjusted_multiplier = fair_multiplier * (1 - __game['house_edge'])\n    assert __balances[ctx.this\n        ] >= bet_size * adjusted_multiplier, 'Contract does not have enough funds to cover the bet'\n    __game['total_rolls'] += 1\n    roll = random.randint(1, 100)\n    __rolls[ctx.caller, __game['total_rolls']] = roll\n    if (roll_type == 'over' and roll > roll_target or roll_type == 'under' and\n        roll < roll_target):\n        win_amount = bet_size * adjusted_multiplier\n        token.transfer(amount=win_amount, to=ctx.caller)\n        __game['total_wins'] += 1\n        return f'You rolled {roll}. You win {win_amount} {token_contract}!'\n    else:\n        __game['total_losses'] += 1\n        return f'You lose! You rolled {roll}'\n\n\n@__export('con_my_cool_contract')\ndef change_owner(new_owner: str):\n    assert ctx.caller == __game['owner'], 'Only the owner can change the owner'\n    __game['owner'] = new_owner\n\n\n@__export('con_my_cool_contract')\ndef change_allowed_tokens(tokens: list):\n    assert ctx.caller == __game['owner'\n        ], 'Only the owner can change the allowed tokens'\n    __game['allowed_tokens'] = tokens\n\n\n@__export('con_my_cool_contract')\ndef change_max_token_bet(token_contract: str, max_bet: float):\n    assert ctx.caller == __game['owner'\n        ], 'Only the owner can change the max token bet'\n    __game['max_token_bet', token_contract] = max_bet\n\n\n@__export('con_my_cool_contract')\ndef change_house_edge(new_edge: float):\n    assert ctx.caller == __game['owner'\n        ], 'Only the owner can change the house edge'\n    assert 0 <= new_edge < 1, 'House edge must be between 0 and 1. For example, 0.03 represents 3%'\n    __game['house_edge'] = new_edge\n\n\n@__export('con_my_cool_contract')\ndef withdraw(amount: float, token_contract: str):\n    assert ctx.caller == __game['owner'], 'Only the owner can withdraw'\n    token = importlib.import_module(token_contract)\n    token.transfer(amount=amount, to=ctx.caller)\n"
+            },
+            {
+                "key": "con_my_cool_contract.__developer__",
+                "value": "7c829aba18409ce70bd6fec16cd57108862c3433c637e88087459d98acfcf40d"
+            },
+            {
+                "key": "con_my_cool_contract.__owner__",
+                "value": null
+            },
+            {
+                "key": "con_my_cool_contract.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        6,
+                        13,
+                        10,
+                        27,
+                        42,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_my_cool_contract.game:allowed_tokens",
+                "value": [
+                    "currency"
+                ]
+            },
+            {
+                "key": "con_my_cool_contract.game:house_edge",
+                "value": {
+                    "__fixed__": "0.03"
+                }
+            },
+            {
+                "key": "con_my_cool_contract.game:max_token_bet:currency",
+                "value": 1000
+            },
+            {
+                "key": "con_my_cool_contract.game:owner",
+                "value": "7c829aba18409ce70bd6fec16cd57108862c3433c637e88087459d98acfcf40d"
+            },
+            {
+                "key": "con_my_cool_contract.game:total_losses",
+                "value": 0
+            },
+            {
+                "key": "con_my_cool_contract.game:total_rolls",
+                "value": 0
+            },
+            {
+                "key": "con_my_cool_contract.game:total_wins",
+                "value": 0
+            },
+            {
+                "key": "con_my_cool_contract1.__code__",
+                "value": "random.seed()\n__game = Hash(contract='con_my_cool_contract1', name='game')\n__rolls = Hash(default_value=False, contract='con_my_cool_contract1', name=\n    'rolls')\n\n\ndef ____():\n    __game['owner'] = ctx.caller\n    __game['total_wins'] = 0\n    __game['total_losses'] = 0\n    __game['total_rolls'] = 0\n    __game['allowed_tokens'] = ['currency']\n    __game['max_token_bet', 'currency'] = 1000\n    __game['house_edge'] = decimal('0.03')\n\n\n@__export('con_my_cool_contract1')\ndef roll(bet_size: float, token_contract: str, roll_type: str, roll_target: int\n    ):\n    __balances = ForeignHash(foreign_contract=token_contract, foreign_name=\n        'balances', contract='con_my_cool_contract1', name='balances')\n    assert bet_size > 0, 'Bet size must be greater than 0'\n    assert token_contract in __game['allowed_tokens'], 'Token not allowed'\n    assert bet_size <= __game['max_token_bet', token_contract\n        ], 'Bet size exceeds the maximum allowed bet'\n    assert roll_type in ['over', 'under'], 'Invalid roll type'\n    if roll_type == 'over':\n        assert 1 <= roll_target < 100, 'Roll target must be between 1 and 99 for over rolls'\n    else:\n        assert 2 <= roll_target <= 100, 'Roll target must be between 2 and 100 for under rolls'\n    token = importlib.import_module(token_contract)\n    token.transfer_from(amount=bet_size, to=ctx.this, main_account=ctx.caller)\n    roll_range = (1, roll_target) if roll_type == 'under' else (roll_target,\n        100)\n    roll_range_size = roll_range[1] - roll_range[0] + 1\n    fair_multiplier = 100 / roll_range_size\n    adjusted_multiplier = fair_multiplier * (1 - __game['house_edge'])\n    assert __balances[ctx.this\n        ] >= bet_size * adjusted_multiplier, 'Contract does not have enough funds to cover the bet'\n    __game['total_rolls'] += 1\n    roll = random.randint(1, 100)\n    __rolls[ctx.caller, __game['total_rolls']] = roll\n    if (roll_type == 'over' and roll > roll_target or roll_type == 'under' and\n        roll < roll_target):\n        win_amount = bet_size * adjusted_multiplier\n        token.transfer(amount=win_amount, to=ctx.caller)\n        __game['total_wins'] += 1\n        return f'You rolled {roll}. You win {win_amount} {token_contract}!'\n    else:\n        __game['total_losses'] += 1\n        return f'You lose! You rolled {roll}'\n\n\n@__export('con_my_cool_contract1')\ndef change_owner(new_owner: str):\n    assert ctx.caller == __game['owner'], 'Only the owner can change the owner'\n    __game['owner'] = new_owner\n\n\n@__export('con_my_cool_contract1')\ndef change_allowed_tokens(tokens: list):\n    assert ctx.caller == __game['owner'\n        ], 'Only the owner can change the allowed tokens'\n    __game['allowed_tokens'] = tokens\n\n\n@__export('con_my_cool_contract1')\ndef change_max_token_bet(token_contract: str, max_bet: float):\n    assert ctx.caller == __game['owner'\n        ], 'Only the owner can change the max token bet'\n    __game['max_token_bet', token_contract] = max_bet\n\n\n@__export('con_my_cool_contract1')\ndef change_house_edge(new_edge: float):\n    assert ctx.caller == __game['owner'\n        ], 'Only the owner can change the house edge'\n    assert 0 <= new_edge < 1, 'House edge must be between 0 and 1. For example, 0.03 represents 3%'\n    __game['house_edge'] = new_edge\n\n\n@__export('con_my_cool_contract1')\ndef withdraw(amount: float, token_contract: str):\n    assert ctx.caller == __game['owner'], 'Only the owner can withdraw'\n    token = importlib.import_module(token_contract)\n    token.transfer(amount=amount, to=ctx.caller)\n"
+            },
+            {
+                "key": "con_my_cool_contract1.__developer__",
+                "value": "7c829aba18409ce70bd6fec16cd57108862c3433c637e88087459d98acfcf40d"
+            },
+            {
+                "key": "con_my_cool_contract1.__owner__",
+                "value": null
+            },
+            {
+                "key": "con_my_cool_contract1.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        6,
+                        13,
+                        10,
+                        29,
+                        9,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_my_cool_contract1.game:allowed_tokens",
+                "value": [
+                    "currency"
+                ]
+            },
+            {
+                "key": "con_my_cool_contract1.game:house_edge",
+                "value": {
+                    "__fixed__": "0.03"
+                }
+            },
+            {
+                "key": "con_my_cool_contract1.game:max_token_bet:currency",
+                "value": 1000
+            },
+            {
+                "key": "con_my_cool_contract1.game:owner",
+                "value": "7c829aba18409ce70bd6fec16cd57108862c3433c637e88087459d98acfcf40d"
+            },
+            {
+                "key": "con_my_cool_contract1.game:total_losses",
+                "value": 0
+            },
+            {
+                "key": "con_my_cool_contract1.game:total_rolls",
+                "value": 0
+            },
+            {
+                "key": "con_my_cool_contract1.game:total_wins",
+                "value": 0
+            },
+            {
+                "key": "con_my_cool_contract22.__code__",
+                "value": "random.seed()\n__game = Hash(contract='con_my_cool_contract22', name='game')\n__rolls = Hash(default_value=False, contract='con_my_cool_contract22', name\n    ='rolls')\n\n\ndef ____():\n    __game['owner'] = ctx.caller\n    __game['total_wins'] = 0\n    __game['total_losses'] = 0\n    __game['total_rolls'] = 0\n    __game['allowed_tokens'] = ['currency']\n    __game['max_token_bet', 'currency'] = 1000\n    __game['house_edge'] = decimal('0.03')\n\n\n@__export('con_my_cool_contract22')\ndef roll(bet_size: float, token_contract: str, roll_type: str, roll_target: int\n    ):\n    __balances = ForeignHash(foreign_contract=token_contract, foreign_name=\n        'balances', contract='con_my_cool_contract22', name='balances')\n    assert bet_size > 0, 'Bet size must be greater than 0'\n    assert token_contract in __game['allowed_tokens'], 'Token not allowed'\n    assert bet_size <= __game['max_token_bet', token_contract\n        ], 'Bet size exceeds the maximum allowed bet'\n    assert roll_type in ['over', 'under'], 'Invalid roll type'\n    if roll_type == 'over':\n        assert 1 <= roll_target < 100, 'Roll target must be between 1 and 99 for over rolls'\n    else:\n        assert 2 <= roll_target <= 100, 'Roll target must be between 2 and 100 for under rolls'\n    token = importlib.import_module(token_contract)\n    token.transfer_from(amount=bet_size, to=ctx.this, main_account=ctx.caller)\n    roll_range = (1, roll_target) if roll_type == 'under' else (roll_target,\n        100)\n    roll_range_size = roll_range[1] - roll_range[0] + 1\n    fair_multiplier = 100 / roll_range_size\n    adjusted_multiplier = fair_multiplier * (1 - __game['house_edge'])\n    assert __balances[ctx.this\n        ] >= bet_size * adjusted_multiplier, 'Contract does not have enough funds to cover the bet'\n    __game['total_rolls'] += 1\n    roll = random.randint(1, 100)\n    __rolls[ctx.caller, __game['total_rolls']] = roll\n    if (roll_type == 'over' and roll > roll_target or roll_type == 'under' and\n        roll < roll_target):\n        win_amount = bet_size * adjusted_multiplier\n        token.transfer(amount=win_amount, to=ctx.caller)\n        __game['total_wins'] += 1\n        return f'You rolled {roll}. You win {win_amount} {token_contract}!'\n    else:\n        __game['total_losses'] += 1\n        return f'You lose! You rolled {roll}'\n\n\n@__export('con_my_cool_contract22')\ndef change_owner(new_owner: str):\n    assert ctx.caller == __game['owner'], 'Only the owner can change the owner'\n    __game['owner'] = new_owner\n\n\n@__export('con_my_cool_contract22')\ndef change_allowed_tokens(tokens: list):\n    assert ctx.caller == __game['owner'\n        ], 'Only the owner can change the allowed tokens'\n    __game['allowed_tokens'] = tokens\n\n\n@__export('con_my_cool_contract22')\ndef change_max_token_bet(token_contract: str, max_bet: float):\n    assert ctx.caller == __game['owner'\n        ], 'Only the owner can change the max token bet'\n    __game['max_token_bet', token_contract] = max_bet\n\n\n@__export('con_my_cool_contract22')\ndef change_house_edge(new_edge: float):\n    assert ctx.caller == __game['owner'\n        ], 'Only the owner can change the house edge'\n    assert 0 <= new_edge < 1, 'House edge must be between 0 and 1. For example, 0.03 represents 3%'\n    __game['house_edge'] = new_edge\n\n\n@__export('con_my_cool_contract22')\ndef withdraw(amount: float, token_contract: str):\n    assert ctx.caller == __game['owner'], 'Only the owner can withdraw'\n    token = importlib.import_module(token_contract)\n    token.transfer(amount=amount, to=ctx.caller)\n"
+            },
+            {
+                "key": "con_my_cool_contract22.__developer__",
+                "value": "7c829aba18409ce70bd6fec16cd57108862c3433c637e88087459d98acfcf40d"
+            },
+            {
+                "key": "con_my_cool_contract22.__owner__",
+                "value": null
+            },
+            {
+                "key": "con_my_cool_contract22.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        6,
+                        13,
+                        10,
+                        32,
+                        38,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_my_cool_contract22.game:allowed_tokens",
+                "value": [
+                    "currency"
+                ]
+            },
+            {
+                "key": "con_my_cool_contract22.game:house_edge",
+                "value": {
+                    "__fixed__": "0.03"
+                }
+            },
+            {
+                "key": "con_my_cool_contract22.game:max_token_bet:currency",
+                "value": 1000
+            },
+            {
+                "key": "con_my_cool_contract22.game:owner",
+                "value": "7c829aba18409ce70bd6fec16cd57108862c3433c637e88087459d98acfcf40d"
+            },
+            {
+                "key": "con_my_cool_contract22.game:total_losses",
+                "value": 0
+            },
+            {
+                "key": "con_my_cool_contract22.game:total_rolls",
+                "value": 0
+            },
+            {
+                "key": "con_my_cool_contract22.game:total_wins",
+                "value": 0
+            },
+            {
+                "key": "con_nameservice.__code__",
+                "value": "import currency\n__collection_name = Variable(contract='con_nameservice', name='collection_name'\n    )\n__collection_owner = Variable(contract='con_nameservice', name=\n    'collection_owner')\n__collection_nfts = Hash(default_value=False, contract='con_nameservice',\n    name='collection_nfts')\n__collection_balances = Hash(default_value=0, contract='con_nameservice',\n    name='collection_balances')\n__collection_balances_approvals = Hash(default_value=0, contract=\n    'con_nameservice', name='collection_balances_approvals')\n__mint_price = Variable(contract='con_nameservice', name='mint_price')\n__royalty_fee_percentage = Variable(contract='con_nameservice', name=\n    'royalty_fee_percentage')\n__contracts_allowlist = Variable(contract='con_nameservice', name=\n    'contracts_allowlist')\n\n\ndef ____(name: str, owner: str):\n    __collection_name.set(name)\n    __collection_owner.set(owner)\n    __contracts_allowlist.set([])\n    __mint_price.set(1)\n    __royalty_fee_percentage.set(2)\n\n\n@__export('con_nameservice')\ndef mint_nft(name: str):\n    name = name.lower()\n    assert name.isalnum(), 'Name must be alphanumeric'\n    assert __collection_nfts[name] == False, 'Name already exists'\n    assert len(name) >= 3, 'The minimum length is 3 characters'\n    assert len(name) <= 32, 'The maximum length is 32 characters'\n    currency.transfer_from(amount=__mint_price.get(), to=__collection_owner\n        .get(), main_account=ctx.caller)\n    __collection_nfts[name] = {'description':\n        'A alias name for your wallet.', 'ipfs_image_url': '', 'metadata':\n        {}, 'amount': 1}\n    __collection_balances[ctx.caller, name] = 1\n\n\n@__export('con_nameservice')\ndef transfer(name: str, amount: int, to: str):\n    assert amount > 0, 'You cannot transfer negative amounts'\n    assert name != '', 'Please specify the name of the NFT you want to transfer'\n    assert __collection_balances[ctx.caller, name\n        ] >= amount, \"You don't have enough NFTs to send\"\n    __collection_balances[ctx.caller, name] -= amount\n    __collection_balances[to, name] += amount\n\n\n@__export('con_nameservice')\ndef approve(amount: int, name: str, to: str):\n    assert amount > 0, 'Cannot approve negative amounts'\n    __collection_balances_approvals[ctx.caller, to, name] += amount\n\n\n@__export('con_nameservice')\ndef transfer_from(name: str, amount: int, to: str, main_account: str):\n    if 'con_' in ctx.caller:\n        assert ctx.caller in __contracts_allowlist.get(\n            ), 'This contract is not allowed to interact with this contract'\n    assert amount > 0, 'Cannot send negative balances!'\n    assert __collection_balances_approvals[main_account, to, name\n        ] >= amount, 'Not enough NFTs approved to send! You have {} and are trying to spend {}'.format(\n        __collection_balances_approvals[main_account, to, name], amount)\n    assert __collection_balances[main_account, name\n        ] >= amount, 'Not enough NFTs to send!'\n    __collection_balances_approvals[main_account, to, name] -= amount\n    __collection_balances[main_account, name] -= amount\n    __collection_balances[to, name] += amount\n\n\n@__export('con_nameservice')\ndef set_mint_price(price: int):\n    assert ctx.caller == __collection_owner.get(\n        ), 'You are not the owner of this collection'\n    __mint_price.set(price)\n\n\n@__export('con_nameservice')\ndef set_royalty_fee_percentage(percentage: int):\n    assert ctx.caller == __collection_owner.get(\n        ), 'You are not the owner of this collection'\n    __royalty_fee_percentage.set(percentage)\n\n\n@__export('con_nameservice')\ndef set_collection_owner(owner: str):\n    assert ctx.caller == __collection_owner.get(\n        ), 'You are not the owner of this collection'\n    __collection_owner.set(owner)\n\n\n@__export('con_nameservice')\ndef set_contract_allowlist(contracts: list):\n    assert ctx.caller == __collection_owner.get(\n        ), 'You are not the owner of this collection'\n    __contracts_allowlist.set(contracts)\n"
+            },
+            {
+                "key": "con_nameservice.__developer__",
+                "value": "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e"
+            },
+            {
+                "key": "con_nameservice.__owner__",
+                "value": null
+            },
+            {
+                "key": "con_nameservice.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        6,
+                        16,
+                        17,
+                        31,
+                        50,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_nameservice.collection_balances:7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e:crosschainer",
+                "value": 1
+            },
+            {
+                "key": "con_nameservice.collection_balances:7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e:duelingbenjos",
+                "value": 1
+            },
+            {
+                "key": "con_nameservice.collection_balances:7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e:endogen",
+                "value": 1
+            },
+            {
+                "key": "con_nameservice.collection_balances:7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e:xian",
+                "value": 1
+            },
+            {
+                "key": "con_nameservice.collection_name",
+                "value": "Xian Nameservice"
+            },
+            {
+                "key": "con_nameservice.collection_nfts:crosschainer",
+                "value": {
+                    "description": "A alias name for your wallet.",
+                    "ipfs_image_url": "",
+                    "metadata": {},
+                    "amount": 1
+                }
+            },
+            {
+                "key": "con_nameservice.collection_nfts:duelingbenjos",
+                "value": {
+                    "description": "A alias name for your wallet.",
+                    "ipfs_image_url": "",
+                    "metadata": {},
+                    "amount": 1
+                }
+            },
+            {
+                "key": "con_nameservice.collection_nfts:endogen",
+                "value": {
+                    "description": "A alias name for your wallet.",
+                    "ipfs_image_url": "",
+                    "metadata": {},
+                    "amount": 1
+                }
+            },
+            {
+                "key": "con_nameservice.collection_nfts:xian",
+                "value": {
+                    "description": "A alias name for your wallet.",
+                    "ipfs_image_url": "",
+                    "metadata": {},
+                    "amount": 1
+                }
+            },
+            {
+                "key": "con_nameservice.collection_owner",
+                "value": "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e"
+            },
+            {
+                "key": "con_nameservice.contracts_allowlist",
+                "value": []
+            },
+            {
+                "key": "con_nameservice.mint_price",
+                "value": 1
+            },
+            {
+                "key": "con_nameservice.royalty_fee_percentage",
+                "value": 2
+            },
             {
                 "key": "currency.__code__",
                 "value": "__balances = Hash(default_value=0, contract='currency', name='balances')\n__metadata = Hash(contract='currency', name='metadata')\n__permits = Hash(contract='currency', name='permits')\n__streams = Hash(contract='currency', name='streams')\nSENDER_KEY = 'sender'\nRECEIVER_KEY = 'receiver'\nSTATUS_KEY = 'status'\nBEGIN_KEY = 'begins'\nCLOSE_KEY = 'closes'\nRATE_KEY = 'rate'\nCLAIMED_KEY = 'claimed'\nSTREAM_ACTIVE = 'active'\nSTREAM_FINALIZED = 'finalized'\nSTREAM_FORFEIT = 'forfeit'\n\n\ndef ____(vk: str):\n    __balances[vk] = decimal('5555555.55')\n    __balances['team_lock'] = decimal('16666666.65')\n    __balances['dao'] = decimal('33333333.3')\n    __balances[vk] += decimal('49999999.95')\n    __balances[vk] += decimal('5555555.55')\n    __setup_seed_stream('team_lock', 'team_lock', vk, decimal(\n        '0.10575725568804825'), 1824)\n\n\ndef __setup_seed_stream(stream_id: str, sender: str, receiver: str, rate:\n    float, duration_days: int):\n    __streams[stream_id, 'status'] = 'active'\n    __streams[stream_id, 'begins'] = now\n    __streams[stream_id, 'closes'] = now + datetime.timedelta(days=\n        duration_days)\n    __streams[stream_id, 'receiver'] = receiver\n    __streams[stream_id, 'sender'] = sender\n    __streams[stream_id, 'rate'] = rate\n    __streams[stream_id, 'claimed'] = 0\n\n\n@__export('currency')\ndef transfer(amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances.'\n    assert __balances[ctx.caller] >= amount, 'Not enough coins to send.'\n    __balances[ctx.caller] -= amount\n    __balances[to] += amount\n\n\n@__export('currency')\ndef approve(amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances.'\n    __balances[ctx.caller, to] += amount\n\n\n@__export('currency')\ndef transfer_from(amount: float, to: str, main_account: str):\n    assert amount > 0, 'Cannot send negative balances.'\n    assert __balances[main_account, ctx.caller\n        ] >= amount, f'Not enough coins approved to send. You have {__balances[main_account, ctx.caller]} and are trying to spend {amount}'\n    assert __balances[main_account] >= amount, 'Not enough coins to send.'\n    __balances[main_account, ctx.caller] -= amount\n    __balances[main_account] -= amount\n    __balances[to] += amount\n\n\n@__export('currency')\ndef balance_of(address: str):\n    return __balances[address]\n\n\n@__export('currency')\ndef permit(owner: str, spender: str, value: float, deadline: str, signature:\n    str):\n    deadline = __strptime_ymdhms(deadline)\n    permit_msg = __construct_permit_msg(owner, spender, value, str(deadline))\n    permit_hash = hashlib.sha3(permit_msg)\n    assert __permits[permit_hash] is None, 'Permit can only be used once.'\n    assert now < deadline, 'Permit has expired.'\n    assert crypto.verify(owner, permit_msg, signature), 'Invalid signature.'\n    __balances[owner, spender] += value\n    __permits[permit_hash] = True\n    return f'Permit granted for {value} to {spender} from {owner}'\n\n\ndef __construct_permit_msg(owner: str, spender: str, value: float, deadline:\n    str):\n    return f'{owner}:{spender}:{value}:{deadline}:{ctx.this}'\n\n\n@__export('currency')\ndef create_stream(receiver: str, rate: float, begins: str, closes: str):\n    begins = __strptime_ymdhms(begins)\n    closes = __strptime_ymdhms(closes)\n    sender = ctx.caller\n    stream_id = __perform_create_stream(sender, receiver, rate, begins, closes)\n    return stream_id\n\n\ndef __perform_create_stream(sender: str, receiver: str, rate: float, begins:\n    str, closes: str):\n    stream_id = hashlib.sha3(f'{sender}:{receiver}:{begins}:{closes}:{rate}')\n    assert __streams[stream_id, STATUS_KEY] is None, 'Stream already exists.'\n    assert begins < closes, 'Stream cannot begin after the close date.'\n    assert rate > 0, 'Rate must be greater than 0.'\n    __streams[stream_id, STATUS_KEY] = STREAM_ACTIVE\n    __streams[stream_id, BEGIN_KEY] = begins\n    __streams[stream_id, CLOSE_KEY] = closes\n    __streams[stream_id, RECEIVER_KEY] = receiver\n    __streams[stream_id, SENDER_KEY] = sender\n    __streams[stream_id, RATE_KEY] = rate\n    __streams[stream_id, CLAIMED_KEY] = 0\n    return stream_id\n\n\n@__export('currency')\ndef create_stream_from_permit(sender: str, receiver: str, rate: float,\n    begins: str, closes: str, deadline: str, signature: str):\n    begins = __strptime_ymdhms(begins)\n    closes = __strptime_ymdhms(closes)\n    deadline = __strptime_ymdhms(deadline)\n    assert now < deadline, 'Permit has expired.'\n    permit_msg = __construct_stream_permit_msg(sender, receiver, rate,\n        begins, closes, deadline)\n    permit_hash = hashlib.sha3(permit_msg)\n    assert __permits[permit_hash] is None, 'Permit can only be used once.'\n    assert crypto.verify(sender, permit_msg, signature), 'Invalid signature.'\n    __permits[permit_hash] = True\n    return __perform_create_stream(sender, receiver, rate, begins, closes)\n\n\n@__export('currency')\ndef balance_stream(stream_id: str):\n    assert __streams[stream_id, STATUS_KEY], 'Stream does not exist.'\n    assert __streams[stream_id, STATUS_KEY\n        ] == STREAM_ACTIVE, 'You can only balance active streams.'\n    assert now > __streams[stream_id, BEGIN_KEY], 'Stream has not started yet.'\n    sender = __streams[stream_id, SENDER_KEY]\n    receiver = __streams[stream_id, RECEIVER_KEY]\n    assert ctx.caller in [sender, receiver\n        ], 'Only sender or receiver can balance a stream.'\n    closes = __streams[stream_id, CLOSE_KEY]\n    begins = __streams[stream_id, BEGIN_KEY]\n    rate = __streams[stream_id, RATE_KEY]\n    claimed = __streams[stream_id, CLAIMED_KEY]\n    outstanding_balance = __calc_outstanding_balance(begins, closes, rate,\n        claimed)\n    assert outstanding_balance > 0, 'No amount due on this stream.'\n    claimable_amount = __calc_claimable_amount(outstanding_balance, sender)\n    __balances[sender] -= claimable_amount\n    __balances[receiver] += claimable_amount\n    __streams[stream_id, CLAIMED_KEY] += claimable_amount\n    return f'Claimed {claimable_amount} tokens from stream'\n\n\n@__export('currency')\ndef change_close_time(stream_id: str, new_close_time: str):\n    new_close_time = __strptime_ymdhms(new_close_time)\n    assert __streams[stream_id, STATUS_KEY], 'Stream does not exist.'\n    assert __streams[stream_id, STATUS_KEY\n        ] == STREAM_ACTIVE, 'Stream is not active.'\n    sender = __streams[stream_id, SENDER_KEY]\n    assert ctx.caller == sender, 'Only sender can extend the close time of a stream.'\n    if new_close_time < __streams[stream_id, BEGIN_KEY] and now < __streams[\n        stream_id, BEGIN_KEY]:\n        __streams[stream_id, CLOSE_KEY] = __streams[stream_id, BEGIN_KEY]\n    elif new_close_time <= now:\n        __streams[stream_id, CLOSE_KEY] = now\n    else:\n        __streams[stream_id, CLOSE_KEY] = new_close_time\n    return f'Changed close time of stream to {__streams[stream_id, CLOSE_KEY]}'\n\n\n@__export('currency')\ndef finalize_stream(stream_id: str):\n    assert __streams[stream_id, STATUS_KEY], 'Stream does not exist.'\n    assert __streams[stream_id, STATUS_KEY\n        ] == STREAM_ACTIVE, 'Stream is not active.'\n    sender = __streams[stream_id, 'sender']\n    receiver = __streams[stream_id, 'receiver']\n    assert ctx.caller in [sender, receiver\n        ], 'Only sender or receiver can finalize a stream.'\n    begins = __streams[stream_id, BEGIN_KEY]\n    closes = __streams[stream_id, CLOSE_KEY]\n    rate = __streams[stream_id, RATE_KEY]\n    claimed = __streams[stream_id, CLAIMED_KEY]\n    assert now <= closes, 'Stream has not closed yet.'\n    outstanding_balance = __calc_outstanding_balance(begins, closes, rate,\n        claimed)\n    assert outstanding_balance == 0, 'Stream has outstanding balance.'\n    __streams[stream_id, STATUS_KEY] = STREAM_FINALIZED\n    return f'Finalized stream {stream_id}'\n\n\n@__export('currency')\ndef close_balance_finalize(stream_id: str):\n    change_close_time(stream_id=stream_id, new_close_time=str(now))\n    balance_finalize(stream_id=stream_id)\n\n\n@__export('currency')\ndef balance_finalize(stream_id: str):\n    balance_stream(stream_id=stream_id)\n    finalize_stream(stream_id=stream_id)\n\n\n@__export('currency')\ndef forfeit_stream(stream_id: str) ->str:\n    assert __streams[stream_id, STATUS_KEY], 'Stream does not exist.'\n    assert __streams[stream_id, STATUS_KEY\n        ] == STREAM_ACTIVE, 'Stream is not active.'\n    receiver = __streams[stream_id, RECEIVER_KEY]\n    assert ctx.caller == receiver, 'Only receiver can forfeit a stream.'\n    __streams[stream_id, STATUS_KEY] = STREAM_FORFEIT\n    __streams[stream_id, CLOSE_KEY] = now\n    return f'Forfeit stream {stream_id}'\n\n\ndef __calc_outstanding_balance(begins: str, closes: str, rate: float,\n    claimed: float) ->float:\n    begins = begins\n    closes = closes\n    claimable_end_point = now if now < closes else closes\n    claimable_period = claimable_end_point - begins\n    claimable_seconds = claimable_period.seconds\n    amount_due = rate * claimable_seconds - claimed\n    return amount_due\n\n\ndef __calc_claimable_amount(amount_due: float, sender: str) ->float:\n    return amount_due if amount_due < __balances[sender] else __balances[sender\n        ]\n\n\ndef __construct_stream_permit_msg(sender: str, receiver: str, rate: float,\n    begins: str, closes: str, deadline: str) ->str:\n    return (\n        f'{sender}:{receiver}:{rate}:{begins}:{closes}:{deadline}:{ctx.this}')\n\n\ndef __strptime_ymdhms(date_string: str) ->datetime.datetime:\n    return datetime.datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S')\n"
@@ -68,9 +478,221 @@
                 }
             },
             {
+                "key": "currency.balances:02122bff580ac362bfa5578eda5fcac86db69f6a1d0c693dd0fe26183327e223",
+                "value": {
+                    "__fixed__": "46605.6081"
+                }
+            },
+            {
+                "key": "currency.balances:03e2669bf5a8190f8472fcf6f1cff2e6f36a81d2c9305020ba444679f196d2cb",
+                "value": {
+                    "__fixed__": "45937.4918"
+                }
+            },
+            {
+                "key": "currency.balances:03e2669bf5a8190f8472fcf6f1cff2e6f36a81d2c9305020ba444679f196d2cb:con_multisend",
+                "value": {
+                    "__fixed__": "899999999121.9003"
+                }
+            },
+            {
+                "key": "currency.balances:1bdd2ccb6fe6f5dbdfea2b2330370acaaabdfee4c0092ac86626e53ff1fe6a7c",
+                "value": {
+                    "__fixed__": "308.7293"
+                }
+            },
+            {
+                "key": "currency.balances:1d3680e34fb0e5932326a55df98ec49142c27ee33ae0dd9fe871fc2735f50cd6",
+                "value": {
+                    "__fixed__": "45521.2622"
+                }
+            },
+            {
+                "key": "currency.balances:1e9043a943ec2985200029add5d031cbcc012ca8dc0b8ab6e7694bb475924c9b",
+                "value": {
+                    "__fixed__": "499.94"
+                }
+            },
+            {
+                "key": "currency.balances:1f8d6a8fad271296883cb1b10e29172145551a852140403e58e519dd0da80fce",
+                "value": {
+                    "__fixed__": "1045.0627"
+                }
+            },
+            {
+                "key": "currency.balances:292b346779dca86b8ffb979f48b590ea04c2d49d9fb505af9d6aa7e044a45269",
+                "value": {
+                    "__fixed__": "499216.3288"
+                }
+            },
+            {
+                "key": "currency.balances:292b346779dca86b8ffb979f48b590ea04c2d49d9fb505af9d6aa7e044a45269:con_multisend",
+                "value": {
+                    "__fixed__": "899999499999.9995"
+                }
+            },
+            {
+                "key": "currency.balances:31fa8d5a88d7ece9abaf312a76a9360fc314ecd2a2f0e9e44c5571d3ccd12595",
+                "value": {
+                    "__fixed__": "46468.1082"
+                }
+            },
+            {
+                "key": "currency.balances:35248b5fbeac2ec94ec89da03be17547eddddf1924c3f984e2cee520b6dbb7a7",
+                "value": {
+                    "__fixed__": "242.0626"
+                }
+            },
+            {
+                "key": "currency.balances:449f6f2489854ec3173f7a7642d3732782c1d4b546eaf4a15c0024949e9f6488",
+                "value": {
+                    "__fixed__": "2000.0"
+                }
+            },
+            {
+                "key": "currency.balances:52226e31d56da22fa8ea0d8725790d26b9040580a2e5780926fdc348d9ccc65c",
+                "value": {
+                    "__fixed__": "0.05"
+                }
+            },
+            {
+                "key": "currency.balances:55fd70fbcd99f2ef97b55e7695f285fc9e58514c372d8b1ad9948bb71cf3872a",
+                "value": {
+                    "__fixed__": "46672.2748"
+                }
+            },
+            {
+                "key": "currency.balances:5a5128857a999aeae59dbf6a6d8a078a8e7d9f749372e68f08a5ea23bfa75954",
+                "value": {
+                    "__fixed__": "46605.6081"
+                }
+            },
+            {
+                "key": "currency.balances:5fa1b314468832fb9d391e8af756140e85325a565d8b411ae2f2001d37c30ef4",
+                "value": {
+                    "__fixed__": "999.84"
+                }
+            },
+            {
+                "key": "currency.balances:6469db016e9444cec27e0e5ffcf0908cbeb2a6ee5ad29742ec46044266cc9e37",
+                "value": {
+                    "__fixed__": "66.7167"
+                }
+            },
+            {
+                "key": "currency.balances:684a3925fa336b8728fb9b0ff036cd43701436b1b8b1f0786a5635eabdcb6f42",
+                "value": {
+                    "__fixed__": "69.4093"
+                }
+            },
+            {
+                "key": "currency.balances:684a3925fa336b8728fb9b0ff036cd43701436b1b8b1f0786a5635eabdcb6f42:con_multisend",
+                "value": {
+                    "__fixed__": "899999999285.0"
+                }
+            },
+            {
+                "key": "currency.balances:699249a17519aa50b0c57c6db8ec46d4a81fc1f557031ef9a3edb2aa4a43a16d",
+                "value": {
+                    "__fixed__": "100.0"
+                }
+            },
+            {
+                "key": "currency.balances:6bacb4f55fa1fa5cdb7cb62d714ada95a3e1933bed019aae51de93ba25b0f7fe",
+                "value": {
+                    "__fixed__": "11.0"
+                }
+            },
+            {
+                "key": "currency.balances:6d2476cd66fa277b6077c76cdcd92733040dada2e12a28c3ebb08af44e12be76",
+                "value": 1
+            },
+            {
+                "key": "currency.balances:74ff1bc4c3a52ecdae2b0bc4a8c8c30e17feb0dd1861390d3f03c997659a7002",
+                "value": {
+                    "__fixed__": "1000.0"
+                }
+            },
+            {
+                "key": "currency.balances:7c829aba18409ce70bd6fec16cd57108862c3433c637e88087459d98acfcf40d",
+                "value": {
+                    "__fixed__": "75.02"
+                }
+            },
+            {
                 "key": "currency.balances:7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e",
                 "value": {
-                    "__fixed__": "61111111.05"
+                    "__fixed__": "59120972.08798205352288775"
+                }
+            },
+            {
+                "key": "currency.balances:7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e:con_nameservice",
+                "value": 1212121208
+            },
+            {
+                "key": "currency.balances:82719726e23aded5e053e68ae1e810bee779b8f15bb63dad4efc59f23fa1940d",
+                "value": {
+                    "__fixed__": "4499.76"
+                }
+            },
+            {
+                "key": "currency.balances:8ce11ec41a14ba8a3545b3214f5913bb129bd686b392d496359fc98f89da490a",
+                "value": {
+                    "__fixed__": "991.74"
+                }
+            },
+            {
+                "key": "currency.balances:8e8b3f6bbd959687b6d655b6b430427c7b0233fb9544649c4796b5e9206357cc",
+                "value": {
+                    "__fixed__": "0.05"
+                }
+            },
+            {
+                "key": "currency.balances:a671bf670678fb7e9709d8a120e413ac30abe3311310f50ed496ba914ad10896",
+                "value": {
+                    "__fixed__": "66.7167"
+                }
+            },
+            {
+                "key": "currency.balances:b6504cf056e264a4c1932d5de6893d110db5459ab4f742eb415d98ed989bb981",
+                "value": {
+                    "__fixed__": "10.0"
+                }
+            },
+            {
+                "key": "currency.balances:b6504cf056e264a4c1932d5de6893d110db5459ab4f742eb415d98ed989bb98d",
+                "value": {
+                    "__fixed__": "16772.4906"
+                }
+            },
+            {
+                "key": "currency.balances:b6504cf056e264a4c1932d5de6893d110db5459ab4f742eb415d98ed989bb98d:con_multisend",
+                "value": {
+                    "__fixed__": "899999987609.0018"
+                }
+            },
+            {
+                "key": "currency.balances:be033abce4b62ac96366bc16b1a5bdc35404acffbbb1e347046381d08c34d291",
+                "value": {
+                    "__fixed__": "2.0"
+                }
+            },
+            {
+                "key": "currency.balances:be033abce4b62ac96366bc16b1a5bdc35404acffbbb1e347046381d08c34d295",
+                "value": {
+                    "__fixed__": "245.88"
+                }
+            },
+            {
+                "key": "currency.balances:ca4ebdf557eae168bc5cabc85b98f1f43a4131faab877eef09b429e02d5175e5",
+                "value": {
+                    "__fixed__": "45521.2622"
+                }
+            },
+            {
+                "key": "currency.balances:cf726cb470a740ebd8c5d20d8ae112191aa2e3098f5c9ace262c9b6e1e6b7b9c",
+                "value": {
+                    "__fixed__": "10946.8960"
                 }
             },
             {
@@ -80,10 +702,50 @@
                 }
             },
             {
+                "key": "currency.balances:e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931",
+                "value": {
+                    "__fixed__": "1046555.6148"
+                }
+            },
+            {
+                "key": "currency.balances:e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931:con_multisend",
+                "value": {
+                    "__fixed__": "900000000000.0"
+                }
+            },
+            {
+                "key": "currency.balances:ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9",
+                "value": {
+                    "__fixed__": "993.00"
+                }
+            },
+            {
+                "key": "currency.balances:f5bdce0a60d1ea3db3eafd3daf923d27035824aa1d0ec4a179dced3d2be26143",
+                "value": {
+                    "__fixed__": "46431.2622"
+                }
+            },
+            {
+                "key": "currency.balances:f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce",
+                "value": {
+                    "__fixed__": "43365.5082"
+                }
+            },
+            {
+                "key": "currency.balances:f8e50a34e0ab068450b67f0855763ac9de1db6be2b19e82748dfb9232e915ea5",
+                "value": {
+                    "__fixed__": "66.6667"
+                }
+            },
+            {
                 "key": "currency.balances:team_lock",
                 "value": {
-                    "__fixed__": "16666666.65"
+                    "__fixed__": "16656788.18201794647711225"
                 }
+            },
+            {
+                "key": "currency.balances:wallet_address",
+                "value": 7
             },
             {
                 "key": "currency.streams:team_lock:begins",
@@ -101,7 +763,9 @@
             },
             {
                 "key": "currency.streams:team_lock:claimed",
-                "value": 0
+                "value": {
+                    "__fixed__": "9878.46798205352288775"
+                }
             },
             {
                 "key": "currency.streams:team_lock:closes",
@@ -222,7 +886,7 @@
             },
             {
                 "key": "masternodes.total_votes",
-                "value": 0
+                "value": 7
             },
             {
                 "key": "masternodes.types",
@@ -237,20 +901,133 @@
                 ]
             },
             {
+                "key": "masternodes.votes:1",
+                "value": {
+                    "yes": 1,
+                    "no": 0,
+                    "type": "reward_change",
+                    "arg": [
+                        0.78,
+                        0.11,
+                        0.01,
+                        0.1
+                    ],
+                    "voters": [
+                        "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e"
+                    ],
+                    "finalized": true
+                }
+            },
+            {
+                "key": "masternodes.votes:2",
+                "value": {
+                    "yes": 1,
+                    "no": 0,
+                    "type": "reward_change",
+                    "arg": [
+                        0.45,
+                        0.45,
+                        0.09,
+                        0.01
+                    ],
+                    "voters": [
+                        "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e"
+                    ],
+                    "finalized": true
+                }
+            },
+            {
+                "key": "masternodes.votes:3",
+                "value": {
+                    "yes": 1,
+                    "no": 0,
+                    "type": "reward_change",
+                    "arg": [
+                        0.45,
+                        0.01,
+                        0.09,
+                        0.45
+                    ],
+                    "voters": [
+                        "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e"
+                    ],
+                    "finalized": true
+                }
+            },
+            {
+                "key": "masternodes.votes:4",
+                "value": {
+                    "yes": 1,
+                    "no": 0,
+                    "type": "stamp_cost_change",
+                    "arg": 50,
+                    "voters": [
+                        "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e"
+                    ],
+                    "finalized": true
+                }
+            },
+            {
+                "key": "masternodes.votes:5",
+                "value": {
+                    "yes": 1,
+                    "no": 0,
+                    "type": "reward_change",
+                    "arg": [
+                        0.49,
+                        0.49,
+                        0.01,
+                        0.01
+                    ],
+                    "voters": [
+                        "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e"
+                    ],
+                    "finalized": true
+                }
+            },
+            {
+                "key": "masternodes.votes:6",
+                "value": {
+                    "yes": 1,
+                    "no": 0,
+                    "type": "reward_change",
+                    "arg": [
+                        0.49,
+                        0.01,
+                        0.49,
+                        0.01
+                    ],
+                    "voters": [
+                        "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e"
+                    ],
+                    "finalized": true
+                }
+            },
+            {
+                "key": "masternodes.votes:7",
+                "value": {
+                    "yes": 1,
+                    "no": 0,
+                    "type": "reward_change",
+                    "arg": [
+                        0.49,
+                        0.01,
+                        0.01,
+                        0.49
+                    ],
+                    "voters": [
+                        "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e"
+                    ],
+                    "finalized": true
+                }
+            },
+            {
                 "key": "rewards.S:value",
                 "value": [
-                    {
-                        "__fixed__": "0.88"
-                    },
-                    {
-                        "__fixed__": "0.01"
-                    },
-                    {
-                        "__fixed__": "0.01"
-                    },
-                    {
-                        "__fixed__": "0.1"
-                    }
+                    0.49,
+                    0.01,
+                    0.01,
+                    0.49
                 ]
             },
             {
@@ -281,7 +1058,7 @@
             },
             {
                 "key": "stamp_cost.S:value",
-                "value": 20
+                "value": 50
             },
             {
                 "key": "stamp_cost.__code__",
@@ -308,11 +1085,83 @@
                         0
                     ]
                 }
+            },
+            {
+                "key": "submission.__code__",
+                "value": "@__export('submission')\ndef submit_contract(name: str, code: str, owner: Any=None, constructor_args: dict={}):\n    if ctx.caller != 'sys':\n        assert name.startswith('con_'), 'Contract must start with con_!'\n\n    assert ctx.caller == ctx.signer, 'Contract cannot be called from another contract!'\n    assert len(name) <= 64, 'Contract name length exceeds 64 characters!'\n    assert name.islower(), 'Contract name must be lowercase!'\n\n    __Contract().submit(\n        name=name,\n        code=code,\n        owner=owner,\n        constructor_args=constructor_args,\n        developer=ctx.caller\n    )\n\n\n@__export('submission')\ndef change_developer(contract: str, new_developer: str):\n    d = __Contract()._driver.get_var(contract=contract, variable='__developer__')\n    assert ctx.caller == d, 'Sender is not current developer!'\n\n    __Contract()._driver.set_var(\n        contract=contract,\n        variable='__developer__',\n        value=new_developer\n    )\n"
+            },
+            {
+                "key": "submission.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        6,
+                        18,
+                        16,
+                        32,
+                        44,
+                        484123
+                    ]
+                }
             }
         ],
-        "origin": {
-            "signature": "1a3cac6ec94de493a1802dfc94d9869b34df894d45d1c48529d1abeca7219ec111c17f9ed553cb14fbb98b6d5fdbfe7bb57d8b9e8666b0e288fd85f592581008",
-            "sender": "da20816d1d5ff3ae65543c63dad14c1204d2260cfb8e4fe00a1a2b8e2edddcd9"
-        }
+        "nonces": [
+            {
+                "key": "1e9043a943ec2985200029add5d031cbcc012ca8dc0b8ab6e7694bb475924c9b:.__n.1e9043a943ec2985200029add5d031cbcc012ca8dc0b8ab6e7694bb475924c9b:",
+                "value": 0
+            },
+            {
+                "key": "5fa1b314468832fb9d391e8af756140e85325a565d8b411ae2f2001d37c30ef4:.__n.5fa1b314468832fb9d391e8af756140e85325a565d8b411ae2f2001d37c30ef4:",
+                "value": 1
+            },
+            {
+                "key": "8ce11ec41a14ba8a3545b3214f5913bb129bd686b392d496359fc98f89da490a:.__n.8ce11ec41a14ba8a3545b3214f5913bb129bd686b392d496359fc98f89da490a:",
+                "value": 15
+            },
+            {
+                "key": "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e:.__n.7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e:",
+                "value": 23
+            },
+            {
+                "key": "e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931:.__n.e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931:",
+                "value": 6
+            },
+            {
+                "key": "684a3925fa336b8728fb9b0ff036cd43701436b1b8b1f0786a5635eabdcb6f42:.__n.684a3925fa336b8728fb9b0ff036cd43701436b1b8b1f0786a5635eabdcb6f42:",
+                "value": 2
+            },
+            {
+                "key": "b6504cf056e264a4c1932d5de6893d110db5459ab4f742eb415d98ed989bb98d:.__n.b6504cf056e264a4c1932d5de6893d110db5459ab4f742eb415d98ed989bb98d:",
+                "value": 32
+            },
+            {
+                "key": "82719726e23aded5e053e68ae1e810bee779b8f15bb63dad4efc59f23fa1940d:.__n.82719726e23aded5e053e68ae1e810bee779b8f15bb63dad4efc59f23fa1940d:",
+                "value": 1
+            },
+            {
+                "key": "292b346779dca86b8ffb979f48b590ea04c2d49d9fb505af9d6aa7e044a45269:.__n.292b346779dca86b8ffb979f48b590ea04c2d49d9fb505af9d6aa7e044a45269:",
+                "value": 7
+            },
+            {
+                "key": "f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce:.__n.f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce:",
+                "value": 4
+            },
+            {
+                "key": "ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9:.__n.ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9:",
+                "value": 7
+            },
+            {
+                "key": "03e2669bf5a8190f8472fcf6f1cff2e6f36a81d2c9305020ba444679f196d2cb:.__n.03e2669bf5a8190f8472fcf6f1cff2e6f36a81d2c9305020ba444679f196d2cb:",
+                "value": 6
+            },
+            {
+                "key": "be033abce4b62ac96366bc16b1a5bdc35404acffbbb1e347046381d08c34d295:.__n.be033abce4b62ac96366bc16b1a5bdc35404acffbbb1e347046381d08c34d295:",
+                "value": 0
+            },
+            {
+                "key": "7c829aba18409ce70bd6fec16cd57108862c3433c637e88087459d98acfcf40d:.__n.7c829aba18409ce70bd6fec16cd57108862c3433c637e88087459d98acfcf40d:",
+                "value": 3
+            }
+        ]
     }
 }
