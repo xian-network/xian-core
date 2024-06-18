@@ -53,16 +53,6 @@ def finalize_block(self, req) -> ResponseFinalizeBlock:
         parsed_tx_result = json.dumps(stringify_decimals(result["tx_result"]))
         logger.debug(f"Parsed tx result: {parsed_tx_result}")
 
-        if self.enable_tx_fee:
-            try:
-                reward_writes.append(
-                    self.rewards_handler.distribute_rewards(
-                        stamp_rewards_amount=result["stamp_rewards_amount"],
-                        stamp_rewards_contract=result["stamp_rewards_contract"]
-                    ))
-            except Exception as e:
-                logger.error(f"REWARD ERROR: {e} for tx {tx_hash}")
-
         tx_results.append(
             ExecTxResult(
                 code=result["tx_result"]["status"],
