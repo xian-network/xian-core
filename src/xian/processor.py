@@ -125,12 +125,15 @@ class TxProcessor:
                 total_stamps_to_split=output['stamps_used'],
                 contract=transaction['payload']['contract']
             )
+            stamp_rate = self.client.get_var(contract='stamp_cost', variable='S', arguments=['value'])
             rewards = {}
             rewards['masternode_reward'] = {}
             for masternode in self.client.get_var(contract='masternodes', variable='nodes'):
-                rewards['masternode_reward'][masternode] = calculated_rewards[0]
-            rewards['foundation_reward'] = calculated_rewards[1]
-            rewards['developer_rewards'] = calculated_rewards[2]
+                rewards['masternode_reward'][masternode] = calculated_rewards[0] / stamp_rate
+            rewards['foundation_reward'] = calculated_rewards[1] / stamp_rate
+            rewards['developer_rewards'] = {}
+            for developer, reward in calculated_rewards[2].items():
+                rewards['developer_rewards'][developer] = reward / stamp_rate
         
 
         tx_output = {
