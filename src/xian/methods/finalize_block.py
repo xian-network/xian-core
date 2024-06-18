@@ -34,7 +34,6 @@ def finalize_block(self, req) -> ResponseFinalizeBlock:
 
     for tx in req.txs:
         tx = decode_transaction_bytes(tx)
-        print(f'tx', tx)
         sender, signature, payload = unpack_transaction(tx)
         if not verify(sender, payload, signature):
             # Not really needed, because check_tx should catch this first, but just in case
@@ -42,8 +41,11 @@ def finalize_block(self, req) -> ResponseFinalizeBlock:
         # Attach metadata to the transaction
         tx["b_meta"] = self.current_block_meta
         try:
-            result = self.tx_processor.process_tx(tx, enabled_fees=self.enable_tx_fee, rewards_handler=self.rewards_handler)
-            print(f'result', result)
+            result = self.tx_processor.process_tx(
+                tx,
+                enabled_fees=self.enable_tx_fee,
+                rewards_handler=self.rewards_handler
+            )
         except Exception as e:
             logger.error(f"Error processing tx: {e}")
             continue # Skip this transaction
@@ -60,6 +62,13 @@ def finalize_block(self, req) -> ResponseFinalizeBlock:
                 gas_used=0
             )
         )
+
+        if self.block_service_mode:
+            print('tx', tx)
+            print('tx_result', result)
+
+            # TODO: Make async
+            # TODO: Save data in BDS DB
 
     if self.static_rewards:
         try:
