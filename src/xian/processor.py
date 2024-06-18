@@ -14,7 +14,7 @@ class TxProcessor:
         self.client = client
         self.executor = Executor(driver=self.client.raw_driver, metering=metering)
 
-    def process_tx(self, tx, enabled_fees=False):
+    def process_tx(self, tx, enabled_fees=False, rewards_handler=None):
         environment = self.get_environment(tx=tx)
 
         stamp_cost = self.client.get_var(contract='stamp_cost', variable='S', arguments=['value']) or 1
@@ -39,7 +39,8 @@ class TxProcessor:
             tx_result = self.process_tx_output(
                 output=output,
                 transaction=tx,
-                stamp_cost=stamp_cost
+                stamp_cost=stamp_cost,
+                rewards_handler=rewards_handler
             )
 
             tx_result = self.prune_tx_result(tx_result)
@@ -92,10 +93,8 @@ class TxProcessor:
             })
             return None
 
-    def process_tx_output(self, output, transaction, stamp_cost):
-        # Clear pending writes, stu said to comment this out
+    def process_tx_output(self, output, transaction, stamp_cost, rewards_handler):
         # self.executor.driver.pending_writes.clear()
-
         # Log out to the node logs if the tx fails
         logger.debug(f"status code = {output['status_code']}")
 
@@ -119,13 +118,32 @@ class TxProcessor:
 
         for write in writes:
             self.client.raw_driver.set(key=write['key'], value=write['value'])
+
+        rewards = None
+        if rewards_handler is not None:
+            calculated_rewards = rewards_handler.calculate_tx_output_rewards(
+                total_stamps_to_split=output['stamps_used'],
+                contract=transaction['payload']['contract']
+            )
+            stamp_rate = self.client.get_var(contract='stamp_cost', variable='S', arguments=['value'])
+            rewards = {}
+            rewards['masternode_reward'] = {}
+            for masternode in self.client.get_var(contract='masternodes', variable='nodes'):
+                rewards['masternode_reward'][masternode] = calculated_rewards[0] / stamp_rate
+            rewards['foundation_reward'] = calculated_rewards[1] / stamp_rate
+            rewards['developer_rewards'] = {}
+            for developer, reward in calculated_rewards[2].items():
+                rewards['developer_rewards'][developer] = reward / stamp_rate
+        
+
         tx_output = {
             'hash': tx_hash,
             'transaction': transaction,
             'status': output['status_code'],
             'state': writes,
             'stamps_used': output['stamps_used'],
-            'result': safe_repr(output['result'])
+            'result': safe_repr(output['result']),
+            'rewards': rewards if rewards else None
         }
 
         tx_output = format_dictionary(tx_output)
