@@ -1,5 +1,4 @@
 import json
-import traceback
 
 from cometbft.abci.v1beta3.types_pb2 import (
     ResponseFinalizeBlock,
@@ -17,7 +16,6 @@ from xian.utils import (
     hash_from_rewards,
     hash_from_validator_updates
 )
-from xian.constants import ErrorCode
 from loguru import logger
 
 
@@ -36,6 +34,7 @@ def finalize_block(self, req) -> ResponseFinalizeBlock:
 
     for tx in req.txs:
         tx = decode_transaction_bytes(tx)
+        print(f'tx', tx)
         sender, signature, payload = unpack_transaction(tx)
         if not verify(sender, payload, signature):
             # Not really needed, because check_tx should catch this first, but just in case
@@ -44,6 +43,7 @@ def finalize_block(self, req) -> ResponseFinalizeBlock:
         tx["b_meta"] = self.current_block_meta
         try:
             result = self.tx_processor.process_tx(tx, enabled_fees=self.enable_tx_fee, rewards_handler=self.rewards_handler)
+            print(f'result', result)
         except Exception as e:
             logger.error(f"Error processing tx: {e}")
             continue # Skip this transaction
