@@ -133,6 +133,8 @@ class TxProcessor:
             rewards['foundation_reward'] = calculated_rewards[1] / stamp_rate
             rewards['developer_rewards'] = {}
             for developer, reward in calculated_rewards[2].items():
+                if developer == 'sys' or developer == None:
+                    developer = self.client.get_var(contract='foundation', variable='owner')
                 rewards['developer_rewards'][developer] = reward / stamp_rate
         
 
