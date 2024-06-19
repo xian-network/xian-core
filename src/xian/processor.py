@@ -138,7 +138,7 @@ class TxProcessor:
                 if write_key in output['writes']:
                     output['writes'][write_key] += ContractingDecimal(str(reward))
                 else:
-                    output['writes'][write_key] = ContractingDecimal(str(reward))
+                    output['writes'][write_key] = self.client.raw_driver.get(write_key) + ContractingDecimal(str(reward))
 
             # Update foundation reward in output writes
             foundation_owner = self.client.get_var(contract='foundation', variable='owner')
@@ -146,7 +146,7 @@ class TxProcessor:
             if foundation_write_key in output['writes']:
                 output['writes'][foundation_write_key] += ContractingDecimal(str(rewards['foundation_reward']))
             else:
-                output['writes'][foundation_write_key] = ContractingDecimal(str(rewards['foundation_reward']))
+                output['writes'][foundation_write_key] = self.client.raw_driver.get(foundation_write_key) + ContractingDecimal(str(rewards['foundation_reward']))
 
             # Update developer rewards in output writes
             for address, reward in rewards['developer_rewards'].items():
@@ -154,7 +154,7 @@ class TxProcessor:
                 if write_key in output['writes']:
                     output['writes'][write_key] += ContractingDecimal(str(reward))
                 else:
-                    output['writes'][write_key] = ContractingDecimal(str(reward))
+                    output['writes'][write_key] = self.client.raw_driver.get(write_key) + ContractingDecimal(str(reward))
 
                     
         writes = self.determine_writes_from_output(
