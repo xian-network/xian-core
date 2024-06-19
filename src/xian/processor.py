@@ -135,26 +135,35 @@ class TxProcessor:
             # Update masternode rewards in output writes
             for address, reward in rewards['masternode_reward'].items():
                 write_key = f"{state_change_key}:{address}"
+                write_key_balance = self.client.get_var(contract='currency', variable='balances', arguments=[address])
+                if write_key_balance is None:
+                    write_key_balance = 0
                 if write_key in output['writes']:
                     output['writes'][write_key] += ContractingDecimal(str(reward))
                 else:
-                    output['writes'][write_key] = self.client.raw_driver.get(write_key) + ContractingDecimal(str(reward))
+                    output['writes'][write_key] = write_key_balance + ContractingDecimal(str(reward))
 
             # Update foundation reward in output writes
             foundation_owner = self.client.get_var(contract='foundation', variable='owner')
             foundation_write_key = f"{state_change_key}:{foundation_owner}"
+            foundation_balance = self.client.get_var(contract='currency', variable='balances', arguments=[foundation_owner])
+            if foundation_balance is None:
+                foundation_balance = 0
             if foundation_write_key in output['writes']:
                 output['writes'][foundation_write_key] += ContractingDecimal(str(rewards['foundation_reward']))
             else:
-                output['writes'][foundation_write_key] = self.client.raw_driver.get(foundation_write_key) + ContractingDecimal(str(rewards['foundation_reward']))
+                output['writes'][foundation_write_key] = foundation_balance + ContractingDecimal(str(rewards['foundation_reward']))
 
             # Update developer rewards in output writes
             for address, reward in rewards['developer_rewards'].items():
                 write_key = f"{state_change_key}:{address}"
+                write_key_balance = self.client.get_var(contract='currency', variable='balances', arguments=[address])
+                if write_key_balance is None:
+                    write_key_balance = 0
                 if write_key in output['writes']:
                     output['writes'][write_key] += ContractingDecimal(str(reward))
                 else:
-                    output['writes'][write_key] = self.client.raw_driver.get(write_key) + ContractingDecimal(str(reward))
+                    output['writes'][write_key] = write_key_balance + ContractingDecimal(str(reward))
 
                     
         writes = self.determine_writes_from_output(
