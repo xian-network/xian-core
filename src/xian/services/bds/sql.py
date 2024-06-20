@@ -133,10 +133,7 @@ def insert_addresses():
         tx_hash, address, created)
     VALUES (
         %(tx_hash)s, %(address)s, %(created)s)
-    ON CONFLICT (address) DO UPDATE 
-    SET 
-        tx_hash = %(tx_hash)s,
-        created = %(created)s;
+    ON CONFLICT (address) DO NOTHING;
     """
 
 
@@ -146,9 +143,5 @@ def insert_contracts():
         tx_hash, name, code, created)
     VALUES (
         %(tx_hash)s, %(name)s, %(code)s, %(created)s)
-    ON CONFLICT (name) DO UPDATE 
-    SET 
-        tx_hash = EXCLUDED.tx_hash,
-        code = EXCLUDED.code,
-        created = EXCLUDED.created;
+    ON CONFLICT (name) DO NOTHING;
     """

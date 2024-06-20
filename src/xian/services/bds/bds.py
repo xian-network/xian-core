@@ -6,12 +6,18 @@ from xian.services.bds import sql
 from xian.services.bds.config import Config
 from xian.services.bds.database import DB
 from contracting.stdlib.bridge.decimal import ContractingDecimal
+from xian_py.xian_datetime import Timedelta
+from contracting.stdlib.bridge.time import Datetime
 
 
 # Custom JSON encoder for ContractingDecimal
 class CustomEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, ContractingDecimal):
+            return str(obj)
+        if isinstance(obj, Datetime):
+            return str(obj)
+        if isinstance(obj, Timedelta):
             return str(obj)
         return super().default(obj)
 
@@ -99,9 +105,25 @@ class BDS:
             logger.exception(e)
 
     def insert_addresses(self, tx: dict):
-        # TODO: Insert from and to addresses
-        pass
+        # TODO: Loop through state and insert everything that has
+        # currency.balances:
+        try:
+            self.db.execute(sql.insert_addresses(), {
+                'tx_hash': tx['tx_hash'],
+                'address': tx['address'],
+                'created': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            })
+        except Exception as e:
+            logger.exception(e)
 
     def insert_contracts(self, tx: dict):
-        # TODO: Insert contracts if contract = 'submission' and function = 'submit_contract'
-        pass
+        if tx['payload']['contract'] == 'submission' and tx['payload']['function'] == 'submit_contract':
+            try:
+                self.db.execute(sql.insert_contracts(), {
+                    'tx_hash': tx['tx_hash'],
+                    'name': tx['payload']['kwargs']['name'],
+                    'code': tx['payload']['kwargs']['code'],
+                    'created': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                })
+            except Exception as e:
+                logger.exception(e)

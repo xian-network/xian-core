@@ -86,13 +86,11 @@ def finalize_block(self, req) -> ResponseFinalizeBlock:
             self.bds.insert_rewards(tx)
             logger.debug(f'-> Saved rewards in {timer() - start_time:.3f} seconds')
 
-            # TODO: Don't execute if not needed
             # Addresses
             start_time = timer()
-            self.bds.insert_address(tx)
+            self.bds.insert_addresses(tx)
             logger.debug(f'-> Saved addresses in {timer() - start_time:.3f} seconds')
 
-            # TODO: Don't execute if not needed
             # Contracts
             start_time = timer()
             self.bds.insert_contracts(tx)
