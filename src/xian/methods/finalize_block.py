@@ -17,7 +17,6 @@ from xian.utils import (
     hash_from_validator_updates
 )
 from loguru import logger
-from timeit import default_timer as timer
 
 
 def finalize_block(self, req) -> ResponseFinalizeBlock:
@@ -66,37 +65,7 @@ def finalize_block(self, req) -> ResponseFinalizeBlock:
 
         # TODO: Make async
         if self.block_service_mode:
-            total_time = timer()
-
-            tx = tx | result
-            print('tx', tx)  # TODO: Remove
-
-            # Tx
-            start_time = timer()
-            self.bds.insert_tx(tx)
-            logger.debug(f'-> Saved tx in {timer() - start_time:.3f} seconds')
-
-            # State changes
-            start_time = timer()
-            self.bds.insert_state_changes(tx)
-            logger.debug(f'-> Saved state changes in {timer() - start_time:.3f} seconds')
-
-            # Rewards
-            start_time = timer()
-            self.bds.insert_rewards(tx)
-            logger.debug(f'-> Saved rewards in {timer() - start_time:.3f} seconds')
-
-            # Addresses
-            start_time = timer()
-            self.bds.insert_addresses(tx)
-            logger.debug(f'-> Saved addresses in {timer() - start_time:.3f} seconds')
-
-            # Contracts
-            start_time = timer()
-            self.bds.insert_contracts(tx)
-            logger.debug(f'-> Saved contracts in {timer() - start_time:.3f} seconds')
-
-            logger.debug(f'Processed tx {tx_hash} in {timer() - total_time:.3f} seconds')
+            self.bds.insert_full_data(tx | result)
 
     if self.static_rewards:
         try:

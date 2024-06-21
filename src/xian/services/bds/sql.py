@@ -79,20 +79,7 @@ def insert_transaction():
         %(hash)s, %(contract)s, %(function)s, %(sender)s, %(nonce)s, 
         %(stamps)s, %(block_hash)s, %(block_height)s, %(block_time)s, 
         %(status)s, %(result)s, %(json_content)s, %(created)s)
-    ON CONFLICT (hash) DO UPDATE 
-    SET 
-        contract = %(contract)s,
-        function = %(function)s,
-        sender = %(sender)s,
-        nonce = %(nonce)s,
-        stamps = %(stamps)s,
-        block_hash = %(block_hash)s,
-        block_height = %(block_height)s,
-        block_time = %(block_time)s,
-        status = %(status)s,
-        result = %(result)s,
-        json_content = %(json_content)s,
-        created = %(created)s;
+    ON CONFLICT (hash) DO NOTHING;
     """
 
 
@@ -102,28 +89,17 @@ def insert_state_changes():
         id, tx_hash, key, value, created)
     VALUES (
         COALESCE(%(id)s, gen_random_uuid()), %(tx_hash)s, %(key)s, %(value)s, %(created)s)
-    ON CONFLICT (id) DO UPDATE 
-    SET 
-        tx_hash = %(tx_hash)s,
-        key = %(key)s,
-        value = %(value)s,
-        created = %(created)s;
+    ON CONFLICT (id) DO NOTHING;
     """
 
 
 def insert_rewards():
     return """
     INSERT INTO rewards(
-        id, tx_hash, key, value, created)
+        id, tx_hash, reward_type, key, value, created)
     VALUES (
         COALESCE(%(id)s, gen_random_uuid()), %(tx_hash)s, %(reward_type)s, %(key)s, %(value)s, %(created)s)
-    ON CONFLICT (id) DO UPDATE 
-    SET 
-        tx_hash = %(tx_hash)s,
-        reward_type = %(reward_type)s,
-        key = %(key)s,
-        value = %(value)s,
-        created = %(created)s;
+    ON CONFLICT (id) DO NOTHING;
     """
 
 

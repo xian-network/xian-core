@@ -8,6 +8,8 @@ from xian.services.bds.database import DB
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 from xian_py.xian_datetime import Timedelta
 from contracting.stdlib.bridge.time import Datetime
+from xian_py.wallet import key_is_valid
+from timeit import default_timer as timer
 
 
 # Custom JSON encoder for ContractingDecimal
@@ -39,6 +41,36 @@ class BDS:
         except Exception as e:
             logger.exception(e)
 
+    def insert_full_data(self, tx: dict):
+        total_time = timer()
+
+        # Tx
+        start_time = timer()
+        self.insert_tx(tx)
+        logger.debug(f'Saved tx in {timer() - start_time:.3f} seconds')
+
+        # State changes
+        start_time = timer()
+        self.insert_state_changes(tx)
+        logger.debug(f'Saved state changes in {timer() - start_time:.3f} seconds')
+
+        # Rewards
+        start_time = timer()
+        self.insert_rewards(tx)
+        logger.debug(f'Saved rewards in {timer() - start_time:.3f} seconds')
+
+        # Addresses
+        start_time = timer()
+        self.insert_addresses(tx)
+        logger.debug(f'Saved addresses in {timer() - start_time:.3f} seconds')
+
+        # Contracts
+        start_time = timer()
+        self.insert_contracts(tx)
+        logger.debug(f'Saved contracts in {timer() - start_time:.3f} seconds')
+
+        logger.debug(f'Processed tx {tx["tx_result"]["hash"]} in {timer() - total_time:.3f} seconds')
+
     def insert_tx(self, tx: dict):
         try:
             self.db.execute(sql.insert_transaction(), {
@@ -60,7 +92,7 @@ class BDS:
             logger.exception(e)
 
     def insert_state_changes(self, tx: dict):
-        for state_change in tx['tx_result']['state'].items():
+        for state_change in tx['tx_result']['state']:
             try:
                 self.db.execute(sql.insert_state_changes(), {
                     'id': None,
@@ -79,48 +111,50 @@ class BDS:
                 'tx_hash': tx['tx_result']['hash'],
                 'reward_type': reward_type,
                 'key': key,
-                'value': value,
+                'value': json.dumps(value, cls=CustomEncoder),
                 'created': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             })
 
         # Developer reward
         for address, reward in tx['tx_result']['rewards']['developer_rewards'].items():
             try:
-                insert('developer_rewards', address, reward)
+                insert('developer_rewards', address, float(reward))
             except Exception as e:
                 logger.exception(e)
 
         # Masternode reward
         for address, reward in tx['tx_result']['rewards']['masternode_reward'].items():
             try:
-                insert('masternode_reward', address, reward)
+                insert('masternode_reward', address, float(reward))
             except Exception as e:
                 logger.exception(e)
 
         # Foundation reward
         try:
-            reward_value = tx['tx_result']['rewards']['foundation_reward']
-            insert('foundation_reward', '', reward_value)
+            reward = tx['tx_result']['rewards']['foundation_reward']
+            insert('foundation_reward', '', float(reward))
         except Exception as e:
             logger.exception(e)
 
     def insert_addresses(self, tx: dict):
-        # TODO: Loop through state and insert everything that has
-        # currency.balances:
-        try:
-            self.db.execute(sql.insert_addresses(), {
-                'tx_hash': tx['tx_hash'],
-                'address': tx['address'],
-                'created': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            })
-        except Exception as e:
-            logger.exception(e)
+        for state_change in tx['tx_result']['state']:
+            if state_change['key'].startswith('currency.balances:'):
+                address = state_change['key'].replace('currency.balances:', '')
+                if key_is_valid(address):
+                    try:
+                        self.db.execute(sql.insert_addresses(), {
+                            'tx_hash': tx['tx_result']['hash'],
+                            'address': address,
+                            'created': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                        })
+                    except Exception as e:
+                        logger.exception(e)
 
     def insert_contracts(self, tx: dict):
         if tx['payload']['contract'] == 'submission' and tx['payload']['function'] == 'submit_contract':
             try:
                 self.db.execute(sql.insert_contracts(), {
-                    'tx_hash': tx['tx_hash'],
+                    'tx_hash': tx['tx_result']['hash'],
                     'name': tx['payload']['kwargs']['name'],
                     'code': tx['payload']['kwargs']['code'],
                     'created': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
