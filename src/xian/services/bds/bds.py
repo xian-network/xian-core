@@ -33,6 +33,7 @@ class BDS:
         await self.db.init_pool()
         await self.__init_tables()
         logger.info('BDS service initialized')
+        return self
 
     async def __init_tables(self):
         try:
