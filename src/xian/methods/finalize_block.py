@@ -1,5 +1,5 @@
 import json
-
+import asyncio
 from cometbft.abci.v1beta3.types_pb2 import (
     ResponseFinalizeBlock,
     ExecTxResult
@@ -65,7 +65,7 @@ def finalize_block(self, req) -> ResponseFinalizeBlock:
 
         # TODO: Make async
         if self.block_service_mode:
-            self.bds.insert_full_data(tx | result)
+            asyncio.create_task(self.bds.insert_full_data(tx | result))
 
     if self.static_rewards:
         try:
