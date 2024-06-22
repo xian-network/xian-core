@@ -2,6 +2,7 @@ import os
 import importlib
 import sys
 import gc
+import asyncio
 
 os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
 
@@ -69,6 +70,8 @@ class Xian:
             logger.error(e)
             raise SystemExit()
 
+        loop = asyncio.get_event_loop()
+
         self.client = ContractingClient()
         self.nonce_storage = NonceStorage(self.client)
         self.upgrader = UpgradeHandler(self)
@@ -81,7 +84,7 @@ class Xian:
         self.chain_id = self.genesis.get("chain_id", None)
         self.block_service_mode = self.config["xian"]["block_service_mode"]
         self.stamp_calculator = StampCalculator() if self.block_service_mode else None
-        self.bds = BDS() if self.block_service_mode else None
+        self.bds = loop.run_until_complete(BDS().init())
         self.pruning_enabled = self.config["xian"]["pruning_enabled"]
         # If pruning is enabled, this is the number of blocks to keep history for
         self.blocks_to_keep = self.config["xian"]["blocks_to_keep"]

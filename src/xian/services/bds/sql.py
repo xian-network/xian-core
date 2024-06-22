@@ -77,9 +77,7 @@ def insert_transaction():
         hash, contract, function, sender, nonce, stamps, block_hash, 
         block_height, block_time, success, result, json_content, created)
     VALUES (
-        %(hash)s, %(contract)s, %(function)s, %(sender)s, %(nonce)s, 
-        %(stamps)s, %(block_hash)s, %(block_height)s, %(block_time)s, 
-        %(success)s, %(result)s, %(json_content)s, %(created)s)
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
     ON CONFLICT (hash) DO NOTHING;
     """
 
@@ -89,7 +87,7 @@ def insert_state_changes():
     INSERT INTO state_changes(
         id, tx_hash, key, value, created)
     VALUES (
-        COALESCE(%(id)s, gen_random_uuid()), %(tx_hash)s, %(key)s, %(value)s, %(created)s)
+        COALESCE($1, gen_random_uuid()), $2, $3, $4, $5)
     ON CONFLICT (id) DO NOTHING;
     """
 
@@ -99,7 +97,7 @@ def insert_rewards():
     INSERT INTO rewards(
         id, tx_hash, type, key, value, created)
     VALUES (
-        COALESCE(%(id)s, gen_random_uuid()), %(tx_hash)s, %(type)s, %(key)s, %(value)s, %(created)s)
+        COALESCE($1, gen_random_uuid()), $2, $3, $4, $5, $6)
     ON CONFLICT (id) DO NOTHING;
     """
 
@@ -109,7 +107,7 @@ def insert_addresses():
     INSERT INTO addresses(
         tx_hash, address, created)
     VALUES (
-        %(tx_hash)s, %(address)s, %(created)s)
+        $1, $2, $3)
     ON CONFLICT (address) DO NOTHING;
     """
 
@@ -119,6 +117,6 @@ def insert_contracts():
     INSERT INTO contracts(
         tx_hash, name, code, XSC0001, created)
     VALUES (
-        %(tx_hash)s, %(name)s, %(code)s, %(XSC0001)s, %(created)s)
+        $1, $2, $3, $4, $5)
     ON CONFLICT (name) DO NOTHING;
     """
