@@ -10,7 +10,7 @@ def create_transactions():
         block_hash TEXT NOT NULL,
         block_height INTEGER NOT NULL,
         block_time BIGINT NOT NULL,
-        status INTEGER NOT NULL,
+        success BOOLEAN,
         result TEXT,
         json_content JSONB NOT NULL,
         created TIMESTAMP NOT NULL
@@ -75,11 +75,11 @@ def insert_transaction():
     return """
     INSERT INTO transactions(
         hash, contract, function, sender, nonce, stamps, block_hash, 
-        block_height, block_time, status, result, json_content, created)
+        block_height, block_time, success, result, json_content, created)
     VALUES (
         %(hash)s, %(contract)s, %(function)s, %(sender)s, %(nonce)s, 
         %(stamps)s, %(block_hash)s, %(block_height)s, %(block_time)s, 
-        %(status)s, %(result)s, %(json_content)s, %(created)s)
+        %(success)s, %(result)s, %(json_content)s, %(created)s)
     ON CONFLICT (hash) DO NOTHING;
     """
 

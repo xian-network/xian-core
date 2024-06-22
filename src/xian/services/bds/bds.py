@@ -72,6 +72,9 @@ class BDS:
         logger.debug(f'Processed tx {tx["tx_result"]["hash"]} in {timer() - total_time:.3f} seconds')
 
     def _insert_tx(self, tx: dict):
+        status = True if tx['tx_result']['status'] == 0 else False
+        result = None if tx['tx_result']['result'] == 'None' else tx['tx_result']['result']
+
         try:
             self.db.execute(sql.insert_transaction(), {
                 'hash': tx['tx_result']['hash'],
@@ -83,8 +86,8 @@ class BDS:
                 'block_hash': tx['b_meta']['hash'],
                 'block_height': tx['b_meta']['height'],
                 'block_time': tx['b_meta']['nanos'],
-                'status': tx['tx_result']['status'],
-                'result': tx['tx_result']['result'],
+                'success': status,
+                'result': result,
                 'json_content': json.dumps(tx, cls=CustomEncoder),
                 'created': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             })
