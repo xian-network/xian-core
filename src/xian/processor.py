@@ -116,10 +116,11 @@ class TxProcessor:
                 contract=transaction['payload']['contract']
             )
             stamp_rate = self.client.get_var(contract='stamp_cost', variable='S', arguments=['value'])
+            foundation_owner = self.client.get_var(contract='foundation', variable='owner')
             rewards = {
                 'masternode_reward': {},
-                'foundation_reward': calculated_rewards[1] / stamp_rate,
-                'developer_rewards': {}
+                'foundation_reward': {foundation_owner: ContractingDecimal(str(calculated_rewards[1] / stamp_rate))},
+                'developer_reward': {}
             }
 
             for masternode in self.client.get_var(contract='masternodes', variable='nodes'):
@@ -128,7 +129,7 @@ class TxProcessor:
             for developer, reward in calculated_rewards[2].items():
                 if developer == 'sys' or developer is None:
                     developer = self.client.get_var(contract='foundation', variable='owner')
-                rewards['developer_rewards'][developer] = ContractingDecimal(str(reward / stamp_rate))
+                rewards['developer_reward'][developer] = ContractingDecimal(str(reward / stamp_rate))
 
             state_change_key = "currency.balances"
 
@@ -144,18 +145,18 @@ class TxProcessor:
                     output['writes'][write_key] = write_key_balance + ContractingDecimal(str(reward))
 
             # Update foundation reward in output writes
-            foundation_owner = self.client.get_var(contract='foundation', variable='owner')
-            foundation_write_key = f"{state_change_key}:{foundation_owner}"
-            foundation_balance = self.client.get_var(contract='currency', variable='balances', arguments=[foundation_owner])
-            if foundation_balance is None:
-                foundation_balance = 0
-            if foundation_write_key in output['writes']:
-                output['writes'][foundation_write_key] += ContractingDecimal(str(rewards['foundation_reward']))
-            else:
-                output['writes'][foundation_write_key] = foundation_balance + ContractingDecimal(str(rewards['foundation_reward']))
+            for address, reward in rewards['foundation_reward'].items():
+                write_key = f"{state_change_key}:{address}"
+                write_key_balance = self.client.get_var(contract='currency', variable='balances', arguments=[foundation_owner])
+                if write_key_balance is None:
+                    write_key_balance = 0
+                if write_key in output['writes']:
+                    output['writes'][write_key] += ContractingDecimal(str(reward))
+                else:
+                    output['writes'][write_key] = write_key_balance + ContractingDecimal(str(reward))
 
             # Update developer rewards in output writes
-            for address, reward in rewards['developer_rewards'].items():
+            for address, reward in rewards['developer_reward'].items():
                 write_key = f"{state_change_key}:{address}"
                 write_key_balance = self.client.get_var(contract='currency', variable='balances', arguments=[address])
                 if write_key_balance is None:
