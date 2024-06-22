@@ -12,7 +12,7 @@ from xian_py.wallet import key_is_valid
 from timeit import default_timer as timer
 
 
-# Custom JSON encoder for ContractingDecimal
+# Custom JSON encoder for our own objects
 class CustomEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, ContractingDecimal):
@@ -46,22 +46,22 @@ class BDS:
 
         # Tx
         start_time = timer()
-        self.insert_tx(tx)
+        self._insert_tx(tx)
         logger.debug(f'Saved tx in {timer() - start_time:.3f} seconds')
 
         # State changes
         start_time = timer()
-        self.insert_state_changes(tx)
+        self._insert_state_changes(tx)
         logger.debug(f'Saved state changes in {timer() - start_time:.3f} seconds')
 
         # Rewards
         start_time = timer()
-        self.insert_rewards(tx)
+        self._insert_rewards(tx)
         logger.debug(f'Saved rewards in {timer() - start_time:.3f} seconds')
 
         # Addresses
         start_time = timer()
-        self.insert_addresses(tx)
+        self._insert_addresses(tx)
         logger.debug(f'Saved addresses in {timer() - start_time:.3f} seconds')
 
         # Contracts
@@ -71,7 +71,7 @@ class BDS:
 
         logger.debug(f'Processed tx {tx["tx_result"]["hash"]} in {timer() - total_time:.3f} seconds')
 
-    def insert_tx(self, tx: dict):
+    def _insert_tx(self, tx: dict):
         try:
             self.db.execute(sql.insert_transaction(), {
                 'hash': tx['tx_result']['hash'],
@@ -91,7 +91,7 @@ class BDS:
         except Exception as e:
             logger.exception(e)
 
-    def insert_state_changes(self, tx: dict):
+    def _insert_state_changes(self, tx: dict):
         for state_change in tx['tx_result']['state']:
             try:
                 self.db.execute(sql.insert_state_changes(), {
@@ -104,39 +104,39 @@ class BDS:
             except Exception as e:
                 logger.exception(e)
 
-    def insert_rewards(self, tx: dict):
-        def insert(reward_type, key, value):
+    def _insert_rewards(self, tx: dict):
+        def insert(type, key, value):
             self.db.execute(sql.insert_rewards(), {
                 'id': None,
                 'tx_hash': tx['tx_result']['hash'],
-                'reward_type': reward_type,
+                'type': type,
                 'key': key,
                 'value': json.dumps(value, cls=CustomEncoder),
                 'created': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             })
 
         # Developer reward
-        for address, reward in tx['tx_result']['rewards']['developer_rewards'].items():
+        for address, reward in tx['tx_result']['rewards']['developer_reward'].items():
             try:
-                insert('developer_rewards', address, float(reward))
+                insert('developer', address, float(reward))
             except Exception as e:
                 logger.exception(e)
 
         # Masternode reward
         for address, reward in tx['tx_result']['rewards']['masternode_reward'].items():
             try:
-                insert('masternode_reward', address, float(reward))
+                insert('masternode', address, float(reward))
             except Exception as e:
                 logger.exception(e)
 
         # Foundation reward
-        try:
-            reward = tx['tx_result']['rewards']['foundation_reward']
-            insert('foundation_reward', '', float(reward))
-        except Exception as e:
-            logger.exception(e)
+        for address, reward in tx['tx_result']['rewards']['foundation_reward'].items():
+            try:
+                insert('foundation', address, float(reward))
+            except Exception as e:
+                logger.exception(e)
 
-    def insert_addresses(self, tx: dict):
+    def _insert_addresses(self, tx: dict):
         for state_change in tx['tx_result']['state']:
             if state_change['key'].startswith('currency.balances:'):
                 address = state_change['key'].replace('currency.balances:', '')
@@ -151,12 +151,26 @@ class BDS:
                         logger.exception(e)
 
     def insert_contracts(self, tx: dict):
+        def is_XSC0001(code: str):
+            code = code.replace(' ', '')
+
+            if 'balances=Hash(' not in code:
+                return False
+            if '@export\ndeftransfer(amount:float,to:str):' not in code:
+                return False
+            if '@export\ndefapprove(amount:float,to:str):' not in code:
+                return False
+            if '@export\ndeftransfer_from(amount:float,to:str,main_account:str):' not in code:
+                return False
+            return True
+
         if tx['payload']['contract'] == 'submission' and tx['payload']['function'] == 'submit_contract':
             try:
                 self.db.execute(sql.insert_contracts(), {
                     'tx_hash': tx['tx_result']['hash'],
                     'name': tx['payload']['kwargs']['name'],
                     'code': tx['payload']['kwargs']['code'],
+                    'XSC0001': is_XSC0001(tx['payload']['kwargs']['code']),
                     'created': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 })
             except Exception as e:

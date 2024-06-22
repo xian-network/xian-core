@@ -35,7 +35,7 @@ def create_rewards():
     CREATE TABLE IF NOT EXISTS rewards (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         tx_hash TEXT REFERENCES transactions(hash),
-        reward_type TEXT NOT NULL,
+        type TEXT NOT NULL,
         key TEXT,
         value DECIMAL NOT NULL,
         created TIMESTAMP NOT NULL
@@ -59,6 +59,7 @@ def create_contracts():
         tx_hash TEXT REFERENCES transactions(hash),
         name TEXT NOT NULL PRIMARY KEY,
         code TEXT NOT NULL,
+        XSC0001 TEXT NOT NULL,
         created TIMESTAMP NOT NULL
     )
     """
@@ -96,9 +97,9 @@ def insert_state_changes():
 def insert_rewards():
     return """
     INSERT INTO rewards(
-        id, tx_hash, reward_type, key, value, created)
+        id, tx_hash, type, key, value, created)
     VALUES (
-        COALESCE(%(id)s, gen_random_uuid()), %(tx_hash)s, %(reward_type)s, %(key)s, %(value)s, %(created)s)
+        COALESCE(%(id)s, gen_random_uuid()), %(tx_hash)s, %(type)s, %(key)s, %(value)s, %(created)s)
     ON CONFLICT (id) DO NOTHING;
     """
 
@@ -116,8 +117,8 @@ def insert_addresses():
 def insert_contracts():
     return """
     INSERT INTO contracts(
-        tx_hash, name, code, created)
+        tx_hash, name, code, XSC0001, created)
     VALUES (
-        %(tx_hash)s, %(name)s, %(code)s, %(created)s)
+        %(tx_hash)s, %(name)s, %(code)s, %(XSC0001)s, %(created)s)
     ON CONFLICT (name) DO NOTHING;
     """
