@@ -19,7 +19,7 @@ class DB:
             port=self.cfg.get('db_port')
         )
 
-    async def execute(self, query: str, params: dict = {}):
+    async def execute(self, query: str, params: list = []):
         async with self.pool.acquire() as connection:
             try:
                 result = await connection.execute(query, *params)

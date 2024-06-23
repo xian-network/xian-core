@@ -59,7 +59,7 @@ def create_contracts():
         tx_hash TEXT REFERENCES transactions(hash),
         name TEXT NOT NULL PRIMARY KEY,
         code TEXT NOT NULL,
-        XSC0001 TEXT NOT NULL,
+        XSC0001 BOOLEAN DEFAULT FALSE,
         created TIMESTAMP NOT NULL
     )
     """

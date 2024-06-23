@@ -80,47 +80,47 @@ class BDS:
         result = None if tx['tx_result']['result'] == 'None' else tx['tx_result']['result']
 
         try:
-            await self.db.execute(sql.insert_transaction(), {
-                'hash': tx['tx_result']['hash'],
-                'contract': tx['payload']['contract'],
-                'function': tx['payload']['function'],
-                'sender': tx['payload']['sender'],
-                'nonce': tx['payload']['nonce'],
-                'stamps': tx['tx_result']['stamps_used'],
-                'block_hash': tx['b_meta']['hash'],
-                'block_height': tx['b_meta']['height'],
-                'block_time': tx['b_meta']['nanos'],
-                'success': status,
-                'result': result,
-                'json_content': json.dumps(tx, cls=CustomEncoder),
-                'created': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            })
+            await self.db.execute(sql.insert_transaction(), [
+                tx['tx_result']['hash'],
+                tx['payload']['contract'],
+                tx['payload']['function'],
+                tx['payload']['sender'],
+                tx['payload']['nonce'],
+                tx['tx_result']['stamps_used'],
+                tx['b_meta']['hash'],
+                tx['b_meta']['height'],
+                tx['b_meta']['nanos'],
+                status,
+                result,
+                json.dumps(tx, cls=CustomEncoder),
+                datetime.now()
+            ])
         except Exception as e:
             logger.exception(e)
 
     async def _insert_state_changes(self, tx: dict):
         for state_change in tx['tx_result']['state']:
             try:
-                await self.db.execute(sql.insert_state_changes(), {
-                    'id': None,
-                    'tx_hash': tx['tx_result']['hash'],
-                    'key': state_change['key'],
-                    'value': json.dumps(state_change['value'], cls=CustomEncoder),
-                    'created': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                })
+                await self.db.execute(sql.insert_state_changes(), [
+                    None,
+                    tx['tx_result']['hash'],
+                    state_change['key'],
+                    json.dumps(state_change['value'], cls=CustomEncoder),
+                    datetime.now()
+                ])
             except Exception as e:
                 logger.exception(e)
 
     async def _insert_rewards(self, tx: dict):
         async def insert(type, key, value):
-            await self.db.execute(sql.insert_rewards(), {
-                'id': None,
-                'tx_hash': tx['tx_result']['hash'],
-                'type': type,
-                'key': key,
-                'value': json.dumps(value, cls=CustomEncoder),
-                'created': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            })
+            await self.db.execute(sql.insert_rewards(), [
+                None,
+                tx['tx_result']['hash'],
+                type,
+                key,
+                json.dumps(value, cls=CustomEncoder),
+                datetime.now()
+            ])
 
         # Developer reward
         for address, reward in tx['tx_result']['rewards']['developer_reward'].items():
@@ -149,11 +149,11 @@ class BDS:
                 address = state_change['key'].replace('currency.balances:', '')
                 if key_is_valid(address):
                     try:
-                        await self.db.execute(sql.insert_addresses(), {
-                            'tx_hash': tx['tx_result']['hash'],
-                            'address': address,
-                            'created': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                        })
+                        await self.db.execute(sql.insert_addresses(), [
+                            tx['tx_result']['hash'],
+                            address,
+                            datetime.now()
+                        ])
                     except Exception as e:
                         logger.exception(e)
 
@@ -173,12 +173,12 @@ class BDS:
 
         if tx['payload']['contract'] == 'submission' and tx['payload']['function'] == 'submit_contract':
             try:
-                await self.db.execute(sql.insert_contracts(), {
-                    'tx_hash': tx['tx_result']['hash'],
-                    'name': tx['payload']['kwargs']['name'],
-                    'code': tx['payload']['kwargs']['code'],
-                    'XSC0001': is_XSC0001(tx['payload']['kwargs']['code']),
-                    'created': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                })
+                await self.db.execute(sql.insert_contracts(), [
+                    tx['tx_result']['hash'],
+                    tx['payload']['kwargs']['name'],
+                    tx['payload']['kwargs']['code'],
+                    is_XSC0001(tx['payload']['kwargs']['code']),
+                    datetime.now()
+                ])
             except Exception as e:
                 logger.exception(e)
