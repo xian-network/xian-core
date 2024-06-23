@@ -122,26 +122,29 @@ class BDS:
                 datetime.now()
             ])
 
-        # Developer reward
-        for address, reward in tx['tx_result']['rewards']['developer_reward'].items():
-            try:
-                await insert('developer', address, float(reward))
-            except Exception as e:
-                logger.exception(e)
+        rewards = tx['tx_result']['rewards']
 
-        # Masternode reward
-        for address, reward in tx['tx_result']['rewards']['masternode_reward'].items():
-            try:
-                await insert('masternode', address, float(reward))
-            except Exception as e:
-                logger.exception(e)
+        if rewards:
+            # Developer reward
+            for address, reward in rewards['developer_reward'].items():
+                try:
+                    await insert('developer', address, float(reward))
+                except Exception as e:
+                    logger.exception(e)
 
-        # Foundation reward
-        for address, reward in tx['tx_result']['rewards']['foundation_reward'].items():
-            try:
-                await insert('foundation', address, float(reward))
-            except Exception as e:
-                logger.exception(e)
+            # Masternode reward
+            for address, reward in rewards['masternode_reward'].items():
+                try:
+                    await insert('masternode', address, float(reward))
+                except Exception as e:
+                    logger.exception(e)
+
+            # Foundation reward
+            for address, reward in rewards['foundation_reward'].items():
+                try:
+                    await insert('foundation', address, float(reward))
+                except Exception as e:
+                    logger.exception(e)
 
     async def _insert_addresses(self, tx: dict):
         for state_change in tx['tx_result']['state']:
