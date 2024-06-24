@@ -4,7 +4,7 @@ from xian.utils import store_genesis_block
 import asyncio
 
 
-def init_chain(self, req) -> ResponseInitChain:
+async def init_chain(self, req) -> ResponseInitChain:
     abci_genesis_state = self.genesis["abci_genesis"]
     asyncio.ensure_future(store_genesis_block(self.client, self.nonce_storage, abci_genesis_state))
 

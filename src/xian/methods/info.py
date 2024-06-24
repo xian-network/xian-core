@@ -5,7 +5,7 @@ from xian.utils import (
 )
 
 
-def info(self, req) -> ResponseInfo:
+async def info(self, req) -> ResponseInfo:
     res = ResponseInfo()
     res.app_version = self.app_version
     res.version = req.version
