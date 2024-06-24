@@ -127,13 +127,13 @@ class Xian:
         res = await check_tx.check_tx(self, raw_tx)
         return res
 
-    def finalize_block(self, req):
+    async def finalize_block(self, req):
         """
         Contains the fields of the newly decided block.
         This method is equivalent to the call sequence BeginBlock, [DeliverTx], and EndBlock in the previous version of ABCI.
         """
-        self.upgrader.check_version(req.height)
-        res = finalize_block.finalize_block(self, req)
+        await self.upgrader.check_version(req.height)
+        res = await finalize_block.finalize_block(self, req)
         return res
 
     def commit(self):

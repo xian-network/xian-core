@@ -66,8 +66,8 @@ class ProtocolHandler:
         response = Response(commit=result)
         return write_message(response)
     
-    def finalize_block(self, req) -> bytes:
-        result = self.app.finalize_block(req.finalize_block)
+    async def finalize_block(self, req) -> bytes:
+        result = await self.app.finalize_block(req.finalize_block)
         response = Response(finalize_block=result)
         return write_message(response)
 
