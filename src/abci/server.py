@@ -51,8 +51,8 @@ class ProtocolHandler:
         response = Response(info=result)
         return write_message(response)
 
-    def check_tx(self, req) -> bytes:
-        result = self.app.check_tx(req.check_tx.tx)
+    async def check_tx(self, req) -> bytes:
+        result = await self.app.check_tx(req.check_tx.tx)
         response = Response(check_tx=result)
         return write_message(response)
 

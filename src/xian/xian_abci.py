@@ -118,13 +118,13 @@ class Xian:
         resp = init_chain.init_chain(self, req)
         return resp
 
-    def check_tx(self, raw_tx):
+    async def check_tx(self, raw_tx):
         """
         Technically optional - not involved in processing blocks.
         Guardian of the mempool: every node runs CheckTx before letting a transaction into its local mempool.
         The transaction may come from an external user or another node
         """
-        res = check_tx.check_tx(self, raw_tx)
+        res = await check_tx.check_tx(self, raw_tx)
         return res
 
     def finalize_block(self, req):
@@ -157,12 +157,12 @@ class Xian:
         res = prepare_proposal.prepare_proposal(self, req)
         return res
 
-    def query(self, req):
+    async def query(self, req):
         """
         Query the application state
         Request Ex. http://localhost:26657/abci_query?path="path"
         """
-        res = query.query(self, req)
+        res = await query.query(self, req)
         return res
 
 
