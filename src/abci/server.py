@@ -76,23 +76,23 @@ class ProtocolHandler:
         response = Response(init_chain=result)
         return write_message(response)
 
-    def list_snapshots(self, req) -> bytes:
-        result = self.app.list_snapshots(req.list_snapshots)
+    async def list_snapshots(self, req) -> bytes:
+        result = await self.app.list_snapshots(req.list_snapshots)
         response = Response(list_snapshots=result)
         return write_message(response)
 
-    def offer_snapshot(self, req) -> bytes:
-        result = self.app.offer_snapshot(req.offer_snapshot)
+    async def offer_snapshot(self, req) -> bytes:
+        result = await self.app.offer_snapshot(req.offer_snapshot)
         response = Response(offer_snapshot=result)
         return write_message(response)
 
-    def load_snapshot_chunk(self, req) -> bytes:
-        result = self.app.load_snapshot_chunk(req.load_snapshot_chunk)
+    async def load_snapshot_chunk(self, req) -> bytes:
+        result = await self.app.load_snapshot_chunk(req.load_snapshot_chunk)
         response = Response(load_snapshot_chunk=result)
         return write_message(response)
 
-    def apply_snapshot_chunk(self, req) -> bytes:
-        result = self.app.apply_snapshot_chunk(req.apply_snapshot_chunk)
+    async def apply_snapshot_chunk(self, req) -> bytes:
+        result = await self.app.apply_snapshot_chunk(req.apply_snapshot_chunk)
         response = Response(apply_snapshot_chunk=result)
         return write_message(response)
     
@@ -106,7 +106,7 @@ class ProtocolHandler:
         response = Response(prepare_proposal=result)
         return write_message(response)
 
-    def no_match(self, req) -> bytes:
+    async def no_match(self, req) -> bytes:
         response = Response(
             exception=ResponseException(error="ABCI request not found")
         )
