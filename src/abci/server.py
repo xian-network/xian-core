@@ -61,8 +61,8 @@ class ProtocolHandler:
         response = Response(query=result)
         return write_message(response)
 
-    def commit(self, req) -> bytes:
-        result = self.app.commit()
+    async def commit(self, req) -> bytes:
+        result = await self.app.commit()
         response = Response(commit=result)
         return write_message(response)
     

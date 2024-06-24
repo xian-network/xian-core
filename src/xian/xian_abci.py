@@ -136,11 +136,11 @@ class Xian:
         res = await finalize_block.finalize_block(self, req)
         return res
 
-    def commit(self):
+    async def commit(self):
         """
         Signal the Application to persist the application state. Application is expected to persist its state at the end of this call, before calling ResponseCommit.
         """
-        res = commit.commit(self)
+        res = await commit.commit(self)
         return res
 
     def process_proposal(self, req):
