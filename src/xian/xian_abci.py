@@ -143,18 +143,18 @@ class Xian:
         res = await commit.commit(self)
         return res
 
-    def process_proposal(self, req):
+    async def process_proposal(self, req):
         """
         Contains all information on the proposed block needed to fully execute it.
         """
-        res = process_proposal.process_proposal(self, req)
+        res = await process_proposal.process_proposal(self, req)
         return res
 
-    def prepare_proposal(self, req):
+    async def prepare_proposal(self, req):
         """
         RequestPrepareProposal contains a preliminary set of transactions txs that CometBFT retrieved from the mempool, called raw proposal. The Application can modify this set and return a modified set of transactions via ResponsePrepareProposal.txs .
         """
-        res = prepare_proposal.prepare_proposal(self, req)
+        res = await prepare_proposal.prepare_proposal(self, req)
         return res
 
     async def query(self, req):
