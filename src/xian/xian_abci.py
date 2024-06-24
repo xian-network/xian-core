@@ -98,19 +98,19 @@ class Xian:
         self.static_rewards_amount_validators = 1
         self.current_block_rewards = {}
 
-    def echo(self, req):
+    async def echo(self, req):
         """
         Echo a string to test an ABCI client/server implementation
         """
         res = echo.echo(self, req)
         return res
 
-    def info(self, req):
+    async def info(self, req):
         """
         Called every time the application starts
         Return information about the application state.
         """
-        res = info.info(self, req)
+        res = await info.info(self, req)
         return res
 
     def init_chain(self, req):

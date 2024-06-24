@@ -41,13 +41,13 @@ class ProtocolHandler:
         response = Response(flush=ResponseFlush())
         return write_message(response)
     
-    def echo(self, req) -> bytes:
-        result = self.app.echo(req.echo)
+    async def echo(self, req) -> bytes:
+        result = await self.app.echo(req.echo)
         response = Response(echo=result)
         return write_message(response)
 
-    def info(self, req) -> bytes:
-        result = self.app.info(req.info)
+    async def info(self, req) -> bytes:
+        result = await self.app.info(req.info)
         response = Response(info=result)
         return write_message(response)
 
