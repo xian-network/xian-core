@@ -71,8 +71,8 @@ class ProtocolHandler:
         response = Response(finalize_block=result)
         return write_message(response)
 
-    def init_chain(self, req) -> bytes:
-        result = self.app.init_chain(req.init_chain)
+    async def init_chain(self, req) -> bytes:
+        result = await self.app.init_chain(req.init_chain)
         response = Response(init_chain=result)
         return write_message(response)
 

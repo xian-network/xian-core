@@ -113,9 +113,9 @@ class Xian:
         res = await info.info(self, req)
         return res
 
-    def init_chain(self, req):
+    async def init_chain(self, req):
         """Called once upon genesis."""
-        resp = init_chain.init_chain(self, req)
+        resp = await init_chain.init_chain(self, req)
         return resp
 
     async def check_tx(self, raw_tx):
