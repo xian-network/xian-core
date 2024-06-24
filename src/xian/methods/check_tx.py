@@ -10,7 +10,7 @@ from xian.constants import ErrorCode, OkCode
 import json
 
 
-def check_tx(self, raw_tx) -> ResponseCheckTx:
+async def check_tx(self, raw_tx) -> ResponseCheckTx:
     try:
         tx = decode_transaction_bytes(raw_tx)
         validate_transaction(self.client,self.nonce_storage,tx)

@@ -41,18 +41,18 @@ class ProtocolHandler:
         response = Response(flush=ResponseFlush())
         return write_message(response)
     
-    def echo(self, req) -> bytes:
-        result = self.app.echo(req.echo)
+    async def echo(self, req) -> bytes:
+        result = await self.app.echo(req.echo)
         response = Response(echo=result)
         return write_message(response)
 
-    def info(self, req) -> bytes:
-        result = self.app.info(req.info)
+    async def info(self, req) -> bytes:
+        result = await self.app.info(req.info)
         response = Response(info=result)
         return write_message(response)
 
-    def check_tx(self, req) -> bytes:
-        result = self.app.check_tx(req.check_tx.tx)
+    async def check_tx(self, req) -> bytes:
+        result = await self.app.check_tx(req.check_tx.tx)
         response = Response(check_tx=result)
         return write_message(response)
 
@@ -61,52 +61,52 @@ class ProtocolHandler:
         response = Response(query=result)
         return write_message(response)
 
-    def commit(self, req) -> bytes:
-        result = self.app.commit()
+    async def commit(self, req) -> bytes:
+        result = await self.app.commit()
         response = Response(commit=result)
         return write_message(response)
     
-    def finalize_block(self, req) -> bytes:
-        result = self.app.finalize_block(req.finalize_block)
+    async def finalize_block(self, req) -> bytes:
+        result = await self.app.finalize_block(req.finalize_block)
         response = Response(finalize_block=result)
         return write_message(response)
 
-    def init_chain(self, req) -> bytes:
-        result = self.app.init_chain(req.init_chain)
+    async def init_chain(self, req) -> bytes:
+        result = await self.app.init_chain(req.init_chain)
         response = Response(init_chain=result)
         return write_message(response)
 
-    def list_snapshots(self, req) -> bytes:
-        result = self.app.list_snapshots(req.list_snapshots)
+    async def list_snapshots(self, req) -> bytes:
+        result = await self.app.list_snapshots(req.list_snapshots)
         response = Response(list_snapshots=result)
         return write_message(response)
 
-    def offer_snapshot(self, req) -> bytes:
-        result = self.app.offer_snapshot(req.offer_snapshot)
+    async def offer_snapshot(self, req) -> bytes:
+        result = await self.app.offer_snapshot(req.offer_snapshot)
         response = Response(offer_snapshot=result)
         return write_message(response)
 
-    def load_snapshot_chunk(self, req) -> bytes:
-        result = self.app.load_snapshot_chunk(req.load_snapshot_chunk)
+    async def load_snapshot_chunk(self, req) -> bytes:
+        result = await self.app.load_snapshot_chunk(req.load_snapshot_chunk)
         response = Response(load_snapshot_chunk=result)
         return write_message(response)
 
-    def apply_snapshot_chunk(self, req) -> bytes:
-        result = self.app.apply_snapshot_chunk(req.apply_snapshot_chunk)
+    async def apply_snapshot_chunk(self, req) -> bytes:
+        result = await self.app.apply_snapshot_chunk(req.apply_snapshot_chunk)
         response = Response(apply_snapshot_chunk=result)
         return write_message(response)
     
-    def process_proposal(self, req) -> bytes:
-        result = self.app.process_proposal(req.process_proposal)
+    async def process_proposal(self, req) -> bytes:
+        result = await self.app.process_proposal(req.process_proposal)
         response = Response(process_proposal=result)
         return write_message(response)
     
-    def prepare_proposal(self, req) -> bytes:
-        result = self.app.prepare_proposal(req.prepare_proposal)
+    async def prepare_proposal(self, req) -> bytes:
+        result = await self.app.prepare_proposal(req.prepare_proposal)
         response = Response(prepare_proposal=result)
         return write_message(response)
 
-    def no_match(self, req) -> bytes:
+    async def no_match(self, req) -> bytes:
         response = Response(
             exception=ResponseException(error="ABCI request not found")
         )

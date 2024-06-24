@@ -102,71 +102,71 @@ class Xian:
         self.static_rewards_amount_validators = 1
         self.current_block_rewards = {}
 
-    def echo(self, req):
+    async def echo(self, req):
         """
         Echo a string to test an ABCI client/server implementation
         """
         res = echo.echo(self, req)
         return res
 
-    def info(self, req):
+    async def info(self, req):
         """
         Called every time the application starts
         Return information about the application state.
         """
-        res = info.info(self, req)
+        res = await info.info(self, req)
         return res
 
-    def init_chain(self, req):
+    async def init_chain(self, req):
         """Called once upon genesis."""
-        resp = init_chain.init_chain(self, req)
+        resp = await init_chain.init_chain(self, req)
         return resp
 
-    def check_tx(self, raw_tx):
+    async def check_tx(self, raw_tx):
         """
         Technically optional - not involved in processing blocks.
         Guardian of the mempool: every node runs CheckTx before letting a transaction into its local mempool.
         The transaction may come from an external user or another node
         """
-        res = check_tx.check_tx(self, raw_tx)
+        res = await check_tx.check_tx(self, raw_tx)
         return res
 
-    def finalize_block(self, req):
+    async def finalize_block(self, req):
         """
         Contains the fields of the newly decided block.
         This method is equivalent to the call sequence BeginBlock, [DeliverTx], and EndBlock in the previous version of ABCI.
         """
-        self.upgrader.check_version(req.height)
-        res = finalize_block.finalize_block(self, req)
+        await self.upgrader.check_version(req.height)
+        res = await finalize_block.finalize_block(self, req)
         return res
 
-    def commit(self):
+    async def commit(self):
         """
         Signal the Application to persist the application state. Application is expected to persist its state at the end of this call, before calling ResponseCommit.
         """
-        res = commit.commit(self)
+        res = await commit.commit(self)
         return res
 
-    def process_proposal(self, req):
+    async def process_proposal(self, req):
         """
         Contains all information on the proposed block needed to fully execute it.
         """
-        res = process_proposal.process_proposal(self, req)
+        res = await process_proposal.process_proposal(self, req)
         return res
 
-    def prepare_proposal(self, req):
+    async def prepare_proposal(self, req):
         """
         RequestPrepareProposal contains a preliminary set of transactions txs that CometBFT retrieved from the mempool, called raw proposal. The Application can modify this set and return a modified set of transactions via ResponsePrepareProposal.txs .
         """
-        res = prepare_proposal.prepare_proposal(self, req)
+        res = await prepare_proposal.prepare_proposal(self, req)
         return res
 
-    def query(self, req):
+    async def query(self, req):
         """
         Query the application state
         Request Ex. http://localhost:26657/abci_query?path="path"
         """
-        res = query.query(self, req)
+        res = await query.query(self, req)
         return res
 
 

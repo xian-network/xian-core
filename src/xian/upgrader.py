@@ -16,7 +16,7 @@ class UpgradeHandler:
         self.current_version = "v1"
         self.app = app
 
-    def change_version(self, version: str):
+    async def change_version(self, version: str):
         """
         This function changes the working version of modules by dynamically loading
         modules based on the specified version. For version 'v1', it looks for files without
@@ -37,7 +37,7 @@ class UpgradeHandler:
         except Exception as e:
             raise Exception(f"Upgrade failed: {e}")
 
-    def _load_module(self, file, root, project_dir):
+    async def _load_module(self, file, root, project_dir):
         """
         Helper function to load or reload a module given its filename and directory.
         """
@@ -54,7 +54,7 @@ class UpgradeHandler:
         # Explicitly collect garbage
         gc.collect()
            
-    def check_version(self, block_height: int):
+    async def check_version(self, block_height: int):
         """
         Check if a version change is required based on the current block height.
         """

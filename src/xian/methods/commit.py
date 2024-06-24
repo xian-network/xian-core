@@ -5,7 +5,7 @@ from xian.utils import (
 )
 
 
-def commit(self) -> ResponseCommit:
+async def commit(self) -> ResponseCommit:
     # commit block to filesystem db
     set_latest_block_hash(self.fingerprint_hash, self.client.raw_driver)
     set_latest_block_height(self.current_block_meta["height"], self.client.raw_driver)
