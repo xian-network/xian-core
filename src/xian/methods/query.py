@@ -3,6 +3,7 @@ import json
 import ast
 import re
 import asyncio
+
 from cometbft.abci.v1beta1.types_pb2 import ResponseQuery
 from xian.utils import encode_str
 from xian.constants import (
@@ -27,15 +28,14 @@ async def query(self, req) -> ResponseQuery:
     (Yes you need to quote the path)
     """
 
+    logger.debug(req.path)
+    path_parts = [part for part in req.path.split("/") if part]
+
     loop = asyncio.get_event_loop()
     result = None
     key = ""
 
     try:
-        logger.debug(req.path)
-        request_path = req.path
-        path_parts = [part for part in request_path.split("/") if part]
-
         # http://localhost:26657/abci_query?path="/get/currency.balances:c93dee52d7dc6cc43af44007c3b1dae5b730ccf18a9e6fb43521f8e4064561e6"
         if path_parts and path_parts[0] == "get":
             result = await loop.run_in_executor(None, self.client.raw_driver.get, path_parts[1])
@@ -128,26 +128,29 @@ async def query(self, req) -> ResponseQuery:
                 tx = json.loads(tx_hex)
                 result = await loop.run_in_executor(None, self.stamp_calculator.execute, tx)
 
-        if result is not None:
-            if isinstance(result, str):
-                v = encode_str(result)
-                type_of_data = "str"
-            elif isinstance(result, int):
-                v = encode_str(str(result))
-                type_of_data = "int"
-            elif isinstance(result, float) or isinstance(result, ContractingDecimal):
-                v = encode_str(str(result))
-                type_of_data = "decimal"
-            elif isinstance(result, dict) or isinstance(result, list):
-                v = encode_str(json.dumps(result, cls=Encoder))
-                type_of_data = "str"
-            else:
-                v = encode_str(str(result))
-                type_of_data = "str"
         else:
             error = f'Unknown query path: {path_parts[0]}'
             logger.error(error)
             return ResponseQuery(code=ErrorCode, value=b"\x00", info=None, log=error)
+
+        if result is None:
+            v = None
+            type_of_data = None
+        elif isinstance(result, str):
+            v = encode_str(result)
+            type_of_data = "str"
+        elif isinstance(result, int):
+            v = encode_str(str(result))
+            type_of_data = "int"
+        elif isinstance(result, float) or isinstance(result, ContractingDecimal):
+            v = encode_str(str(result))
+            type_of_data = "decimal"
+        elif isinstance(result, dict) or isinstance(result, list):
+            v = encode_str(json.dumps(result, cls=Encoder))
+            type_of_data = "str"
+        else:
+            v = encode_str(str(result))
+            type_of_data = "str"
 
     except Exception as err:
         logger.error(err)
