@@ -13,6 +13,7 @@ Please delete options that are not relevant.
 ## Checklist
 
 - [ ] I have performed a self-review of my own code
+- [ ] I have tested this change in my development environment.
 - [ ] I have added tests to prove that this change works
 - [ ] All existing tests pass after this change
 - [ ] I have added / updated documentation related to this change
