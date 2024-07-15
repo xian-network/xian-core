@@ -232,6 +232,7 @@ class TxProcessor:
         block_meta = tx["b_meta"]
         nanos = block_meta["nanos"]
         signature = tx['metadata']['signature']
+        chain_id = block_meta["chain_id"]
 
         # Nanos is set at the time of block being processed, and is shared between all txns in a block.
         # TODO : confirm this w/ CometBFT docs.
@@ -239,14 +240,12 @@ class TxProcessor:
         # it's set during the consensus agreement & voting for block between all validators.
 
         return {
-            # TODO: review
             'block_hash': block_meta["hash"],  # hash nanos
             'block_num': block_meta["height"],  # block number
-            # TODO: review
-            # Used for deterministic entropy for random games
             '__input_hash': self.get_timestamp_hash_from_tx(nanos, signature),
             'now': self.get_now_from_nanos(nanos=nanos),
-            'AUXILIARY_SALT': signature
+            'AUXILIARY_SALT': signature,
+            'chain_id': chain_id,
         }
 
     def get_timestamp_hash_from_tx(self, nanos, signature):

@@ -32,6 +32,7 @@ async def finalize_block(self, req) -> ResponseFinalizeBlock:
         "nanos": nanos,
         "height": height,
         "hash": hash,
+        "chain_id": self.chain_id,
     }   
 
     for tx in req.txs:
