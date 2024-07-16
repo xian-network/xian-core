@@ -5,8 +5,7 @@ from datetime import datetime
 from xian.services.bds import sql
 from xian.services.bds.config import Config
 from contracting.stdlib.bridge.decimal import ContractingDecimal
-from xian_py.xian_datetime import Timedelta
-from contracting.stdlib.bridge.time import Datetime
+from contracting.stdlib.bridge.time import Datetime, Timedelta
 from xian_py.wallet import key_is_valid
 from timeit import default_timer as timer
 from xian.services.bds.database import DB
