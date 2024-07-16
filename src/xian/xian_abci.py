@@ -177,8 +177,11 @@ def main():
         sys.stderr,
         level='DEBUG')
 
+    start_path = os.path.dirname(os.path.realpath(__file__))
+    log_path = os.path.realpath(os.path.join(start_path, '..', '..'))
+
     logger.add(
-        os.path.join('log', '{time}.log'),
+        os.path.join(log_path, 'logs', '{time}.log'),
         retention=timedelta(days=3),
         format='{time} {level} {name} {message}',
         level='DEBUG',
