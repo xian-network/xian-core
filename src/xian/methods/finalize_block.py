@@ -63,7 +63,6 @@ async def finalize_block(self, req) -> ResponseFinalizeBlock:
             )
         )
 
-        # TODO: Make async
         if self.block_service_mode:
             asyncio.create_task(self.bds.insert_full_data(tx | result))
 
