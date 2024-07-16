@@ -2,6 +2,7 @@ import os
 import unittest
 from io import BytesIO
 import logging
+import asyncio
 
 from xian.constants import OkCode, ErrorCode
 from xian.xian_abci import Xian
@@ -22,7 +23,7 @@ logging.disable(logging.CRITICAL)
 
 os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
 
-def deserialize(raw: bytes) -> Response:
+async def deserialize(raw: bytes) -> Response:
     try:
         resp = next(read_messages(BytesIO(raw), Response))
         return resp
@@ -30,21 +31,22 @@ def deserialize(raw: bytes) -> Response:
         logging.error("Deserialization error: %s", e)
         raise
 
-class TestCommit(unittest.TestCase):
+class TestCommit(unittest.IsolatedAsyncioTestCase):
 
-    def setUp(self):
+    async def asyncSetUp(self):
         self.app = Xian()
+        self.app.client.raw_driver.flush_full()
         self.app.current_block_meta = {"height": 0, "nanos": 0}
         self.handler = ProtocolHandler(self.app)
 
-    def process_request(self, request_type, req):
-        raw = self.handler.process(request_type, req)
-        resp = deserialize(raw)
+    async def process_request(self, request_type, req):
+        raw = await self.handler.process(request_type, req)
+        resp = await deserialize(raw)
         return resp
 
-    def test_commit(self):
+    async def test_commit(self):
         request = Request(commit=RequestCommit())
-        response = self.process_request("commit", request)
+        response = await self.process_request("commit", request)
         self.assertEqual(response.commit.retain_height, 0)
 
 if __name__ == "__main__":
