@@ -1,5 +1,4 @@
 import json
-import asyncio
 
 from loguru import logger
 from datetime import datetime
