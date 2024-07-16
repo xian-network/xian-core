@@ -24,8 +24,8 @@ from xian.methods import (
 )
 from xian.upgrader import UpgradeHandler
 from xian.validators import ValidatorHandler
-from xian.storage import NonceStorage
-from xian.services.stamp_estimator import StampCalculator
+from xian.nonce import NonceStorage
+from xian.services.stamp_calculator import StampCalculator
 from xian.processor import TxProcessor
 from xian.rewards import RewardsHandler
 
