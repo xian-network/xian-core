@@ -2,6 +2,7 @@ import os
 import unittest
 from io import BytesIO
 import logging
+import asyncio
 
 from xian.constants import OkCode, ErrorCode
 from xian.xian_abci import Xian
@@ -25,7 +26,7 @@ logging.disable(logging.CRITICAL)
 
 os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
 
-def deserialize(raw: bytes) -> Response:
+async def deserialize(raw: bytes) -> Response:
     try:
         resp = next(read_messages(BytesIO(raw), Response))
         return resp
@@ -33,23 +34,23 @@ def deserialize(raw: bytes) -> Response:
         logging.error("Deserialization error: %s", e)
         raise
 
-class TestInfo(unittest.TestCase):
+class TestInfo(unittest.IsolatedAsyncioTestCase):
 
-    def setUp(self):
+    async def asyncSetUp(self):
         self.app = Xian()
         self.handler = ProtocolHandler(self.app)
 
-    def process_request(self, request_type, req):
-        raw = self.handler.process(request_type, req)
-        resp = deserialize(raw)
+    async def process_request(self, request_type, req):
+        raw = await self.handler.process(request_type, req)
+        resp = await deserialize(raw)
         return resp
 
-    def test_info(self):
+    async def test_info(self):
         request = Request(info=RequestInfo())
-        response = self.process_request("info", request)
+        response = await self.process_request("info", request)
         self.assertEqual(response.info.app_version, 1)
-        self.assertEqual(response.info.data, "") # We dont use that
-        self.assertEqual(response.info.version, "") # Not running CometBFT
+        self.assertEqual(response.info.data, "")  # We don't use that
+        self.assertEqual(response.info.version, "")  # Not running CometBFT
         self.assertEqual(response.info.last_block_height, 0)
         self.assertEqual(response.info.last_block_app_hash, b"")
 
