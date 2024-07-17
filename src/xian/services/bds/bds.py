@@ -68,7 +68,7 @@ class BDS:
 
         # Contracts
         start_time = timer()
-        await self.insert_contracts(tx)
+        await self._insert_contracts(tx)
         logger.debug(f'Saved contracts in {timer() - start_time:.3f} seconds')
 
         logger.debug(f'Processed tx {tx["tx_result"]["hash"]} in {timer() - total_time:.3f} seconds')
@@ -158,7 +158,7 @@ class BDS:
                     except Exception as e:
                         logger.exception(e)
 
-    async def insert_contracts(self, tx: dict):
+    async def _insert_contracts(self, tx: dict):
         def is_XSC0001(code: str):
             code = code.replace(' ', '')
 
@@ -183,3 +183,12 @@ class BDS:
                 ])
             except Exception as e:
                 logger.exception(e)
+
+    async def get_state_history(self, key: str):
+        try:
+            result = await self.db.fetch(sql.select_state_history(), [key])
+            result_lists = [[value for value in record.values()] for record in result]
+            result_json = json.dumps(result_lists, default=str)
+            return result_json
+        except Exception as e:
+            logger.exception(e)

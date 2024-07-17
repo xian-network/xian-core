@@ -70,8 +70,13 @@ async def query(self, req) -> ResponseQuery:
         elif path_parts[0] == "ping":
             result = {'status': 'online'}
 
-        # BLOCK SERVICE MODE
+        # SERVICE NODE MODE
         if self.block_service_mode:
+            # http://localhost:26657/abci_query?path="/state_history/currency.balances:ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9"
+            if path_parts[0] == "state_history":
+                key = path_parts[1]
+                result = await self.bds.get_state_history(key)
+
             # http://localhost:26657/abci_query?path="/keys/currency.balances"
             if path_parts[0] == "keys":
                 list_of_keys = await loop.run_in_executor(None, self.client.raw_driver.keys, path_parts[1])
