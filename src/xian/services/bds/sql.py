@@ -120,3 +120,12 @@ def insert_contracts():
         $1, $2, $3, $4, $5)
     ON CONFLICT (name) DO NOTHING;
     """
+
+
+def select_state_history():
+    return """
+    SELECT key, value, tx_hash, created
+    FROM state_changes
+    WHERE key = $1
+    ORDER BY created DESC
+    """
