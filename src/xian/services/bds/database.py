@@ -20,9 +20,25 @@ class DB:
         )
 
     async def execute(self, query: str, params: list = []):
+        """
+        This is meant for INSERT, UPDATE and DELETE statements
+        that usually don't return data
+        """
         async with self.pool.acquire() as connection:
             try:
                 result = await connection.execute(query, *params)
+                return result
+            except Exception as e:
+                logger.exception(f'Error while executing SQL: {e}')
+                raise e
+
+    async def fetch(self, query: str, params: list = []):
+        """
+        This is meant for statement like SELECT that return data
+        """
+        async with self.pool.acquire() as connection:
+            try:
+                result = await connection.fetch(query, *params)
                 return result
             except Exception as e:
                 logger.exception(f'Error while executing SQL: {e}')
