@@ -119,9 +119,8 @@ async def query(self, req) -> ResponseQuery:
                 except:
                     result = {"stdout": "", "stderr": ""}
 
-            # TODO: Deprecated - Remove after tooling adjusted to 'calculate_stamps' endpoint
-            # http://localhost:26657/abci_query?path="/estimate_stamps/<encoded_tx>"
-            elif path_parts[0] == "calculate_stamps" or path_parts[0] == "estimate_stamps":
+            # http://localhost:26657/abci_query?path="/calculate_stamps/<encoded_tx>"
+            elif path_parts[0] == "calculate_stamps":
                 raw_tx = path_parts[1]
                 byte_data = bytes.fromhex(raw_tx)
                 tx_hex = byte_data.decode("utf-8")
