@@ -34,7 +34,7 @@ class DB:
 
     async def fetch(self, query: str, params: list = []):
         """
-        This is meant for statement like SELECT that return data
+        This is meant for SELECT statements that return data
         """
         async with self.pool.acquire() as connection:
             try:
