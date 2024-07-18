@@ -15,7 +15,8 @@ from xian.services.bds.database import DB
 class CustomEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, ContractingDecimal):
-            return str(obj)
+            v = float(str(obj))
+            return int(v) if v.is_integer() else v
         if isinstance(obj, Datetime):
             return str(obj)
         if isinstance(obj, Timedelta):
