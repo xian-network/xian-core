@@ -81,7 +81,8 @@ async def query(self, req) -> ResponseQuery:
                     offset = int(path_parts[2])
                 elif len(path_parts) == 4:
                     offset = int(path_parts[2]) 
-                    limit = int(path_parts[3])
+                    _limit = int(path_parts[3])
+                    limit = limit if _limit > limit else _limit
                 result = await self.bds.get_state_history(key, offset, limit)
 
             # http://localhost:26657/abci_query?path="/keys/currency.balances"
