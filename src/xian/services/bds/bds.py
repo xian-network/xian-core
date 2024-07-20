@@ -210,9 +210,13 @@ class BDS:
             except Exception as e:
                 logger.exception(e)
 
-    async def get_state_history(self, key: str):
+    async def get_state_history(self, key: str, offset: int, limit: int):
         try:
-            result = await self.db.fetch(sql.select_state_history(), [key])
+            result = None
+            if offset is None:
+                result = await self.db.fetch(sql.select_state_history(), [key, limit])
+            else:
+                result = await self.db.fetch(sql.select_state_history_by_offset(), [key, offset, limit])
 
             results = []
             for row in result:
