@@ -72,10 +72,18 @@ async def query(self, req) -> ResponseQuery:
 
         # SERVICE NODE MODE
         if self.block_service_mode:
-            # http://localhost:26657/abci_query?path="/state_history/currency.balances:ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9"
+            # http://localhost:26657/abci_query?path="/state_history/currency.balances:ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9/<offset>/<limit>"
             if path_parts[0] == "state_history":
                 key = path_parts[1]
-                result = await self.bds.get_state_history(key)
+                offset = None
+                limit = 100  # default
+                if len(path_parts) == 3:
+                    # when an offset value is passed without a limit value, use default limit
+                    offset = int(path_parts[2])
+                elif len(path_parts) == 4:
+                    offset = int(path_parts[2]) 
+                    limit = int(path_parts[3])
+                result = await self.bds.get_state_history(key, offset, limit)
 
             # http://localhost:26657/abci_query?path="/keys/currency.balances"
             if path_parts[0] == "keys":
