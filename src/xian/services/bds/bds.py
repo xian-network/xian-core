@@ -213,8 +213,20 @@ class BDS:
     async def get_state_history(self, key: str):
         try:
             result = await self.db.fetch(sql.select_state_history(), [key])
-            result_lists = [[value for value in record.values()] for record in result]
-            result_json = json.dumps(result_lists, default=str)
-            return result_json
+
+            results = []
+            for row in result:
+                row_dict = dict(row)
+                try:
+                    # Parse the value column if it contains JSON
+                    row_dict['value'] = json.loads(row_dict['value'])
+                except (json.JSONDecodeError, TypeError):
+                    pass
+                results.append(row_dict)
+
+            # Convert the list of dictionaries to JSON
+            results_json = json.dumps(results, default=str)
+
+            return results_json
         except Exception as e:
             logger.exception(e)

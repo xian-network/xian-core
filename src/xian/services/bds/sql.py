@@ -124,8 +124,15 @@ def insert_contracts():
 
 def select_state_history():
     return """
-    SELECT key, value, tx_hash, created
-    FROM state_changes
-    WHERE key = $1
-    ORDER BY created DESC
+    SELECT
+        key,
+        value,
+        tx_hash,
+        created
+    FROM
+        state_changes
+    WHERE
+        key = $1
+    ORDER BY
+        created DESC;
     """
