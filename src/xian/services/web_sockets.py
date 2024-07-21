@@ -34,6 +34,6 @@ class WebSocketServer:
     async def start(self):
         start_server = websockets.serve(
             self.websocket_handler,
-            "localhost", 8765
+            "localhost", 7654
         )
         await start_server
