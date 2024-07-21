@@ -9,6 +9,7 @@ from contracting.stdlib.bridge.time import Datetime, Timedelta
 from xian_py.wallet import key_is_valid
 from timeit import default_timer as timer
 from xian.services.bds.database import DB
+from xian.services.bds.websocket_server import WebSocketServer
 
 
 # Custom JSON encoder for our own objects
@@ -51,11 +52,16 @@ class CustomEncoder(json.JSONEncoder):
 
 class BDS:
     db = None
+    ws = None
 
     async def init(self):
         self.db = DB(Config('config.json'))
+        self.ws = WebSocketServer(self)
+
+        await self.ws.start()
         await self.db.init_pool()
         await self.__init_tables()
+
         logger.info('BDS service initialized')
         return self
 
@@ -132,6 +138,10 @@ class BDS:
                     json.dumps(state_change['value'], cls=CustomEncoder),
                     datetime.now()
                 ])
+
+                # Notify websocket subscribers about changed state
+                await self.ws.notify_subscribers(state_change['key'], state_change['value'])
+
             except Exception as e:
                 logger.exception(e)
 
@@ -210,13 +220,9 @@ class BDS:
             except Exception as e:
                 logger.exception(e)
 
-    async def get_state_history(self, key: str, offset: int, limit: int):
+    async def get_state_history(self, key: str, limit: int = 100, offset: int = 0):
         try:
-            result = None
-            if offset is None:
-                result = await self.db.fetch(sql.select_state_history(), [key, limit])
-            else:
-                result = await self.db.fetch(sql.select_state_history_by_offset(), [key, offset, limit])
+            result = await self.db.fetch(sql.select_state_history(), [key, limit, offset])
 
             results = []
             for row in result:

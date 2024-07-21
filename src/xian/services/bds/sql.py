@@ -124,21 +124,6 @@ def insert_contracts():
 
 def select_state_history():
     return """
-    SELECT
-        key,
-        value,
-        tx_hash,
-        created
-    FROM
-        state_changes
-    WHERE
-        key = $1
-    ORDER BY
-        created DESC;
-    """
-
-def select_state_history_by_offset():
-    return """
     SELECT 
         key, 
         value, 
@@ -150,5 +135,5 @@ def select_state_history_by_offset():
         key = $1
     ORDER BY 
         created DESC
-    LIMIT $3 OFFSET $2
+    LIMIT $2 OFFSET $3
     """

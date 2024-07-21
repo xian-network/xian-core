@@ -30,7 +30,6 @@ async def query(self, req) -> ResponseQuery:
 
     logger.debug(req.path)
     path_parts = [part for part in req.path.split("/") if part]
-
     loop = asyncio.get_event_loop()
     result = None
     key = ""
@@ -72,18 +71,24 @@ async def query(self, req) -> ResponseQuery:
 
         # SERVICE NODE MODE
         if self.block_service_mode:
-            # http://localhost:26657/abci_query?path="/state_history/currency.balances:ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9/<offset>/<limit>"
+            # http://localhost:26657/abci_query?path="/state_history/currency.balances:ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9/limit=10/offset=20"
             if path_parts[0] == "state_history":
                 key = path_parts[1]
-                offset = None
-                limit = 100  # default
-                if len(path_parts) == 3:
-                    offset = int(path_parts[2])
-                elif len(path_parts) == 4:
-                    offset = int(path_parts[2]) 
-                    _limit = int(path_parts[3])
-                    limit = limit if _limit > limit else _limit
-                result = await self.bds.get_state_history(key, offset, limit)
+                limit = 100
+                offset = 0
+
+                params = dict()
+                for path in path_parts:
+                    if '=' in path:
+                        param_list = path.split('=')
+                        params[param_list[0]] = param_list[1]
+
+                if 'limit' in params:
+                    limit = int(params['limit'])
+                if 'offset' in params:
+                    offset = int(params['offset'])
+
+                result = await self.bds.get_state_history(key, limit, offset)
 
             # http://localhost:26657/abci_query?path="/keys/currency.balances"
             if path_parts[0] == "keys":
