@@ -122,6 +122,13 @@ def decode_transaction_bytes(raw):
     tx_json = json.loads(tx_str)
     return tx_json
 
+def encode_transaction(tx):
+    tx_str = json.dumps(tx)
+    tx_bytes = tx_str.encode("utf-8")
+    tx_hex = tx_bytes.hex()
+    tx_encoded_bytes = tx_hex.encode("utf-8")
+    return tx_encoded_bytes
+
 
 def unpack_transaction(tx):
     timestamp = tx["metadata"].get("timestamp", None)
