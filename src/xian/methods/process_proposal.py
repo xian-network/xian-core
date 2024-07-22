@@ -11,5 +11,6 @@ async def process_proposal(self, req) -> ResponseProcessProposal:
             continue
     if txs != sorted(txs):
         response.status = ResponseProcessProposal.ProposalStatus.REJECT
-    response.status = ResponseProcessProposal.ProposalStatus.ACCEPT
+    else:
+        response.status = ResponseProcessProposal.ProposalStatus.ACCEPT
     return response
