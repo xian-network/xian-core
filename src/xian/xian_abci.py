@@ -3,7 +3,7 @@ import importlib
 import sys
 import gc
 
-from .config import Config
+from .config import CoreConfig
 
 os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
 
@@ -64,7 +64,7 @@ def load_module(module_path, original_module_path):
 
 
 class Xian:
-    def __init__(self, core_config=Config()):
+    def __init__(self, core_config=CoreConfig()):
         try:
             self.cometbft_config = load_tendermint_config(core_config)
             self.genesis = load_genesis_data(core_config)

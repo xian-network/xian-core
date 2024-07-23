@@ -1,6 +1,6 @@
 from pathlib import Path
 
-class Config:
+class CoreConfig:
     COMETBFT_HOME = Path.home() / Path(".cometbft/")
     COMETBFT_CONFIG = COMETBFT_HOME / Path("config/config.toml")
     COMETBFT_GENESIS = COMETBFT_HOME / Path("config/genesis.json")
