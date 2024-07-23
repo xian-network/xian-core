@@ -41,6 +41,8 @@ from cometbft.abci.v1beta2.types_pb2 import (
 from cometbft.types.v1.params_pb2 import ConsensusParams
 from cometbft.crypto.v1.keys_pb2 import PublicKey
 
+from fixtures.test_config import TestConfig
+
 # Disable any kind of logging
 logging.disable(logging.CRITICAL)
 
@@ -57,8 +59,7 @@ async def deserialize(raw: bytes) -> Response:
 class TestXianHandler(unittest.IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self):
-        self.app = Xian()
-        self.app.client.raw_driver.flush_full()
+        self.app = Xian(core_config=TestConfig())
         self.app.current_block_meta = {"height": 0, "nanos": 0}
         self.handler = ProtocolHandler(self.app)
 

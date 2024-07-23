@@ -18,6 +18,8 @@ from cometbft.abci.v1beta1.types_pb2 import (
     RequestCommit,
 )
 
+from fixtures.test_config import TestConfig
+
 # Disable any kind of logging
 logging.disable(logging.CRITICAL)
 
@@ -34,8 +36,7 @@ async def deserialize(raw: bytes) -> Response:
 class TestCommit(unittest.IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self):
-        self.app = Xian()
-        self.app.client.raw_driver.flush_full()
+        self.app = Xian(core_config=TestConfig())
         self.app.current_block_meta = {"height": 0, "nanos": 0}
         self.handler = ProtocolHandler(self.app)
 

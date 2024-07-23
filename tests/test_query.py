@@ -7,6 +7,7 @@ from xian.constants import OkCode, ErrorCode
 from xian.xian_abci import Xian
 from abci.server import ProtocolHandler
 from abci.utils import read_messages
+from fixtures.test_config import TestConfig
 
 from cometbft.abci.v1beta3.types_pb2 import (
     Request,
@@ -36,10 +37,8 @@ async def deserialize(raw: bytes) -> Response:
 class TestInfo(unittest.IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self):
-        self.app = Xian()
-        self.app.client.raw_driver.flush_full()
-        self.app.current_block_meta = {"height": 0, "nanos": 0}
-
+        self.app = Xian(core_config=TestConfig())
+        self.app.current_block_meta = {"height": 0, "nanos": 0, "chain_id": "test_chain"}
         self.app.client.raw_driver.set_contract("currency", '''balances = Hash(default_value=0)
 
 @construct
@@ -132,8 +131,10 @@ def transfer_from(amount: float, to: str, main_account: str):
         self.assertEqual(response.query.code, OkCode)
         self.assertEqual(response.query.info, "str")
         self.assertEqual(response.query.key, b"")
-        self.assertEqual(result["status"], ErrorCode)
-        self.assertEqual(result["stamps_used"], 1)
+        self.assertEqual(result["status"], OkCode)
+        # Accounting for the fact that the stamp calculation is not deterministic between different architectures e.g (M2 Max vs AMD64).
+        # However, in the blockchain environment the stamp calculation is deterministic.
+        self.assertGreater(result["stamps_used"], 200)
 
 
     async def test_health_query(self):
