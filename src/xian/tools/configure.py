@@ -8,6 +8,8 @@ import hashlib
 from time import sleep
 from pathlib import Path
 from argparse import ArgumentParser
+
+from xian.constants import TENDERMINT_GENESIS
 from nacl.signing import SigningKey
 from nacl.encoding import HexEncoder, Base64Encoder
 from argparse import BooleanOptionalAction
@@ -304,7 +306,8 @@ class Configure:
 
             # REWORK to PATH
             genesis_path = os.path.normpath(os.path.join('genesis', self.args.genesis_file_name))
-            target_path = os.path.join(os.path.expanduser('~'), '.cometbft', 'config', 'genesis.json')
+            target_path = TENDERMINT_GENESIS
+            breakpoint()
             os.system(f'cp {genesis_path} {target_path}')
 
         if self.args.validator_privkey:

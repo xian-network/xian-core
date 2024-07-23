@@ -1,6 +1,7 @@
 import json
 import struct
 import toml
+from .config import CoreConfig
 import nacl
 import nacl.encoding
 import nacl.signing
@@ -67,7 +68,6 @@ def verify(vk: str, msg: str, signature: str):
     vk = bytes.fromhex(vk)
     msg = msg.encode()
     signature = bytes.fromhex(signature)
-
     vk = nacl.signing.VerifyKey(vk)
     try:
         vk.verify(msg, signature)
@@ -163,20 +163,20 @@ def convert_binary_to_hex(binary_data):
         raise
 
 
-def load_tendermint_config():
-    if not (c.TENDERMINT_HOME.exists() and c.TENDERMINT_HOME.is_dir()):
-        raise FileNotFoundError("You must initialize Tendermint first")
-    if not (c.TENDERMINT_CONFIG.exists() and c.TENDERMINT_CONFIG.is_file()):
-        raise FileNotFoundError(f"File not found: {c.TENDERMINT_CONFIG}")
+def load_tendermint_config(config: CoreConfig):
+    if not (config.COMETBFT_HOME.exists() and config.COMETBFT_HOME.is_dir()):
+        raise FileNotFoundError("You must initialize CometBFT first")
+    if not (config.COMETBFT_CONFIG.exists() and config.COMETBFT_CONFIG.is_file()):
+        raise FileNotFoundError(f"File not found: {config.COMETBFT_CONFIG}")
 
-    return toml.load(c.TENDERMINT_CONFIG)
+    return toml.load(config.COMETBFT_CONFIG)
 
 
-def load_genesis_data():
-    if not (c.TENDERMINT_GENESIS.exists() and c.TENDERMINT_GENESIS.is_file()):
-        raise FileNotFoundError(f"File not found: {c.TENDERMINT_GENESIS}")
+def load_genesis_data(config: CoreConfig):
+    if not (config.COMETBFT_GENESIS.exists() and config.COMETBFT_GENESIS.is_file()):
+        raise FileNotFoundError(f"File not found: {config.COMETBFT_GENESIS}")
 
-    with open(c.TENDERMINT_GENESIS, "r") as file:
+    with open(config.COMETBFT_GENESIS, "r") as file:
         return json.load(file)
 
 
