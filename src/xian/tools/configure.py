@@ -307,7 +307,6 @@ class Configure:
             # REWORK to PATH
             genesis_path = os.path.normpath(os.path.join('genesis', self.args.genesis_file_name))
             target_path = COMETBFT_GENESIS
-            breakpoint()
             os.system(f'cp {genesis_path} {target_path}')
 
         if self.args.validator_privkey:
