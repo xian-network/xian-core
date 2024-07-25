@@ -11,7 +11,7 @@ import os
 import sys
 from loguru import logger
 from contracting.stdlib.bridge.time import Datetime
-from fixtures.test_config import TestConfig
+from fixtures.test_constants import TestConstants
 
 # Get the directory where the script is located
 script_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
@@ -48,8 +48,7 @@ TEST_SUBMISSION_KWARGS = {
 class MyTestCase(unittest.TestCase):
 
     def setUp(self):
-        core_config = TestConfig()
-        self.c = ContractingClient(storage_home=core_config.STORAGE_HOME)
+        self.c = ContractingClient(storage_home=TestConstants.STORAGE_HOME)
         self.tx_processor = TxProcessor(client=self.c)
         # Hard load the submission contract
         self.d = self.c.raw_driver

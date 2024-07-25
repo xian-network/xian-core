@@ -5,7 +5,7 @@ from xian.utils import (
     verify,
     validate_transaction
 )
-from xian.constants import ErrorCode, OkCode
+from xian.constants import Constants as c
 
 import json
 
@@ -16,10 +16,10 @@ async def check_tx(self, raw_tx) -> ResponseCheckTx:
         validate_transaction(self.client,self.nonce_storage,tx)
         sender, signature, payload = unpack_transaction(tx)
         if not verify(sender, payload, signature):
-            return ResponseCheckTx(code=ErrorCode, log="Bad signature")
+            return ResponseCheckTx(code=c.ErrorCode, log="Bad signature")
         payload_json = json.loads(payload)
         if payload_json["chain_id"] != self.chain_id:
-            return ResponseCheckTx(code=ErrorCode, log="Wrong chain_id")
-        return ResponseCheckTx(code=OkCode)
+            return ResponseCheckTx(code=c.ErrorCode, log="Wrong chain_id")
+        return ResponseCheckTx(code=c.OkCode)
     except Exception as e:
-        return ResponseCheckTx(code=ErrorCode, log=f"{type(e).__name__}: {e}")
+        return ResponseCheckTx(code=c.ErrorCode, log=f"{type(e).__name__}: {e}")

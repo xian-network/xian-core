@@ -1,7 +1,7 @@
 import json
 import struct
 import toml
-from xian.config import CoreConfig
+from xian.constants import Constants
 import nacl
 import nacl.encoding
 import nacl.signing
@@ -9,7 +9,7 @@ import hashlib
 import marshal
 import binascii
 
-import xian.constants as c
+from xian.constants import Constants as c
 
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 from contracting.stdlib.bridge.time import Datetime
@@ -163,7 +163,7 @@ def convert_binary_to_hex(binary_data):
         raise
 
 
-def load_tendermint_config(config: CoreConfig):
+def load_tendermint_config(config: Constants):
     if not (config.COMETBFT_HOME.exists() and config.COMETBFT_HOME.is_dir()):
         raise FileNotFoundError("You must initialize CometBFT first")
     if not (config.COMETBFT_CONFIG.exists() and config.COMETBFT_CONFIG.is_file()):
@@ -172,7 +172,7 @@ def load_tendermint_config(config: CoreConfig):
     return toml.load(config.COMETBFT_CONFIG)
 
 
-def load_genesis_data(config: CoreConfig):
+def load_genesis_data(config: Constants):
     if not (config.COMETBFT_GENESIS.exists() and config.COMETBFT_GENESIS.is_file()):
         raise FileNotFoundError(f"File not found: {config.COMETBFT_GENESIS}")
 
