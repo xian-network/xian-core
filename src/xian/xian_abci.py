@@ -3,7 +3,7 @@ import importlib
 import sys
 import gc
 
-from .config import CoreConfig
+from xian.config import CoreConfig
 
 os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
 
