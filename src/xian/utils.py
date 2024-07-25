@@ -1,7 +1,7 @@
 import json
 import struct
 import toml
-from .config import CoreConfig
+from xian.config import CoreConfig
 import nacl
 import nacl.encoding
 import nacl.signing
