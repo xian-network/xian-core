@@ -6,10 +6,8 @@ import asyncio
 
 from cometbft.abci.v1beta1.types_pb2 import ResponseQuery
 from xian.utils import encode_str
-from xian.constants import (
-    OkCode,
-    ErrorCode
-)
+from xian.constants import Constants as c
+
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 from contracting.compilation import parser
 from contracting.compilation.linter import Linter
@@ -131,7 +129,7 @@ async def query(self, req) -> ResponseQuery:
         else:
             error = f'Unknown query path: {path_parts[0]}'
             logger.error(error)
-            return ResponseQuery(code=ErrorCode, value=b"\x00", info=None, log=error)
+            return ResponseQuery(code=c.ErrorCode, value=b"\x00", info=None, log=error)
 
         if result is None:
             v = None
@@ -154,6 +152,6 @@ async def query(self, req) -> ResponseQuery:
 
     except Exception as err:
         logger.error(err)
-        return ResponseQuery(code=ErrorCode, log=err)
+        return ResponseQuery(code=c.ErrorCode, log=err)
 
-    return ResponseQuery(code=OkCode, value=v, info=type_of_data, key=encode_str(key))
+    return ResponseQuery(code=c.OkCode, value=v, info=type_of_data, key=encode_str(key))

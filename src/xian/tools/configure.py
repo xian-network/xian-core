@@ -9,7 +9,7 @@ from time import sleep
 from pathlib import Path
 from argparse import ArgumentParser
 
-from xian.constants import COMETBFT_GENESIS
+from xian.constants import Constants as c
 from nacl.signing import SigningKey
 from nacl.encoding import HexEncoder, Base64Encoder
 from argparse import BooleanOptionalAction
@@ -306,7 +306,7 @@ class Configure:
 
             # REWORK to PATH
             genesis_path = os.path.normpath(os.path.join('genesis', self.args.genesis_file_name))
-            target_path = COMETBFT_GENESIS
+            target_path = c.COMETBFT_GENESIS
             os.system(f'cp {genesis_path} {target_path}')
 
         if self.args.validator_privkey:

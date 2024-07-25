@@ -1,4 +1,4 @@
-import xian.constants as c
+from xian.constants import Constants as c
 from xian.exceptions import TransactionException
 
 from contracting import constants as config

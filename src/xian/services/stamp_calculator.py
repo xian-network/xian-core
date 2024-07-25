@@ -1,4 +1,4 @@
-from xian.config import CoreConfig
+from xian.constants import Constants
 from contracting.execution.executor import Executor
 from contracting.storage.encoder import safe_repr
 from contracting.storage.driver import Driver
@@ -9,8 +9,8 @@ import secrets
 
 
 class StampCalculator:
-    def __init__(self, chain_id: str, core_config: CoreConfig = CoreConfig()):
-        driver = Driver(storage_home=core_config.STORAGE_HOME)
+    def __init__(self, chain_id: str, constants: Constants = Constants):
+        driver = Driver(storage_home=constants.STORAGE_HOME)
         self.executor = Executor(metering=False, bypass_balance_amount=True, bypass_cache=True, driver=driver)
         self.chain_id = chain_id
     def generate_environment(self, input_hash='0' * 64, bhash='0' * 64, num=1):

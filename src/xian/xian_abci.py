@@ -3,7 +3,7 @@ import importlib
 import sys
 import gc
 
-from xian.config import CoreConfig
+from xian.constants import Constants
 
 os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
 
@@ -64,15 +64,15 @@ def load_module(module_path, original_module_path):
 
 
 class Xian:
-    def __init__(self, core_config=CoreConfig()):
+    def __init__(self, constants=Constants):
         try:
-            self.cometbft_config = load_tendermint_config(core_config)
-            self.genesis = load_genesis_data(core_config)
+            self.cometbft_config = load_tendermint_config(constants)
+            self.genesis = load_genesis_data(constants)
         except Exception as e:
             logger.error(e)
             raise SystemExit()
 
-        self.client = ContractingClient(storage_home=core_config.STORAGE_HOME)
+        self.client = ContractingClient(storage_home=constants.STORAGE_HOME)
         self.nonce_storage = NonceStorage(self.client)
         self.upgrader = UpgradeHandler(self)
         self.validator_handler = ValidatorHandler(self)
@@ -84,7 +84,7 @@ class Xian:
         self.chain_id = self.genesis.get("chain_id", None)
         self.block_service_mode = self.cometbft_config["xian"]["block_service_mode"]
         self.stamp_calculator = (
-            StampCalculator(chain_id=self.chain_id, core_config=core_config)
+            StampCalculator(chain_id=self.chain_id, constants=constants)
             if self.block_service_mode
             else None
         )
