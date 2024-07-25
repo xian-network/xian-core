@@ -1,5 +1,4 @@
 import json
-import asyncio
 
 from cometbft.abci.v1beta2.types_pb2 import Event, EventAttribute
 from cometbft.abci.v1beta3.types_pb2 import (
