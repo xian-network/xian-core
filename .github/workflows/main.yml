@@ -32,6 +32,7 @@ jobs:
       run: |
         source xian_venv/bin/activate
         pip install -e xian-contracting/ -e .
+        pip install pytest  # Install pytest explicitly
 
     - name: Run tests
       run: |
