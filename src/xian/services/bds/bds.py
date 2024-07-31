@@ -232,3 +232,19 @@ class BDS:
             return results_json
         except Exception as e:
             logger.exception(e)
+
+    async def get_contracts(self, limit: int = 100, offset: int = 0):
+        try:
+            result = await self.db.fetch(sql.select_contracts(), [limit, offset])
+
+            results = []
+            for row in result:
+                row_dict = dict(row)
+                results.append(row_dict)
+
+            # Convert the list of dictionaries to JSON
+            results_json = json.dumps(results, default=str)
+
+            return results_json
+        except Exception as e:
+            logger.exception(e)

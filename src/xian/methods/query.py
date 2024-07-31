@@ -69,7 +69,7 @@ async def query(self, req) -> ResponseQuery:
         elif path_parts[0] == "ping":
             result = {'status': 'online'}
 
-        # SERVICE NODE MODE
+        # Blockchain Data Service
         if self.block_service_mode:
             # http://localhost:26657/abci_query?path="/state_history/currency.balances:ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9/limit=10/offset=20"
             if path_parts[0] == "state_history":
@@ -96,9 +96,23 @@ async def query(self, req) -> ResponseQuery:
                 result = [key.split(":")[1] for key in list_of_keys]
                 key = path_parts[1]
 
-            # http://localhost:26657/abci_query?path="/contracts"
+            # http://localhost:26657/abci_query?path="/contracts/limit=10/offset=20"
             elif path_parts[0] == "contracts":
-                result = await loop.run_in_executor(None, self.client.raw_driver.get_contract_files)
+                limit = 100
+                offset = 0
+
+                params = dict()
+                for path in path_parts:
+                    if '=' in path:
+                        param_list = path.split('=')
+                        params[param_list[0]] = param_list[1]
+
+                if 'limit' in params:
+                    limit = int(params['limit'])
+                if 'offset' in params:
+                    offset = int(params['offset'])
+
+                result = await self.bds.get_contracts(limit, offset)
 
             # http://localhost:26657/abci_query?path="/lint/<code>"
             elif path_parts[0] == "lint":

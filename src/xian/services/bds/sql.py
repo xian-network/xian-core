@@ -137,3 +137,15 @@ def select_state_history():
         created DESC
     LIMIT $2 OFFSET $3
     """
+
+
+def select_contracts():
+    return """
+    SELECT
+        *
+    FROM 
+        contracts
+    ORDER BY 
+        created DESC
+    LIMIT $1 OFFSET $2
+    """
