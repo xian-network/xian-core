@@ -122,6 +122,41 @@ def insert_contracts():
     """
 
 
+def select_contracts():
+    return """
+    SELECT
+        *
+    FROM 
+        contracts
+    ORDER BY 
+        created DESC
+    LIMIT $1 OFFSET $2
+    """
+
+
+def select_state():
+    return """
+    WITH ranked_state_changes AS (
+        SELECT
+            key,
+            value,
+            ROW_NUMBER() OVER (PARTITION BY key ORDER BY created DESC) AS rn
+        FROM
+            state_changes
+        WHERE
+            key LIKE $1 || '%'
+    )
+    SELECT
+        key,
+        value
+    FROM
+        ranked_state_changes
+    WHERE
+        rn = 1
+    LIMIT $2 OFFSET $3;
+    """
+
+
 def select_state_history():
     return """
     SELECT 
@@ -139,13 +174,38 @@ def select_state_history():
     """
 
 
-def select_contracts():
+def select_state_tx():
     return """
     SELECT
-        *
-    FROM 
-        contracts
-    ORDER BY 
-        created DESC
-    LIMIT $1 OFFSET $2
+        key, value
+    FROM
+        state_changes
+    WHERE
+        tx_hash = $1;
+    """
+
+
+def select_state_block_height():
+    return """
+    SELECT
+        sc.key, sc.value
+    FROM
+        state_changes sc
+    JOIN
+        transactions t ON sc.tx_hash = t.hash
+    WHERE
+        t.block_height = $1;
+    """
+
+
+def select_state_block_hash():
+    return """
+    SELECT
+        sc.key, sc.value
+    FROM
+        state_changes sc
+    JOIN
+        transactions t ON sc.tx_hash = t.hash
+    WHERE
+        t.block_hash = $1;
     """

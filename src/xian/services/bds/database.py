@@ -1,7 +1,18 @@
+import json
 import asyncpg
 
 from loguru import logger
 from xian.services.bds.config import Config
+
+
+def result_to_json(result):
+    results = []
+    for row in result:
+        row_dict = dict(row)
+        results.append(row_dict)
+
+    # Convert the list of dictionaries to JSON
+    return json.dumps(results, default=str)
 
 
 class DB:

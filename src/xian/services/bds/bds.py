@@ -6,9 +6,9 @@ from xian.services.bds import sql
 from xian.services.bds.config import Config
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 from contracting.stdlib.bridge.time import Datetime, Timedelta
+from xian.services.bds.database import DB, result_to_json
 from xian_py.wallet import key_is_valid
 from timeit import default_timer as timer
-from xian.services.bds.database import DB
 
 
 # Custom JSON encoder for our own objects
@@ -212,6 +212,38 @@ class BDS:
             except Exception as e:
                 logger.exception(e)
 
+    async def get_contracts(self, limit: int = 100, offset: int = 0):
+        try:
+            result = await self.db.fetch(sql.select_contracts(), [limit, offset])
+
+            results = []
+            for row in result:
+                row_dict = dict(row)
+                results.append(row_dict)
+
+            # Convert the list of dictionaries to JSON
+            results_json = json.dumps(results, default=str)
+
+            return results_json
+        except Exception as e:
+            logger.exception(e)
+
+    async def get_state(self, key: str):
+        try:
+            result = await self.db.fetch(sql.select_state(), [key])
+
+            results = []
+            for row in result:
+                row_dict = dict(row)
+                results.append(row_dict)
+
+            # Convert the list of dictionaries to JSON
+            results_json = json.dumps(results, default=str)
+
+            return results_json
+        except Exception as e:
+            logger.exception(e)
+
     async def get_state_history(self, key: str, limit: int = 100, offset: int = 0):
         try:
             result = await self.db.fetch(sql.select_state_history(), [key, limit, offset])
@@ -233,18 +265,19 @@ class BDS:
         except Exception as e:
             logger.exception(e)
 
-    async def get_contracts(self, limit: int = 100, offset: int = 0):
+    async def get_state_for_tx(self, key: str):
         try:
-            result = await self.db.fetch(sql.select_contracts(), [limit, offset])
+            result = await self.db.fetch(sql.select_state_tx(), [key])
+            return result_to_json(result)
+        except Exception as e:
+            logger.exception(e)
 
-            results = []
-            for row in result:
-                row_dict = dict(row)
-                results.append(row_dict)
-
-            # Convert the list of dictionaries to JSON
-            results_json = json.dumps(results, default=str)
-
-            return results_json
+    async def get_state_for_block(self, key: str):
+        try:
+            if len(key) == 64:
+                result = await self.db.fetch(sql.select_state_block_hash(), [key])
+            else:
+                result = await self.db.fetch(sql.select_state_block_height(), [int(key)])
+            return result_to_json(result)
         except Exception as e:
             logger.exception(e)
