@@ -2,9 +2,11 @@ name: CI
 
 on:
   push:
-    branches: [main, crosschainer-patch-18]
+    branches: 
+      - "*"
   pull_request:
-    branches: [main]
+    branches:
+      - "*"
 
 jobs:
   test:

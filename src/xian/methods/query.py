@@ -5,7 +5,7 @@ import re
 import asyncio
 
 from cometbft.abci.v1beta1.types_pb2 import ResponseQuery
-from xian.utils import encode_str
+from xian.utils.encoding import encode_str
 from xian.constants import Constants as c
 
 from contracting.stdlib.bridge.decimal import ContractingDecimal

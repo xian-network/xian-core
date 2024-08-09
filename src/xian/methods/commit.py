@@ -1,5 +1,5 @@
 from cometbft.abci.v1beta3.types_pb2 import ResponseCommit
-from xian.utils import (
+from xian.utils.block import (
     set_latest_block_hash,
     set_latest_block_height
 )

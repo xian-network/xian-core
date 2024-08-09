@@ -4,7 +4,8 @@ from contracting.storage.encoder import safe_repr
 from contracting.storage.driver import Driver
 from contracting.stdlib.bridge.time import Datetime
 from datetime import datetime
-from xian.utils import format_dictionary, stringify_decimals
+from xian.utils.tx import format_dictionary
+from xian.utils.encoding import stringify_decimals
 import secrets
 
 

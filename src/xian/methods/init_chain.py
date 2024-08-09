@@ -1,5 +1,5 @@
 from cometbft.abci.v1beta3.types_pb2 import ResponseInitChain
-from xian.utils import store_genesis_block
+from xian.utils.block import store_genesis_block
 
 import asyncio
 
