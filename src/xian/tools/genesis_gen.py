@@ -1,5 +1,5 @@
 from argparse import ArgumentParser
-from xian.utils import is_compiled_key
+from xian.utils.block import is_compiled_key
 from contracting.client import ContractingClient
 from contracting.storage.driver import Driver
 from contracting.storage.encoder import encode

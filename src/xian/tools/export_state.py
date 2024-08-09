@@ -3,10 +3,10 @@ import hashlib
 
 from pathlib import Path
 from argparse import ArgumentParser
-from xian.utils import is_compiled_key
 from contracting.storage.driver import Driver
 from contracting.storage.encoder import encode
 from xian_py.wallet import Wallet
+from xian.utils.block import is_compiled_key
 
 
 def hash_genesis_block_state_changes(state_changes: list) -> str:
