@@ -37,7 +37,7 @@ async def deserialize(raw: bytes) -> Response:
 class TestCommit(unittest.IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self):
-        self.app = Xian(constants=TestConstants)
+        self.app = await Xian.create(constants=TestConstants)
         self.app.current_block_meta = {"height": 0, "nanos": 0}
         self.app.client.raw_driver.set("currency.balances:invalid_vk", 100000)
         self.handler = ProtocolHandler(self.app)

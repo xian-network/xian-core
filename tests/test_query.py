@@ -37,7 +37,7 @@ async def deserialize(raw: bytes) -> Response:
 class TestInfo(unittest.IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self):
-        self.app = Xian(constants=TestConstants)
+        self.app = await Xian.create(constants=TestConstants)
         self.app.current_block_meta = {"height": 0, "nanos": 0, "chain_id": "test_chain"}
         self.app.client.raw_driver.set_contract("currency", '''balances = Hash(default_value=0)
 
@@ -118,6 +118,7 @@ def transfer_from(amount: float, to: str, main_account: str):
 
     async def test_contracts_query(self):
         request = Request(query=RequestQuery(path="/contracts"))
+        breakpoint()
         response = await self.process_request("query", request)
         self.assertEqual(response.query.code, c.OkCode)
         self.assertEqual(response.query.info, "str")

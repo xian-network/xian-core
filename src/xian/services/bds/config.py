@@ -1,6 +1,5 @@
 import os
 import json
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 class Config:
 
@@ -8,7 +7,9 @@ class Config:
     _cfg_file = None
 
     def __init__(self, *cfg_path: str):
-        self._cfg_file = os.path.join(*cfg_path)
+        # Ensure the path is relative to the directory of this file
+        base_path = os.path.dirname(os.path.abspath(__file__))
+        self._cfg_file = os.path.join(base_path, *cfg_path)
         self.load()
 
     def load(self):

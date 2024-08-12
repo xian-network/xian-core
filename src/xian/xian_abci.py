@@ -88,7 +88,6 @@ class Xian:
         
         self.block_service_mode = self.cometbft_config["xian"]["block_service_mode"]
         if self.block_service_mode:
-            self.bds = loop.run_until_complete(BDS().init())
             self.stamp_calculator = StampCalculator(chain_id=self.chain_id, constants=constants)        
 
         self.pruning_enabled = self.cometbft_config["xian"]["pruning_enabled"]
@@ -109,6 +108,13 @@ class Xian:
         self.static_rewards_amount_foundation = 1
         self.static_rewards_amount_validators = 1
         self.current_block_rewards = {}
+        
+    @classmethod
+    async def create(cls, constants=Constants):
+        self = cls(constants=constants)
+        if self.block_service_mode:
+            self.bds = await BDS().init()
+        return self
 
     async def echo(self, req):
         """
