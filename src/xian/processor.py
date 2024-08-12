@@ -3,7 +3,8 @@ import hashlib
 
 from loguru import logger
 from datetime import datetime
-from xian.utils import format_dictionary, tx_hash_from_tx, is_compiled_key
+from xian.utils.tx import tx_hash_from_tx, format_dictionary
+from xian.utils.block import is_compiled_key
 from contracting.execution.executor import Executor
 from contracting.storage.encoder import convert_dict, safe_repr
 from contracting.stdlib.bridge.time import Datetime
