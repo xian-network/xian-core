@@ -1,10 +1,12 @@
 from cometbft.abci.v1beta3.types_pb2 import ResponseCheckTx
-from xian.utils import (
-    decode_transaction_bytes,
-    unpack_transaction,
-    verify,
+from xian.utils.tx import (
     validate_transaction
 )
+from xian.utils.tx import (
+    verify,
+    unpack_transaction
+)
+from xian.utils.encoding import decode_transaction_bytes
 from xian.constants import Constants as c
 
 import json

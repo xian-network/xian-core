@@ -1,5 +1,5 @@
 from cometbft.abci.v1beta1.types_pb2 import ResponseInfo
-from xian.utils import (
+from xian.utils.block import (
     get_latest_block_hash,
     get_latest_block_height,
 )

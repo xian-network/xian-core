@@ -32,7 +32,7 @@ from xian.services.stamp_calculator import StampCalculator
 from xian.processor import TxProcessor
 from xian.rewards import RewardsHandler
 
-from xian.utils import (
+from xian.utils.cometbft import (
     load_tendermint_config,
     load_genesis_data,
 )
