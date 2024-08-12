@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main, crosschainer-patch-18]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python 3.11.8
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11.8'
+
+    - name: Install system dependencies
+      run: sudo apt-get update && sudo apt-get install -y pkg-config libhdf5-dev build-essential
+
+    - name: Clone xian-contracting repository
+      run: git clone https://github.com/xian-network/xian-contracting.git
+
+    - name: Set up Python environment
+      run: python3.11 -m venv xian_venv
+
+    - name: Activate virtual environment and install dependencies
+      run: |
+        source xian_venv/bin/activate
+        pip install -e xian-contracting/ -e .
+        pip install pytest  # Install pytest explicitly
+
+    - name: Run tests
+      run: |
+        source xian_venv/bin/activate
+        pytest tests

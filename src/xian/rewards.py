@@ -1,6 +1,6 @@
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 import decimal
-import xian.constants as c
+from xian.constants import Constants as c
 from collections import defaultdict
 from loguru import logger
 

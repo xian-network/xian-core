@@ -4,10 +4,10 @@ from io import BytesIO
 import logging
 import asyncio
 
-from xian.constants import OkCode, ErrorCode
 from xian.xian_abci import Xian
 from abci.server import ProtocolHandler
 from abci.utils import read_messages
+from fixtures.test_constants import TestConstants
 
 from cometbft.abci.v1beta3.types_pb2 import (
     Request,
@@ -37,7 +37,7 @@ async def deserialize(raw: bytes) -> Response:
 class TestInfo(unittest.IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self):
-        self.app = Xian()
+        self.app = Xian(constants=TestConstants)
         self.handler = ProtocolHandler(self.app)
 
     async def process_request(self, request_type, req):

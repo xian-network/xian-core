@@ -32,7 +32,7 @@ async def finalize_block(self, req) -> ResponseFinalizeBlock:
         "height": height,
         "hash": hash,
         "chain_id": self.chain_id
-    }   
+    }
 
     for tx in req.txs:
         tx = decode_transaction_bytes(tx)
@@ -106,7 +106,7 @@ async def finalize_block(self, req) -> ResponseFinalizeBlock:
             ))
         except Exception as e:
             logger.error(f"STATIC REWARD ERROR: {e} for block")
-        
+
     reward_hash = hash_from_rewards(reward_writes)
     validator_updates = self.validator_handler.build_validator_updates()
     validator_updates_hash = hash_from_validator_updates(validator_updates)

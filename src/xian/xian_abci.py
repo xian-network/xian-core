@@ -4,6 +4,8 @@ import sys
 import gc
 import asyncio
 
+from xian.constants import Constants
+
 os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
 
 from loguru import logger
@@ -21,7 +23,7 @@ from xian.methods import (
     commit,
     process_proposal,
     prepare_proposal,
-    query
+    query,
 )
 from xian.upgrader import UpgradeHandler
 from xian.validators import ValidatorHandler
@@ -36,6 +38,7 @@ from xian.utils import (
 )
 
 from abci.utils import get_logger
+
 get_logger("requests").setLevel(30)
 get_logger("urllib3").setLevel(30)
 get_logger("asyncio").setLevel(30)
@@ -62,17 +65,17 @@ def load_module(module_path, original_module_path):
 
 
 class Xian:
-    def __init__(self):
+    def __init__(self, constants=Constants):
         try:
-            self.config = load_tendermint_config()
-            self.genesis = load_genesis_data()
+            self.cometbft_config = load_tendermint_config(constants)
+            self.genesis = load_genesis_data(constants)
         except Exception as e:
             logger.error(e)
             raise SystemExit()
 
+        self.client = ContractingClient(storage_home=constants.STORAGE_HOME)
         loop = asyncio.get_event_loop()
 
-        self.client = ContractingClient()
         self.nonce_storage = NonceStorage(self.client)
         self.upgrader = UpgradeHandler(self)
         self.validator_handler = ValidatorHandler(self)
@@ -82,19 +85,24 @@ class Xian:
         self.fingerprint_hashes = []
         self.fingerprint_hash = None
         self.chain_id = self.genesis.get("chain_id", None)
-        self.block_service_mode = self.config["xian"]["block_service_mode"]
-        self.stamp_calculator = StampCalculator() if self.block_service_mode else None
-        self.bds = loop.run_until_complete(BDS().init())
-        self.pruning_enabled = self.config["xian"]["pruning_enabled"]
-        # If pruning is enabled, this is the number of blocks to keep history for
-        self.blocks_to_keep = self.config["xian"]["blocks_to_keep"]
-        self.app_version = 1
+        
+        self.block_service_mode = self.cometbft_config["xian"]["block_service_mode"]
+        if self.block_service_mode:
+            self.bds = loop.run_until_complete(BDS().init())
+            self.stamp_calculator = StampCalculator(chain_id=self.chain_id, constants=constants)        
 
+        self.pruning_enabled = self.cometbft_config["xian"]["pruning_enabled"]
+        # If pruning is enabled, this is the number of blocks to keep history for
+        self.blocks_to_keep = self.cometbft_config["xian"]["blocks_to_keep"]
+        self.app_version = 1
+        # breakpoint()
         if self.chain_id is None:
             raise ValueError("No value set for 'chain_id' in genesis block")
 
         if self.genesis.get("abci_genesis", None) is None:
-            raise ValueError("No value set for 'abci_genesis' in Tendermint genesis.json")
+            raise ValueError(
+                "No value set for 'abci_genesis' in Tendermint genesis.json"
+            )
 
         self.enable_tx_fee = True
         self.static_rewards = False
@@ -173,9 +181,7 @@ class Xian:
 def main():
     logger.remove()
 
-    logger.add(
-        sys.stderr,
-        level='DEBUG')
+    logger.add(sys.stderr, level="DEBUG")
 
     start_path = os.path.dirname(os.path.realpath(__file__))
     log_path = os.path.realpath(os.path.join(start_path, '..', '..'))
@@ -183,9 +189,10 @@ def main():
     logger.add(
         os.path.join(log_path, 'logs', '{time}.log'),
         retention=timedelta(days=3),
-        format='{time} {level} {name} {message}',
-        level='DEBUG',
-        rotation='10 MB')
+        format="{time} {level} {name} {message}",
+        level="DEBUG",
+        rotation="10 MB",
+    )
 
     app = ABCIServer(app=Xian())
     app.run()
