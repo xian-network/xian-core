@@ -29,7 +29,7 @@ async def query(self, req) -> ResponseQuery:
     logger.debug(req.path)
     path_parts = [part for part in req.path.split("/") if part]
     loop = asyncio.get_event_loop()
-    key = path_parts[1]
+    key = path_parts[1] if len(path_parts) > 1 else ""
     result = None
 
     try:
@@ -40,7 +40,6 @@ async def query(self, req) -> ResponseQuery:
         # http://localhost:26657/abci_query?path="/health"
         elif path_parts[0] == "health":
             result = "OK"
-
         # http://localhost:26657/abci_query?path="/get_next_nonce/ddd326fddb5d1677595311f298b744a4e9f415b577ac179a6afbf38483dc0791"
         elif path_parts[0] == "get_next_nonce":
             result = await loop.run_in_executor(None, self.nonce_storage.get_next_nonce, path_parts[1])
@@ -81,6 +80,11 @@ async def query(self, req) -> ResponseQuery:
                 limit = int(params['limit'])
             if 'offset' in params:
                 offset = int(params['offset'])
+                
+            if path_parts[0] == "keys":
+                list_of_keys = await loop.run_in_executor(None, self.client.raw_driver.keys, path_parts[1])
+                result = [key.split(":")[1] for key in list_of_keys]
+                key = path_parts[1]
 
             # http://localhost:26657/abci_query?path="/state/currency.balances"
             elif path_parts[0] == "state":
