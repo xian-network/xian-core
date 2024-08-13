@@ -80,7 +80,8 @@ async def query(self, req) -> ResponseQuery:
                 limit = int(params['limit'])
             if 'offset' in params:
                 offset = int(params['offset'])
-                
+
+            # http://localhost:26657/abci_query?path="/keys/currency.balances"    
             if path_parts[0] == "keys":
                 list_of_keys = await loop.run_in_executor(None, self.client.raw_driver.keys, path_parts[1])
                 result = [key.split(":")[1] for key in list_of_keys]
