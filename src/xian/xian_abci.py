@@ -88,13 +88,12 @@ class Xian:
         
         self.block_service_mode = self.cometbft_config["xian"]["block_service_mode"]
         if self.block_service_mode:
-            self.stamp_calculator = StampCalculator(chain_id=self.chain_id, constants=constants)        
+            self.stamp_calculator = StampCalculator(chain_id=self.chain_id, constants=constants)
 
         self.pruning_enabled = self.cometbft_config["xian"]["pruning_enabled"]
         # If pruning is enabled, this is the number of blocks to keep history for
         self.blocks_to_keep = self.cometbft_config["xian"]["blocks_to_keep"]
         self.app_version = 1
-        # breakpoint()
         if self.chain_id is None:
             raise ValueError("No value set for 'chain_id' in genesis block")
 
@@ -199,8 +198,11 @@ def main():
         level="DEBUG",
         rotation="10 MB",
     )
+    
+    loop = asyncio.get_event_loop()
+    xian_instance = loop.run_until_complete(Xian.create())
 
-    app = ABCIServer(app=Xian())
+    app = ABCIServer(app=xian_instance)
     app.run()
 
 
