@@ -28,21 +28,18 @@ async def query(self, req) -> ResponseQuery:
 
     logger.debug(req.path)
     path_parts = [part for part in req.path.split("/") if part]
-
     loop = asyncio.get_event_loop()
+    key = path_parts[1] if len(path_parts) > 1 else ""
     result = None
-    key = ""
 
     try:
         # http://localhost:26657/abci_query?path="/get/currency.balances:c93dee52d7dc6cc43af44007c3b1dae5b730ccf18a9e6fb43521f8e4064561e6"
         if path_parts and path_parts[0] == "get":
             result = await loop.run_in_executor(None, self.client.raw_driver.get, path_parts[1])
-            key = path_parts[1]
 
         # http://localhost:26657/abci_query?path="/health"
         elif path_parts[0] == "health":
             result = "OK"
-
         # http://localhost:26657/abci_query?path="/get_next_nonce/ddd326fddb5d1677595311f298b744a4e9f415b577ac179a6afbf38483dc0791"
         elif path_parts[0] == "get_next_nonce":
             result = await loop.run_in_executor(None, self.nonce_storage.get_next_nonce, path_parts[1])
@@ -68,17 +65,53 @@ async def query(self, req) -> ResponseQuery:
         elif path_parts[0] == "ping":
             result = {'status': 'online'}
 
-        # BLOCK SERVICE MODE
+        # Blockchain Data Service
         if self.block_service_mode:
-            # http://localhost:26657/abci_query?path="/keys/currency.balances"
+            limit = 100
+            offset = 0
+
+            params = dict()
+            for path in path_parts:
+                if '=' in path:
+                    param_list = path.split('=')
+                    params[param_list[0]] = param_list[1]
+
+            if 'limit' in params and int(params['limit']) < limit:
+                limit = int(params['limit'])
+            if 'offset' in params:
+                offset = int(params['offset'])
+
+            # http://localhost:26657/abci_query?path="/keys/currency.balances"    
             if path_parts[0] == "keys":
                 list_of_keys = await loop.run_in_executor(None, self.client.raw_driver.keys, path_parts[1])
                 result = [key.split(":")[1] for key in list_of_keys]
                 key = path_parts[1]
 
-            # http://localhost:26657/abci_query?path="/contracts"
+            # http://localhost:26657/abci_query?path="/state/currency.balances"
+            elif path_parts[0] == "state":
+                result = await self.bds.get_state(key)
+                print('state', result)  # TODO: Remove
+
+            # http://localhost:26657/abci_query?path="/state_history/currency.balances:ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9/limit=10/offset=20"
+            if path_parts[0] == "state_history":
+                result = await self.bds.get_state_history(key, limit, offset)
+                print('state_history', result)  # TODO: Remove
+
+            # http://localhost:26657/abci_query?path="/state_for_tx/f39b4ea880088cfae45538acb2f7fdae1e70112185a5523d1027bcf74eac3919"
+            elif path_parts[0] == "state_for_tx":
+                result = await self.bds.get_state_for_tx(key)
+                print('state_for_tx', result)  # TODO: Remove
+
+            # Block Height: http://localhost:26657/abci_query?path="/state_for_block/662"
+            # Block Hash: http://localhost:26657/abci_query?path="/state_for_block/34F1A1C923D23C5C0531490E714FC56F501EDADF05B6BF68C2ED3923234E0CC4"
+            elif path_parts[0] == "state_for_block":
+                result = await self.bds.get_state_for_block(key)
+                print('state_for_block', result)  # TODO: Remove
+
+            # http://localhost:26657/abci_query?path="/contracts/limit=10/offset=20"
             elif path_parts[0] == "contracts":
-                result = await loop.run_in_executor(None, self.client.raw_driver.get_contract_files)
+                result = await self.bds.get_contracts(limit, offset)
+                print('contracts', result)  # TODO: Remove
 
             # http://localhost:26657/abci_query?path="/lint/<code>"
             elif path_parts[0] == "lint":
@@ -117,9 +150,8 @@ async def query(self, req) -> ResponseQuery:
                 except:
                     result = {"stdout": "", "stderr": ""}
 
-            # TODO: Deprecated - Remove after tooling adjusted to 'calculate_stamps' endpoint
-            # http://localhost:26657/abci_query?path="/estimate_stamps/<encoded_tx>"
-            elif path_parts[0] == "calculate_stamps" or path_parts[0] == "estimate_stamps":
+            # http://localhost:26657/abci_query?path="/calculate_stamps/<encoded_tx>"
+            elif path_parts[0] == "calculate_stamps":
                 raw_tx = path_parts[1]
                 byte_data = bytes.fromhex(raw_tx)
                 tx_hex = byte_data.decode("utf-8")

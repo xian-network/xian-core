@@ -12,6 +12,21 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: 1234
+          POSTGRES_DB: xian
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
@@ -37,6 +52,8 @@ jobs:
         pip install pytest  # Install pytest explicitly
 
     - name: Run tests
+      env:
+        DATABASE_URL: postgres://postgres:1234@localhost:5432/xian
       run: |
         source xian_venv/bin/activate
         pytest tests

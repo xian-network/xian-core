@@ -2,6 +2,7 @@ import os
 import importlib
 import sys
 import gc
+import asyncio
 
 from xian.constants import Constants
 
@@ -10,7 +11,7 @@ os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
 from loguru import logger
 from datetime import timedelta
 from abci.server import ABCIServer
-
+from xian.services.bds.bds import BDS
 from contracting.client import ContractingClient
 
 from xian.methods import (
@@ -73,6 +74,8 @@ class Xian:
             raise SystemExit()
 
         self.client = ContractingClient(storage_home=constants.STORAGE_HOME)
+        loop = asyncio.get_event_loop()
+
         self.nonce_storage = NonceStorage(self.client)
         self.upgrader = UpgradeHandler(self)
         self.validator_handler = ValidatorHandler(self)
@@ -82,17 +85,15 @@ class Xian:
         self.fingerprint_hashes = []
         self.fingerprint_hash = None
         self.chain_id = self.genesis.get("chain_id", None)
+        
         self.block_service_mode = self.cometbft_config["xian"]["block_service_mode"]
-        self.stamp_calculator = (
-            StampCalculator(chain_id=self.chain_id, constants=constants)
-            if self.block_service_mode
-            else None
-        )
+        if self.block_service_mode:
+            self.stamp_calculator = StampCalculator(chain_id=self.chain_id, constants=constants)
+
         self.pruning_enabled = self.cometbft_config["xian"]["pruning_enabled"]
         # If pruning is enabled, this is the number of blocks to keep history for
         self.blocks_to_keep = self.cometbft_config["xian"]["blocks_to_keep"]
         self.app_version = 1
-        # breakpoint()
         if self.chain_id is None:
             raise ValueError("No value set for 'chain_id' in genesis block")
 
@@ -106,6 +107,13 @@ class Xian:
         self.static_rewards_amount_foundation = 1
         self.static_rewards_amount_validators = 1
         self.current_block_rewards = {}
+        
+    @classmethod
+    async def create(cls, constants=Constants):
+        self = cls(constants=constants)
+        if self.block_service_mode:
+            self.bds = await BDS().init()
+        return self
 
     async def echo(self, req):
         """
@@ -180,15 +188,21 @@ def main():
 
     logger.add(sys.stderr, level="DEBUG")
 
+    start_path = os.path.dirname(os.path.realpath(__file__))
+    log_path = os.path.realpath(os.path.join(start_path, '..', '..'))
+
     logger.add(
-        os.path.join("log", "{time}.log"),
+        os.path.join(log_path, 'logs', '{time}.log'),
         retention=timedelta(days=3),
         format="{time} {level} {name} {message}",
         level="DEBUG",
         rotation="10 MB",
     )
+    
+    loop = asyncio.get_event_loop()
+    xian_instance = loop.run_until_complete(Xian.create())
 
-    app = ABCIServer(app=Xian())
+    app = ABCIServer(app=xian_instance)
     app.run()
 
 

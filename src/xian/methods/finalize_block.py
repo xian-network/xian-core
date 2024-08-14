@@ -1,4 +1,5 @@
 import json
+import asyncio
 
 from cometbft.abci.v1beta2.types_pb2 import Event, EventAttribute
 from cometbft.abci.v1beta3.types_pb2 import (
@@ -99,6 +100,9 @@ async def finalize_block(self, req) -> ResponseFinalizeBlock:
                 events=tx_events
             )
         )
+
+        if self.block_service_mode:
+            asyncio.create_task(self.bds.insert_full_data(tx | result))
 
     if self.static_rewards:
         try:
