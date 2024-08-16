@@ -6,8 +6,6 @@ import asyncio
 
 from xian.constants import Constants
 
-os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
-
 from loguru import logger
 from datetime import timedelta
 from abci.server import ABCIServer

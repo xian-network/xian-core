@@ -24,8 +24,6 @@ from cometbft.abci.v1beta1.types_pb2 import ResponseInfo
 # Disable any kind of logging
 logging.disable(logging.CRITICAL)
 
-os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
-
 async def deserialize(raw: bytes) -> Response:
     try:
         resp = next(read_messages(BytesIO(raw), Response))
