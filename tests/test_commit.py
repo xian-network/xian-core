@@ -22,8 +22,6 @@ from fixtures.test_constants import TestConstants
 # Disable any kind of logging
 logging.disable(logging.CRITICAL)
 
-os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
-
 async def deserialize(raw: bytes) -> Response:
     try:
         resp = next(read_messages(BytesIO(raw), Response))

@@ -23,8 +23,6 @@ import json
 # Disable any kind of logging
 logging.disable(logging.CRITICAL)
 
-os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
-
 
 async def deserialize(raw: bytes) -> Response:
     try:

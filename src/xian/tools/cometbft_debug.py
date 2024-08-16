@@ -9,8 +9,6 @@ import json
 import datetime
 import warnings
 
-os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
-
 TX_INDEX_PATH = Path().home().joinpath(".cometbft/data/tx_index.db")
 STATE_PATH = Path().home().joinpath(".cometbft/data/state.db")
 BLOCKSTORE_PATH = Path().home().joinpath(".cometbft/data/blockstore.db")
