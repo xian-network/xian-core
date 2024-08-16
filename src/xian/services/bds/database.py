@@ -76,3 +76,12 @@ class DB:
             except Exception as e:
                 logger.exception(f'Error while executing SQL: {e}')
                 raise e
+
+    async def has_entries(self, table_name: str) -> bool:
+        try:
+            result = await self.fetch(f"SELECT COUNT(*) as count FROM {table_name}")
+            logger.debug(result)
+            return result[0]['count'] > 0
+        except Exception as e:
+            logger.exception(e)
+            return False

@@ -89,7 +89,7 @@ async def query(self, req) -> ResponseQuery:
 
             # http://localhost:26657/abci_query?path="/state/currency.balances"
             elif path_parts[0] == "state":
-                result = await self.bds.get_state(key)
+                result = await self.bds.get_state(key, limit, offset)
                 print('state', result)  # TODO: Remove
 
             # http://localhost:26657/abci_query?path="/state_history/currency.balances:ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9/limit=10/offset=20"

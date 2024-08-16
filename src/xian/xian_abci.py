@@ -110,7 +110,7 @@ class Xian:
     async def create(cls, constants=Constants):
         self = cls(constants=constants)
         if self.block_service_mode:
-            self.bds = await BDS().init()
+            self.bds = await BDS().init(cometbft_genesis=self.genesis)
         return self
 
     async def echo(self, req):

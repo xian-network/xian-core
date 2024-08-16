@@ -52,14 +52,38 @@ class CustomEncoder(json.JSONEncoder):
 class BDS:
     db = None
 
-    async def init(self):
+    async def init(self, cometbft_genesis: dict):
         self.db = DB(Config('config.json'))
 
         await self.db.init_pool()
         await self.__init_tables()
 
+        has_entries = await self.db.has_entries("transactions")
+        logger.debug(f"HAS ENTRIES: {has_entries}")
+        if not has_entries:
+            await self.process_genesis_block(cometbft_genesis)
+
         logger.info('BDS service initialized')
         return self
+
+    async def process_genesis_block(self, cometbft_genesis: dict):
+        start_time = timer()
+        genesis_state = cometbft_genesis["abci_genesis"]["genesis"]
+
+        # insert genesis txn
+        await self.insert_genesis_txn(genesis_state)
+
+        # process each item in the genesis block
+        for index, state in enumerate(genesis_state):         
+            logger.debug(f"processing item {index} from genesis_state")
+            parts = state["key"].split(".")
+
+            if parts[1] == "__code__":
+                await self.insert_genesis_state_contract(parts[0], parts[1])
+            else:
+                await self.insert_genesis_state_change(state["key"], state["value"])
+
+        logger.debug(f'Processed genesis block in {timer() - start_time:.3f} seconds')
 
     async def __init_tables(self):
         try:
@@ -187,26 +211,13 @@ class BDS:
                         logger.exception(e)
 
     async def _insert_contracts(self, tx: dict):
-        def is_XSC0001(code: str):
-            code = code.replace(' ', '')
-
-            if 'balances=Hash(' not in code:
-                return False
-            if '@export\ndeftransfer(amount:float,to:str):' not in code:
-                return False
-            if '@export\ndefapprove(amount:float,to:str):' not in code:
-                return False
-            if '@export\ndeftransfer_from(amount:float,to:str,main_account:str):' not in code:
-                return False
-            return True
-
         if tx['payload']['contract'] == 'submission' and tx['payload']['function'] == 'submit_contract':
             try:
                 await self.db.execute(sql.insert_contracts(), [
                     tx['tx_result']['hash'],
                     tx['payload']['kwargs']['name'],
                     tx['payload']['kwargs']['code'],
-                    is_XSC0001(tx['payload']['kwargs']['code']),
+                    self.is_XSC0001(tx['payload']['kwargs']['code']),
                     datetime.now()
                 ])
             except Exception as e:
@@ -228,9 +239,9 @@ class BDS:
         except Exception as e:
             logger.exception(e)
 
-    async def get_state(self, key: str):
+    async def get_state(self, key: str, limit: int = 100, offset: int = 0):
         try:
-            result = await self.db.fetch(sql.select_state(), [key])
+            result = await self.db.fetch(sql.select_state(), [key, limit, offset])
 
             results = []
             for row in result:
@@ -281,3 +292,57 @@ class BDS:
             return result_to_json(result)
         except Exception as e:
             logger.exception(e)
+
+    def is_XSC0001(self, code: str):
+        code = code.replace(' ', '')
+
+        if 'balances=Hash(' not in code:
+            return False
+        if '@export\ndeftransfer(amount:float,to:str):' not in code:
+            return False
+        if '@export\ndefapprove(amount:float,to:str):' not in code:
+            return False
+        if '@export\ndeftransfer_from(amount:float,to:str,main_account:str):' not in code:
+            return False
+        return True
+
+    async def insert_genesis_txn(self, genesis_state: dict):
+        await self.db.execute(sql.insert_transaction(), [
+            "GENESIS",
+            "GENESIS_SUBMISSION",
+            "process_genesis_block",
+            "sys",
+            0,
+            0,
+            "GENESIS",
+            0,
+            0,
+            True,
+            "OK",
+            json.dumps(genesis_state, cls=CustomEncoder),
+            datetime.now()
+        ])
+
+    async def insert_genesis_state_contract(self, contract_name, code):
+        try:
+            await self.db.execute(sql.insert_contracts(), [
+                f"GENESIS",
+                contract_name,
+                code,
+                self.is_XSC0001(code),
+                datetime.now()
+            ])
+        except Exception as e:
+            logger.exception(e)      
+
+    async def insert_genesis_state_change(self, key, value):
+                try:
+                    await self.db.execute(sql.insert_state_changes(), [
+                        None,
+                        f"GENESIS",
+                        key,
+                        json.dumps(value, cls=CustomEncoder),
+                        datetime.now()
+                    ])
+                except Exception as e:
+                    logger.exception(e)
