@@ -79,7 +79,7 @@ class BDS:
             parts = state["key"].split(".")
 
             if parts[1] == "__code__":
-                await self.insert_genesis_state_contract(parts[0], parts[1])
+                await self.insert_genesis_state_contract(parts[0], state["value"])
             else:
                 await self.insert_genesis_state_change(state["key"], state["value"])
 

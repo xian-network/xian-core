@@ -76,10 +76,21 @@ async def query(self, req) -> ResponseQuery:
                     param_list = path.split('=')
                     params[param_list[0]] = param_list[1]
 
-            if 'limit' in params and int(params['limit']) < limit:
-                limit = int(params['limit'])
+            if 'limit' in params:
+                try:
+                    limit = int(params['limit'])
+                    if limit < 0 or limit > 1000:  # Example range check
+                        limit = 100
+                except (ValueError, TypeError):
+                    limit = 100
+
             if 'offset' in params:
-                offset = int(params['offset'])
+                try:
+                    offset = int(params['offset'])
+                    if offset < 0:
+                        offset = 0
+                except (ValueError, TypeError):
+                    offset = 0
 
             # http://localhost:26657/abci_query?path="/keys/currency.balances"    
             if path_parts[0] == "keys":
