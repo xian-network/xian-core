@@ -59,7 +59,6 @@ class BDS:
         await self.__init_tables()
 
         has_entries = await self.db.has_entries("transactions")
-        logger.debug(f"HAS ENTRIES: {has_entries}")
         if not has_entries:
             await self.process_genesis_block(cometbft_genesis)
 
@@ -79,7 +78,8 @@ class BDS:
             parts = state["key"].split(".")
 
             if parts[1] == "__code__":
-                await self.insert_genesis_state_contract(parts[0], parts[1])
+                submission_time = self.get_submission_time(genesis_state, parts[0])
+                await self.insert_genesis_state_contract(parts[0], state["value"], submission_time)
             else:
                 await self.insert_genesis_state_change(state["key"], state["value"])
 
@@ -323,14 +323,14 @@ class BDS:
             datetime.now()
         ])
 
-    async def insert_genesis_state_contract(self, contract_name, code):
+    async def insert_genesis_state_contract(self, contract_name, code, submission_time):
         try:
             await self.db.execute(sql.insert_contracts(), [
                 f"GENESIS",
                 contract_name,
                 code,
                 self.is_XSC0001(code),
-                datetime.now()
+                submission_time
             ])
         except Exception as e:
             logger.exception(e)      
@@ -346,3 +346,9 @@ class BDS:
                     ])
                 except Exception as e:
                     logger.exception(e)
+
+    def get_submission_time(self, genesis_state: list, contract_name: str) -> datetime:
+        for item in genesis_state:
+            if isinstance(item, dict) and item.get('key') == f"{contract_name}.__submitted__":
+                return datetime(*item["value"].get("__time__"))
+        return datetime.now()

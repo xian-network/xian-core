@@ -129,7 +129,7 @@ def select_contracts():
     FROM 
         contracts
     ORDER BY 
-        created DESC
+        created ASC
     LIMIT $1 OFFSET $2
     """
 
