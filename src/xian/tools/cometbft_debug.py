@@ -90,7 +90,7 @@ class CometBFTDebug:
         if not path.exists():
             return "Database Size: 0 B"
         size = sum(f.stat().st_size for f in path.glob('**/*') if f.is_file())
-        # Make size human readable
+        # Make size human-readable
         for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
             if size < 1024.0:
                 return f"Database Size: {size:.2f} {unit}"
