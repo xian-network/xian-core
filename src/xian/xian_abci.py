@@ -63,7 +63,7 @@ def load_module(module_path, original_module_path):
 
 
 class Xian:
-    def __init__(self, constants=Constants):
+    def __init__(self, constants=Constants()):
         try:
             self.cometbft_config = load_tendermint_config(constants)
             self.genesis = load_genesis_data(constants)
