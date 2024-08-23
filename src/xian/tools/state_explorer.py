@@ -1,6 +1,5 @@
 import urwid
 import json
-import datetime
 import warnings
 
 from contracting.storage.driver import Driver
