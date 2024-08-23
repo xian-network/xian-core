@@ -5,7 +5,6 @@ from contracting.storage.driver import Driver
 from contracting.storage.encoder import encode
 from xian_py.wallet import Wallet
 from pathlib import Path
-import pdb
 
 import hashlib
 import json
@@ -64,7 +63,7 @@ class GenesisGen:
         h.update(f'{encode(state_changes).encode()}'.encode())
         return h.hexdigest()
 
-    def replace_arg(selg, arg: str, values: dict):
+    def replace_arg(self, arg: str, values: dict):
         result = re.search('%%(.*)%%', arg)
 
         if result:
