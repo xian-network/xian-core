@@ -1,3 +1,5 @@
+from typing import Callable
+
 import nacl
 import nacl.signing
 import nacl.encoding
@@ -51,7 +53,7 @@ def tx_hash_from_tx(tx):
     return h.hexdigest()
 
 
-def recurse_rules(d: dict, rule: dict):
+def recurse_rules(d: dict, rule: dict | Callable):
     if callable(rule):
         return rule(d)
 

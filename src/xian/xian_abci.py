@@ -63,7 +63,7 @@ def load_module(module_path, original_module_path):
 
 
 class Xian:
-    def __init__(self, constants=Constants):
+    def __init__(self, constants=Constants()):
         try:
             self.cometbft_config = load_tendermint_config(constants)
             self.genesis = load_genesis_data(constants)
@@ -72,8 +72,6 @@ class Xian:
             raise SystemExit()
 
         self.client = ContractingClient(storage_home=constants.STORAGE_HOME)
-        loop = asyncio.get_event_loop()
-
         self.nonce_storage = NonceStorage(self.client)
         self.upgrader = UpgradeHandler(self)
         self.validator_handler = ValidatorHandler(self)
@@ -83,7 +81,7 @@ class Xian:
         self.fingerprint_hashes = []
         self.fingerprint_hash = None
         self.chain_id = self.genesis.get("chain_id", None)
-        
+
         self.block_service_mode = self.cometbft_config["xian"]["block_service_mode"]
         if self.block_service_mode:
             self.stamp_calculator = StampCalculator(chain_id=self.chain_id, constants=constants)
@@ -105,7 +103,7 @@ class Xian:
         self.static_rewards_amount_foundation = 1
         self.static_rewards_amount_validators = 1
         self.current_block_rewards = {}
-        
+
     @classmethod
     async def create(cls, constants=Constants):
         self = cls(constants=constants)
@@ -196,7 +194,7 @@ def main():
         level="DEBUG",
         rotation="10 MB",
     )
-    
+
     loop = asyncio.get_event_loop()
     xian_instance = loop.run_until_complete(Xian.create())
 

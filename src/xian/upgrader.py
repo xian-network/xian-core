@@ -29,10 +29,10 @@ class UpgradeHandler:
                 for file in files:
                     # For version 'v1', load files without '_v' in their name
                     if version == "v1" and '_v' not in file and file.endswith(".py"):
-                        self._load_module(file, root, project_dir)
+                        await self._load_module(file, root, project_dir)
                     # For other versions, check for the appropriate version marker in the file name
                     elif f"_{version}.py" in file:
-                        self._load_module(file, root, project_dir)
+                        await self._load_module(file, root, project_dir)
             logger.info(f"Changed to version {version}")
         except Exception as e:
             raise Exception(f"Upgrade failed: {e}")
