@@ -6,6 +6,15 @@ from xian.constants import Constants as c
 from contracting.storage.encoder import convert_dict
 from loguru import logger
 
+from google.protobuf.timestamp_pb2 import Timestamp
+from datetime import datetime
+
+
+def convert_cometbft_time_to_datetime(nanoseconds: int) -> datetime:
+    timestamp = Timestamp()
+    timestamp.FromNanoseconds(nanoseconds)
+    return timestamp.ToDatetime()
+
 
 def get_nanotime_from_block_time(timeobj) -> int:
     seconds = timeobj.seconds

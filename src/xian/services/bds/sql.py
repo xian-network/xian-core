@@ -24,7 +24,7 @@ def create_state_changes():
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         tx_hash TEXT REFERENCES transactions(hash),
         key TEXT NOT NULL,
-        value JSONB NOT NULL,
+        value JSONB,
         created TIMESTAMP NOT NULL
     )
     """
@@ -63,6 +63,48 @@ def create_contracts():
         created TIMESTAMP NOT NULL
     )
     """
+
+def create_readonly_role():
+    return """
+    DO $$
+    BEGIN
+        -- Create the read-only role
+        IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'readonly_user') THEN
+            CREATE ROLE readonly_user WITH LOGIN PASSWORD 'readonly';
+        END IF;
+
+        -- Grant read-only permissions
+        GRANT CONNECT ON DATABASE xian TO readonly_user;
+        GRANT USAGE ON SCHEMA public TO readonly_user;
+        GRANT SELECT ON ALL TABLES IN SCHEMA public TO readonly_user;
+
+        -- Ensure future tables also get SELECT permission
+        ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO readonly_user;
+
+        -- Set resource limits
+        ALTER ROLE readonly_user SET statement_timeout = '1s';
+        ALTER ROLE readonly_user SET max_parallel_workers_per_gather = 2;
+    END
+    $$;
+    """
+
+def enforce_table_limits():
+    return """
+    DO $$
+    DECLARE
+        rec RECORD;
+        schema_name TEXT := 'public'; -- Change this to your schema name
+        limit_value INT := 100; -- Change this to your desired limit
+    BEGIN
+        FOR rec IN
+            SELECT table_name
+            FROM information_schema.tables
+            WHERE table_schema = schema_name
+        LOOP
+            EXECUTE format('SELECT * FROM %I.%I LIMIT %s', schema_name, rec.table_name, limit_value);
+        END LOOP;
+    END $$;
+"""
 
 
 def select_db_size():

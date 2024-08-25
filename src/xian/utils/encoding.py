@@ -1,5 +1,6 @@
 import json
 import binascii
+import hashlib
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 from contracting.stdlib.bridge.time import Datetime
 
@@ -15,6 +16,10 @@ def decode_transaction_bytes(raw):
     tx_str = tx_decoded_bytes.decode("utf-8")
     tx_json = json.loads(tx_str)
     return tx_json
+
+
+def hash_bytes(bytes):
+    return hashlib.sha256(bytes).hexdigest()
 
 
 def convert_binary_to_hex(binary_data):
