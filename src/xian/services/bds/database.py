@@ -17,6 +17,8 @@ def result_to_json(result):
 
 class DB:
 
+    batch = []
+
     def __init__(self, config: Config):
         self.cfg = config
         self.pool = None
@@ -64,6 +66,20 @@ class DB:
             except Exception as e:
                 logger.exception(f'Error while executing SQL: {e}')
                 raise e
+
+    def add_query_to_batch(self, query: str, args: list):
+        self.batch.append((query, args))
+
+    async def commit_batch_to_disk(self):
+        async with self.pool.acquire() as connection:
+            try:
+                for query, params in self.batch:
+                    await connection.execute(query, *params)
+            except Exception as e:
+                logger.exception(f'Error while executing SQL: {e}')
+                raise e
+            finally:
+                self.batch = []
 
     async def fetch(self, query: str, params: list = []):
         """

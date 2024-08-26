@@ -12,7 +12,8 @@ from xian.utils.hash import (
     hash_from_validator_updates
 )
 from xian.utils.block import (
-    get_nanotime_from_block_time
+    get_nanotime_from_block_time,
+    convert_cometbft_time_to_datetime
 )
 from xian.utils.tx import (
     verify,
@@ -21,7 +22,8 @@ from xian.utils.tx import (
 from xian.utils.encoding import (
     decode_transaction_bytes,
     convert_binary_to_hex,
-    stringify_decimals
+    stringify_decimals,
+    hash_bytes
 )
 from loguru import logger
 
@@ -29,6 +31,7 @@ from loguru import logger
 async def finalize_block(self, req) -> ResponseFinalizeBlock:
     nanos = get_nanotime_from_block_time(req.time)
     hash = convert_binary_to_hex(req.hash)
+    block_datetime = convert_cometbft_time_to_datetime(nanos)
     height = req.height
     tx_results = []
     reward_writes = []
@@ -40,8 +43,8 @@ async def finalize_block(self, req) -> ResponseFinalizeBlock:
         "chain_id": self.chain_id
     }
 
-    for tx in req.txs:
-        tx = decode_transaction_bytes(tx)
+    for tx_bytes in req.txs:
+        tx = decode_transaction_bytes(tx_bytes)
         sender, signature, payload = unpack_transaction(tx)
 
         if not verify(sender, payload, signature):
@@ -102,7 +105,11 @@ async def finalize_block(self, req) -> ResponseFinalizeBlock:
         )
 
         if self.block_service_mode:
-            asyncio.create_task(self.bds.insert_full_data(tx | result))
+            cometbft_hash = hash_bytes(tx_bytes).upper()
+            result["tx_result"]["hash"] = cometbft_hash
+            asyncio.create_task(self.bds.insert_full_data(tx | result, block_datetime))
+
+    asyncio.create_task(self.bds.db.commit_batch_to_disk())
 
     if self.static_rewards:
         try:

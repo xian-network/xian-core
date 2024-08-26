@@ -92,45 +92,48 @@ class BDS:
             await self.db.execute(sql.create_rewards())
             await self.db.execute(sql.create_contracts())
             await self.db.execute(sql.create_addresses())
+            await self.db.execute(sql.create_readonly_role())
+            await self.db.execute(sql.enforce_table_limits())
         except Exception as e:
             logger.exception(e)
 
-    async def insert_full_data(self, tx: dict):
+
+    async def insert_full_data(self, tx: dict, block_time: datetime):
         total_time = timer()
 
         # Tx
         start_time = timer()
-        await self._insert_tx(tx)
+        await self._insert_tx(tx, block_time)
         logger.debug(f'Saved tx in {timer() - start_time:.3f} seconds')
 
         # State changes
         start_time = timer()
-        await self._insert_state_changes(tx)
+        await self._insert_state_changes(tx, block_time)
         logger.debug(f'Saved state changes in {timer() - start_time:.3f} seconds')
 
         # Rewards
         start_time = timer()
-        await self._insert_rewards(tx)
+        await self._insert_rewards(tx, block_time)
         logger.debug(f'Saved rewards in {timer() - start_time:.3f} seconds')
 
         # Addresses
         start_time = timer()
-        await self._insert_addresses(tx)
+        await self._insert_addresses(tx, block_time)
         logger.debug(f'Saved addresses in {timer() - start_time:.3f} seconds')
 
         # Contracts
         start_time = timer()
-        await self._insert_contracts(tx)
+        await self._insert_contracts(tx, block_time)
         logger.debug(f'Saved contracts in {timer() - start_time:.3f} seconds')
 
         logger.debug(f'Processed tx {tx["tx_result"]["hash"]} in {timer() - total_time:.3f} seconds')
 
-    async def _insert_tx(self, tx: dict):
+    async def _insert_tx(self, tx: dict, block_time: datetime):
         status = True if tx['tx_result']['status'] == 0 else False
         result = None if tx['tx_result']['result'] == 'None' else tx['tx_result']['result']
 
         try:
-            await self.db.execute(sql.insert_transaction(), [
+            self.db.add_query_to_batch(sql.insert_transaction(), [
                 tx['tx_result']['hash'],
                 tx['payload']['contract'],
                 tx['payload']['function'],
@@ -143,33 +146,34 @@ class BDS:
                 status,
                 result,
                 json.dumps(tx, cls=CustomEncoder),
-                datetime.now()
+                block_time
             ])
         except Exception as e:
             logger.exception(e)
 
-    async def _insert_state_changes(self, tx: dict):
+    async def _insert_state_changes(self, tx: dict, block_time: datetime):
         for state_change in tx['tx_result']['state']:
             try:
-                await self.db.execute(sql.insert_state_changes(), [
+                self.db.add_query_to_batch(sql.insert_state_changes(), [
                     None,
                     tx['tx_result']['hash'],
                     state_change['key'],
                     json.dumps(state_change['value'], cls=CustomEncoder),
-                    datetime.now()
+                    block_time
                 ])
+
             except Exception as e:
                 logger.exception(e)
 
-    async def _insert_rewards(self, tx: dict):
+    async def _insert_rewards(self, tx: dict, block_time: datetime):
         async def insert(type, key, value):
-            await self.db.execute(sql.insert_rewards(), [
+            self.db.add_query_to_batch(sql.insert_rewards(), [
                 None,
                 tx['tx_result']['hash'],
                 type,
                 key,
                 json.dumps(value, cls=CustomEncoder),
-                datetime.now()
+                block_time
             ])
 
         rewards = tx['tx_result']['rewards']
@@ -196,29 +200,29 @@ class BDS:
                 except Exception as e:
                     logger.exception(e)
 
-    async def _insert_addresses(self, tx: dict):
+    async def _insert_addresses(self, tx: dict, block_time: datetime):
         for state_change in tx['tx_result']['state']:
             if state_change['key'].startswith('currency.balances:'):
                 address = state_change['key'].replace('currency.balances:', '')
                 if key_is_valid(address):
                     try:
-                        await self.db.execute(sql.insert_addresses(), [
+                        self.db.add_query_to_batch(sql.insert_addresses(), [
                             tx['tx_result']['hash'],
                             address,
-                            datetime.now()
+                            block_time
                         ])
                     except Exception as e:
                         logger.exception(e)
 
-    async def _insert_contracts(self, tx: dict):
+    async def _insert_contracts(self, tx: dict, block_time: datetime):
         if tx['payload']['contract'] == 'submission' and tx['payload']['function'] == 'submit_contract':
             try:
-                await self.db.execute(sql.insert_contracts(), [
+                self.db.add_query_to_batch(sql.insert_contracts(), [
                     tx['tx_result']['hash'],
                     tx['payload']['kwargs']['name'],
                     tx['payload']['kwargs']['code'],
                     self.is_XSC0001(tx['payload']['kwargs']['code']),
-                    datetime.now()
+                    block_time
                 ])
             except Exception as e:
                 logger.exception(e)
@@ -349,6 +353,10 @@ class BDS:
 
     def get_submission_time(self, genesis_state: list, contract_name: str) -> datetime:
         for item in genesis_state:
+            if "con_" not in contract_name:
+                if contract_name == "submission":
+                    return datetime(1970,1,1,0,0,0,0)
+                return datetime(1970,1,1,1,0,0,0)
             if isinstance(item, dict) and item.get('key') == f"{contract_name}.__submitted__":
                 return datetime(*item["value"].get("__time__"))
         return datetime.now()
