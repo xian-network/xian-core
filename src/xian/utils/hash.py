@@ -17,6 +17,10 @@ def hash_from_rewards(rewards):
 
 def hash_from_validator_updates(validator_updates):
     h = hashlib.sha3_256()
-    encoded_validator_updates = str(validator_updates).encode()
-    h.update(encoded_validator_updates)
+    
+    # Serialize each validator update using protobuf's SerializeToString() method
+    for update in validator_updates:
+        encoded_update = update.SerializeToString()
+        h.update(encoded_update)
+    
     return h.hexdigest()
