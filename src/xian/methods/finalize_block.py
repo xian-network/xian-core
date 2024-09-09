@@ -27,7 +27,6 @@ from xian.utils.encoding import (
 )
 from loguru import logger
 
-
 async def finalize_block(self, req) -> ResponseFinalizeBlock:
     nanos = get_nanotime_from_block_time(req.time)
     hash = convert_binary_to_hex(req.hash)
@@ -122,7 +121,7 @@ async def finalize_block(self, req) -> ResponseFinalizeBlock:
             logger.error(f"STATIC REWARD ERROR: {e} for block")
 
     reward_hash = hash_from_rewards(reward_writes)
-    validator_updates = self.validator_handler.build_validator_updates()
+    validator_updates = self.validator_handler.build_validator_updates(height)
     validator_updates_hash = hash_from_validator_updates(validator_updates)
     self.fingerprint_hashes.append(validator_updates_hash)
     self.fingerprint_hashes.append(reward_hash)

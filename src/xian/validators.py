@@ -24,7 +24,7 @@ class ValidatorHandler:
     def to_bytes(self, data: str) -> bytes:
         return bytes.fromhex(data)
     
-    def build_validator_updates(self) -> list[ValidatorUpdate]:
+    def build_validator_updates(self, height) -> list[ValidatorUpdate]:
         validators_state = self.get_validators_from_state()
         validators_tendermint = self.get_tendermint_validators()
         if len(validators_tendermint) == 0:
@@ -39,6 +39,14 @@ class ValidatorHandler:
             if validator not in validators_state:
                 updates.append(ValidatorUpdate(pub_key=PublicKey(ed25519=self.to_bytes(validator)), power=0))
                 logging.info(f"Removing {validator} from tendermint validators")
+
+        # We sort the updates by public key to make it deterministic
         if len(updates) > 0:
-            logging.info(f"Validator updates: {updates}")
+            updates = sorted(updates, key=lambda x: x.pub_key.ed25519)
+        # We do not do more than 1 update per block
+        if len(updates) > 1:
+            updates = updates[:1]
+        # We do not do validator updates before height 3
+        if height < 3:
+            updates = []
         return updates
