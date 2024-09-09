@@ -27,7 +27,6 @@ from xian.utils.encoding import (
 )
 from loguru import logger
 
-
 async def finalize_block(self, req) -> ResponseFinalizeBlock:
     nanos = get_nanotime_from_block_time(req.time)
     hash = convert_binary_to_hex(req.hash)
