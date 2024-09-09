@@ -41,7 +41,8 @@ class ValidatorHandler:
                 logging.info(f"Removing {validator} from tendermint validators")
 
         # We sort the updates by public key to make it deterministic
-        updates = sorted(updates, key=lambda x: x.pub_key.ed25519)
+        if len(updates) > 0:
+            updates = sorted(updates, key=lambda x: x.pub_key.ed25519)
         # We do not do more than 1 update per block
         if len(updates) > 1:
             updates = updates[:1]
