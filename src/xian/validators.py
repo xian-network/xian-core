@@ -29,8 +29,7 @@ class ValidatorHandler:
         validators_tendermint = self.get_tendermint_validators()
         if len(validators_tendermint) == 0:
             logging.error("Failed to get validators from tendermint")
-            # We make it crash because its completely broken
-            raise Exception("Failed to get validators from tendermint. Will not work.")
+            return []
         updates = []
         for validator in validators_state:
             if validator not in validators_tendermint:
