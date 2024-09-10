@@ -40,7 +40,4 @@ class ValidatorHandler:
                 updates.append(ValidatorUpdate(pub_key=PublicKey(ed25519=self.to_bytes(validator)), power=0))
                 logging.info(f"Removing {validator} from tendermint validators")
 
-        # We do not do validator updates before height 3
-        if height < 3:
-            updates = []
         return updates
