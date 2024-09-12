@@ -1,8 +1,6 @@
 balances = Hash(default_value=0)
 metadata = Hash()
-# XST002
 permits = Hash()
-# XST003
 streams = Hash()
 
 
