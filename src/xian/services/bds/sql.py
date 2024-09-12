@@ -30,6 +30,16 @@ def create_state_changes():
     """
 
 
+def create_state():
+    return """
+    CREATE TABLE IF NOT EXISTS state (
+        key TEXT PRIMARY KEY,
+        value JSONB,
+        updated TIMESTAMP NOT NULL
+    )
+    """
+
+
 def create_rewards():
     return """
     CREATE TABLE IF NOT EXISTS rewards (
@@ -123,6 +133,16 @@ def insert_transaction():
     ON CONFLICT (hash) DO NOTHING;
     """
 
+def insert_or_update_state():
+    return """
+    INSERT INTO state(
+        key, value, updated)
+    VALUES (
+        $1, $2, $3)
+    ON CONFLICT (key) DO UPDATE SET
+        value = EXCLUDED.value,
+        updated = EXCLUDED.updated;
+    """
 
 def insert_state_changes():
     return """

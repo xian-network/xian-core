@@ -93,6 +93,7 @@ class BDS:
             await self.db.execute(sql.create_contracts())
             await self.db.execute(sql.create_addresses())
             await self.db.execute(sql.create_readonly_role())
+            await self.db.execute(sql.create_state())
             await self.db.execute(sql.enforce_table_limits())
         except Exception as e:
             logger.exception(e)
@@ -126,6 +127,10 @@ class BDS:
         await self._insert_contracts(tx, block_time)
         logger.debug(f'Saved contracts in {timer() - start_time:.3f} seconds')
 
+        start_time = timer()
+        await self._insert_state(tx, block_time)
+        logger.debug(f'Saved contracts in {timer() - start_time:.3f} seconds')
+
         logger.debug(f'Processed tx {tx["tx_result"]["hash"]} in {timer() - total_time:.3f} seconds')
 
     async def _insert_tx(self, tx: dict, block_time: datetime):
@@ -157,6 +162,18 @@ class BDS:
                 self.db.add_query_to_batch(sql.insert_state_changes(), [
                     None,
                     tx['tx_result']['hash'],
+                    state_change['key'],
+                    json.dumps(state_change['value'], cls=CustomEncoder),
+                    block_time
+                ])
+
+            except Exception as e:
+                logger.exception(e)
+
+    async def _insert_state(self, tx: dict, block_time: datetime):
+        for state_change in tx['tx_result']['state']:
+            try:
+                self.db.add_query_to_batch(sql.insert_or_update_state(), [
                     state_change['key'],
                     json.dumps(state_change['value'], cls=CustomEncoder),
                     block_time
@@ -350,6 +367,18 @@ class BDS:
                     ])
                 except Exception as e:
                     logger.exception(e)
+
+    async def insert_genesis_state(self, key, value):
+                try:
+                    await self.db.execute(sql.insert_or_update_state(), [
+                        key,
+                        json.dumps(value, cls=CustomEncoder),
+                        datetime.now()
+                    ])
+                except Exception as e:
+                    logger.exception(e)
+
+    
 
     def get_submission_time(self, genesis_state: list, contract_name: str) -> datetime:
         for item in genesis_state:
