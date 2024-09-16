@@ -42,7 +42,8 @@
 			}
 		},
 		{
-			"name": "team_lock",
+			"name": "vault",
+			"submit_as": "team_lock",
 			"owner": null,
 			"constructor_args": {
 				"initial_owners":"6ebd8090a80e5fc629f38fceefd05d66035a5a4d4ba2c223319ec8f9b83cb48a,?vk2,?vk3",
