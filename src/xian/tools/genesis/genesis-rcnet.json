@@ -1,0 +1,73 @@
+{
+    "genesis_time": "2024-09-16T00:00:00.000000000Z",
+    "chain_id": "xian-network",
+    "initial_height": "0",
+    "consensus_params": {
+        "block": {
+            "max_bytes": "22020096",
+            "max_gas": "-1",
+            "time_iota_ms": "1000"
+        },
+        "evidence": {
+            "max_age_num_blocks": "100000",
+            "max_age_duration": "172800000000000",
+            "max_bytes": "1048576"
+        },
+        "validator": {
+            "pub_key_types": [
+                "ed25519"
+            ]
+        },
+        "version": {}
+    },
+    "validators": [
+        {
+            "address": "098F6EDD410E40638747DD39BF7301C74E4691B0",
+            "pub_key": {
+                "type": "tendermint/PubKeyEd25519",
+                "value": "E8qaYtEMvCjVVAjgqF0x9cBZ/ju0kxZTjh0DBk8/LI4="
+            },
+            "power": "10",
+            "name": ""
+        },
+        {
+            "address": "FC45330044B010CE239C0F524B74560F4DECE0D2",
+            "pub_key": {
+                "type": "tendermint/PubKeyEd25519",
+                "value": "033bKEiP4brmUnmTTWgA+uEbJvfAFRG3bKbmArvCOY0="
+            },
+            "power": "10",
+            "name": ""
+        },
+        {
+            "address": "531687010E7FEA4514257D138298D9F9546D7DA2",
+            "pub_key": {
+                "type": "tendermint/PubKeyEd25519",
+                "value": "QER/Rs6hJg3XSHgzz/Ywplt4aPGar9/WRluYnJptug4="
+            },
+            "power": "10",
+            "name": ""
+        },
+        {
+            "address": "91C543E26CAE7170CE1A4AC97797F47770D7E981",
+            "pub_key": {
+                "type": "tendermint/PubKeyEd25519",
+                "value": "jnMFLu0D5g1PJ+TkIsB0LNKnVawDQSK9UEqHr610b4o="
+            },
+            "power": "10",
+            "name": ""
+        },
+        {
+            "address": "0F5A14A96B8008C53DE54422BF711C80EF3EA724",
+            "pub_key": {
+                "type": "tendermint/PubKeyEd25519",
+                "value": "ypru4ZKFTcVabT4hG/hYzD7NQei4alXAd0Ds4p80lZc="
+            },
+            "power": "10",
+            "name": ""
+        }
+    ],
+    "app_hash": "",
+    "abci_genesis": {
+    }
+}
