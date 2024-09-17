@@ -8,7 +8,7 @@ stream_id = Variable()
 transactions = Hash()
 
 @construct
-def seed(initial_owners: str, initial_required_signatures: int, stream_id: str):
+def seed(initial_owners: str, initial_required_signatures: int, stream: str):
     """
     Initializes the multisig contract.
     - initial_owners: Comma-separated string of owner addresses.
@@ -21,7 +21,7 @@ def seed(initial_owners: str, initial_required_signatures: int, stream_id: str):
     required_signatures.set(initial_required_signatures)
     owner_count.set(len(owner_list))
     transaction_count.set(0)
-    stream_id.set(stream_id)
+    stream_id.set(stream)
 
 @export
 def submit_transaction(to: str = None, amount: float = None, tx_type: str = 'transfer'):
