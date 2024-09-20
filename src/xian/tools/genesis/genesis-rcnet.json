@@ -1,0 +1,404 @@
+{
+    "genesis_time": "2024-09-17T00:00:00.000000000Z",
+    "chain_id": "xian-network",
+    "initial_height": "0",
+    "consensus_params": {
+        "block": {
+            "max_bytes": "22020096",
+            "max_gas": "-1",
+            "time_iota_ms": "1000"
+        },
+        "evidence": {
+            "max_age_num_blocks": "100000",
+            "max_age_duration": "172800000000000",
+            "max_bytes": "1048576"
+        },
+        "validator": {
+            "pub_key_types": [
+                "ed25519"
+            ]
+        },
+        "version": {}
+    },
+    "validators": [
+        {
+            "address": "098F6EDD410E40638747DD39BF7301C74E4691B0",
+            "pub_key": {
+                "type": "tendermint/PubKeyEd25519",
+                "value": "E8qaYtEMvCjVVAjgqF0x9cBZ/ju0kxZTjh0DBk8/LI4="
+            },
+            "power": "10",
+            "name": ""
+        },
+        {
+            "address": "FC45330044B010CE239C0F524B74560F4DECE0D2",
+            "pub_key": {
+                "type": "tendermint/PubKeyEd25519",
+                "value": "033bKEiP4brmUnmTTWgA+uEbJvfAFRG3bKbmArvCOY0="
+            },
+            "power": "10",
+            "name": ""
+        },
+        {
+            "address": "531687010E7FEA4514257D138298D9F9546D7DA2",
+            "pub_key": {
+                "type": "tendermint/PubKeyEd25519",
+                "value": "QER/Rs6hJg3XSHgzz/Ywplt4aPGar9/WRluYnJptug4="
+            },
+            "power": "10",
+            "name": ""
+        },
+        {
+            "address": "91C543E26CAE7170CE1A4AC97797F47770D7E981",
+            "pub_key": {
+                "type": "tendermint/PubKeyEd25519",
+                "value": "jnMFLu0D5g1PJ+TkIsB0LNKnVawDQSK9UEqHr610b4o="
+            },
+            "power": "10",
+            "name": ""
+        },
+        {
+            "address": "0F5A14A96B8008C53DE54422BF711C80EF3EA724",
+            "pub_key": {
+                "type": "tendermint/PubKeyEd25519",
+                "value": "ypru4ZKFTcVabT4hG/hYzD7NQei4alXAd0Ds4p80lZc="
+            },
+            "power": "10",
+            "name": ""
+        }
+    ],
+    "app_hash": "",
+    "abci_genesis": {
+        "hash": "2bb4e112aca11805538842bd993470f18f337797ec3f2f6ab02c47385caf088e",
+        "number": "0",
+        "genesis": [
+            {
+                "key": "currency.__code__",
+                "value": "__balances = Hash(default_value=0, contract='currency', name='balances')\n__metadata = Hash(contract='currency', name='metadata')\n__permits = Hash(contract='currency', name='permits')\n__streams = Hash(contract='currency', name='streams')\n\n\ndef ____(vk: str):\n    __balances[vk] = decimal('5555555.55')\n    __balances['team_vesting'] = decimal('16666666.65')\n    __balances['dao'] = decimal('33333333.3')\n    __balances['team_lock'] += decimal('49999999.95')\n    __balances[vk] += decimal('5555555.55')\n    __setup_seed_stream('team_vesting', 'team_vesting', 'team_lock',\n        decimal('0.10575725568804825'), 1824)\n\n\ndef __setup_seed_stream(stream_id: str, sender: str, receiver: str, rate:\n    float, duration_days: int):\n    __streams[stream_id, 'status'] = 'active'\n    __streams[stream_id, 'begins'] = now\n    __streams[stream_id, 'closes'] = now + datetime.timedelta(days=\n        duration_days)\n    __streams[stream_id, 'receiver'] = receiver\n    __streams[stream_id, 'sender'] = sender\n    __streams[stream_id, 'rate'] = rate\n    __streams[stream_id, 'claimed'] = 0\n\n\n@__export('currency')\ndef transfer(amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances.'\n    assert __balances[ctx.caller] >= amount, 'Not enough coins to send.'\n    __balances[ctx.caller] -= amount\n    __balances[to] += amount\n    return f'Sent {amount} to {to}'\n\n\n@__export('currency')\ndef approve(amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances.'\n    __balances[ctx.caller, to] = amount\n    return f'Approved {amount} for {to}'\n\n\n@__export('currency')\ndef transfer_from(amount: float, to: str, main_account: str):\n    assert amount > 0, 'Cannot send negative balances.'\n    assert __balances[main_account, ctx.caller\n        ] >= amount, f'Not enough coins approved to send. You have {__balances[main_account, ctx.caller]} approved and are trying to spend {amount}'\n    assert __balances[main_account] >= amount, 'Not enough coins to send.'\n    __balances[main_account, ctx.caller] -= amount\n    __balances[main_account] -= amount\n    __balances[to] += amount\n    return f'Sent {amount} to {to} from {main_account}'\n\n\n@__export('currency')\ndef balance_of(address: str):\n    return __balances[address]\n\n\n@__export('currency')\ndef permit(owner: str, spender: str, value: float, deadline: str, signature:\n    str):\n    deadline = __strptime_ymdhms(deadline)\n    permit_msg = __construct_permit_msg(owner, spender, value, str(deadline))\n    permit_hash = hashlib.sha3(permit_msg)\n    assert __permits[permit_hash] is None, 'Permit can only be used once.'\n    assert now < deadline, 'Permit has expired.'\n    assert crypto.verify(owner, permit_msg, signature), 'Invalid signature.'\n    __balances[owner, spender] += value\n    __permits[permit_hash] = True\n    return f'Permit granted for {value} to {spender} from {owner}'\n\n\ndef __construct_permit_msg(owner: str, spender: str, value: float, deadline:\n    str):\n    return f'{owner}:{spender}:{value}:{deadline}:{ctx.this}:{chain_id}'\n\n\nSENDER_KEY = 'sender'\nRECEIVER_KEY = 'receiver'\nSTATUS_KEY = 'status'\nBEGIN_KEY = 'begins'\nCLOSE_KEY = 'closes'\nRATE_KEY = 'rate'\nCLAIMED_KEY = 'claimed'\nSTREAM_ACTIVE = 'active'\nSTREAM_FINALIZED = 'finalized'\nSTREAM_FORFEIT = 'forfeit'\n\n\n@__export('currency')\ndef create_stream(receiver: str, rate: float, begins: str, closes: str):\n    begins = __strptime_ymdhms(begins)\n    closes = __strptime_ymdhms(closes)\n    sender = ctx.caller\n    stream_id = __perform_create_stream(sender, receiver, rate, begins, closes)\n    return stream_id\n\n\ndef __perform_create_stream(sender: str, receiver: str, rate: float, begins:\n    str, closes: str):\n    stream_id = hashlib.sha3(f'{sender}:{receiver}:{begins}:{closes}:{rate}')\n    assert __streams[stream_id, STATUS_KEY] is None, 'Stream already exists.'\n    assert begins < closes, 'Stream cannot begin after the close date.'\n    assert rate > 0, 'Rate must be greater than 0.'\n    __streams[stream_id, STATUS_KEY] = STREAM_ACTIVE\n    __streams[stream_id, BEGIN_KEY] = begins\n    __streams[stream_id, CLOSE_KEY] = closes\n    __streams[stream_id, RECEIVER_KEY] = receiver\n    __streams[stream_id, SENDER_KEY] = sender\n    __streams[stream_id, RATE_KEY] = rate\n    __streams[stream_id, CLAIMED_KEY] = 0\n    return stream_id\n\n\n@__export('currency')\ndef create_stream_from_permit(sender: str, receiver: str, rate: float,\n    begins: str, closes: str, deadline: str, signature: str):\n    begins = __strptime_ymdhms(begins)\n    closes = __strptime_ymdhms(closes)\n    deadline = __strptime_ymdhms(deadline)\n    assert now < deadline, 'Permit has expired.'\n    permit_msg = __construct_stream_permit_msg(sender, receiver, rate,\n        begins, closes, deadline)\n    permit_hash = hashlib.sha3(permit_msg)\n    assert __permits[permit_hash] is None, 'Permit can only be used once.'\n    assert crypto.verify(sender, permit_msg, signature), 'Invalid signature.'\n    __permits[permit_hash] = True\n    return __perform_create_stream(sender, receiver, rate, begins, closes)\n\n\n@__export('currency')\ndef balance_stream(stream_id: str):\n    assert __streams[stream_id, STATUS_KEY], 'Stream does not exist.'\n    assert __streams[stream_id, STATUS_KEY\n        ] == STREAM_ACTIVE, 'You can only balance active streams.'\n    assert now > __streams[stream_id, BEGIN_KEY], 'Stream has not started yet.'\n    sender = __streams[stream_id, SENDER_KEY]\n    receiver = __streams[stream_id, RECEIVER_KEY]\n    assert ctx.caller in [sender, receiver\n        ], 'Only sender or receiver can balance a stream.'\n    closes = __streams[stream_id, CLOSE_KEY]\n    begins = __streams[stream_id, BEGIN_KEY]\n    rate = __streams[stream_id, RATE_KEY]\n    claimed = __streams[stream_id, CLAIMED_KEY]\n    outstanding_balance = __calc_outstanding_balance(begins, closes, rate,\n        claimed)\n    assert outstanding_balance > 0, 'No amount due on this stream.'\n    claimable_amount = __calc_claimable_amount(outstanding_balance, sender)\n    __balances[sender] -= claimable_amount\n    __balances[receiver] += claimable_amount\n    __streams[stream_id, CLAIMED_KEY] += claimable_amount\n    return f'Claimed {claimable_amount} tokens from stream'\n\n\n@__export('currency')\ndef change_close_time(stream_id: str, new_close_time: str):\n    new_close_time = __strptime_ymdhms(new_close_time)\n    assert __streams[stream_id, STATUS_KEY], 'Stream does not exist.'\n    assert __streams[stream_id, STATUS_KEY\n        ] == STREAM_ACTIVE, 'Stream is not active.'\n    sender = __streams[stream_id, SENDER_KEY]\n    assert ctx.caller == sender, 'Only sender can extend the close time of a stream.'\n    if new_close_time < __streams[stream_id, BEGIN_KEY] and now < __streams[\n        stream_id, BEGIN_KEY]:\n        __streams[stream_id, CLOSE_KEY] = __streams[stream_id, BEGIN_KEY]\n    elif new_close_time <= now:\n        __streams[stream_id, CLOSE_KEY] = now\n    else:\n        __streams[stream_id, CLOSE_KEY] = new_close_time\n    return f'Changed close time of stream to {__streams[stream_id, CLOSE_KEY]}'\n\n\n@__export('currency')\ndef finalize_stream(stream_id: str):\n    assert __streams[stream_id, STATUS_KEY], 'Stream does not exist.'\n    assert __streams[stream_id, STATUS_KEY\n        ] == STREAM_ACTIVE, 'Stream is not active.'\n    sender = __streams[stream_id, 'sender']\n    receiver = __streams[stream_id, 'receiver']\n    assert ctx.caller in [sender, receiver\n        ], 'Only sender or receiver can finalize a stream.'\n    begins = __streams[stream_id, BEGIN_KEY]\n    closes = __streams[stream_id, CLOSE_KEY]\n    rate = __streams[stream_id, RATE_KEY]\n    claimed = __streams[stream_id, CLAIMED_KEY]\n    assert now <= closes, 'Stream has not closed yet.'\n    outstanding_balance = __calc_outstanding_balance(begins, closes, rate,\n        claimed)\n    assert outstanding_balance == 0, 'Stream has outstanding balance.'\n    __streams[stream_id, STATUS_KEY] = STREAM_FINALIZED\n    return f'Finalized stream {stream_id}'\n\n\n@__export('currency')\ndef close_balance_finalize(stream_id: str):\n    change_close_time(stream_id=stream_id, new_close_time=str(now))\n    balance_finalize(stream_id=stream_id)\n\n\n@__export('currency')\ndef balance_finalize(stream_id: str):\n    balance_stream(stream_id=stream_id)\n    finalize_stream(stream_id=stream_id)\n\n\n@__export('currency')\ndef forfeit_stream(stream_id: str) ->str:\n    assert __streams[stream_id, STATUS_KEY], 'Stream does not exist.'\n    assert __streams[stream_id, STATUS_KEY\n        ] == STREAM_ACTIVE, 'Stream is not active.'\n    receiver = __streams[stream_id, RECEIVER_KEY]\n    assert ctx.caller == receiver, 'Only receiver can forfeit a stream.'\n    __streams[stream_id, STATUS_KEY] = STREAM_FORFEIT\n    __streams[stream_id, CLOSE_KEY] = now\n    return f'Forfeit stream {stream_id}'\n\n\ndef __calc_outstanding_balance(begins: str, closes: str, rate: float,\n    claimed: float) ->float:\n    begins = begins\n    closes = closes\n    claimable_end_point = now if now < closes else closes\n    claimable_period = claimable_end_point - begins\n    claimable_seconds = claimable_period.seconds\n    amount_due = rate * claimable_seconds - claimed\n    return amount_due\n\n\ndef __calc_claimable_amount(amount_due: float, sender: str) ->float:\n    return amount_due if amount_due < __balances[sender] else __balances[sender\n        ]\n\n\ndef __construct_stream_permit_msg(sender: str, receiver: str, rate: float,\n    begins: str, closes: str, deadline: str) ->str:\n    return (\n        f'{sender}:{receiver}:{rate}:{begins}:{closes}:{deadline}:{ctx.this}:{chain_id}'\n        )\n\n\ndef __strptime_ymdhms(date_string: str) ->datetime.datetime:\n    return datetime.datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S')\n"
+            },
+            {
+                "key": "currency.__developer__",
+                "value": "sys"
+            },
+            {
+                "key": "currency.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        9,
+                        17,
+                        9,
+                        13,
+                        0,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "currency.balances:13ca9a62d10cbc28d55408e0a85d31f5c059fe3bb49316538e1d03064f3f2c8e",
+                "value": {
+                    "__fixed__": "11111111.10"
+                }
+            },
+            {
+                "key": "currency.balances:dao",
+                "value": {
+                    "__fixed__": "33333333.3"
+                }
+            },
+            {
+                "key": "currency.balances:team_lock",
+                "value": {
+                    "__fixed__": "49999999.95"
+                }
+            },
+            {
+                "key": "currency.balances:team_vesting",
+                "value": {
+                    "__fixed__": "16666666.65"
+                }
+            },
+            {
+                "key": "currency.streams:team_vesting:begins",
+                "value": {
+                    "__time__": [
+                        2024,
+                        9,
+                        17,
+                        9,
+                        13,
+                        0,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "currency.streams:team_vesting:claimed",
+                "value": 0
+            },
+            {
+                "key": "currency.streams:team_vesting:closes",
+                "value": {
+                    "__time__": [
+                        2029,
+                        9,
+                        15,
+                        9,
+                        13,
+                        0,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "currency.streams:team_vesting:rate",
+                "value": {
+                    "__fixed__": "0.10575725568804825"
+                }
+            },
+            {
+                "key": "currency.streams:team_vesting:receiver",
+                "value": "team_lock"
+            },
+            {
+                "key": "currency.streams:team_vesting:sender",
+                "value": "team_vesting"
+            },
+            {
+                "key": "currency.streams:team_vesting:status",
+                "value": "active"
+            },
+            {
+                "key": "dao.__code__",
+                "value": "import currency\n\n\n@__export('dao')\ndef transfer_from_dao(args: dict):\n    amount = args.get('amount')\n    to = args.get('to')\n    assert amount > 0, 'Amount must be greater than 0'\n    currency.transfer(amount=amount, to=to)\n"
+            },
+            {
+                "key": "dao.__developer__",
+                "value": "sys"
+            },
+            {
+                "key": "dao.__owner__",
+                "value": "masternodes"
+            },
+            {
+                "key": "dao.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        9,
+                        17,
+                        9,
+                        13,
+                        0,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "foundation.__code__",
+                "value": "import currency\n__owner = Variable(contract='foundation', name='owner')\n\n\ndef ____(vk: str):\n    __owner.set(vk)\n\n\n@__export('foundation')\ndef withdraw(amount: float):\n    assert amount > 0, 'Cannot send negative balances!'\n    assert ctx.caller == __owner.get(), 'Not owner!'\n    currency.transfer(amount, ctx.caller)\n\n\n@__export('foundation')\ndef change_owner(vk: str):\n    assert ctx.caller == __owner.get(), 'Not owner!'\n    __owner.set(vk)\n"
+            },
+            {
+                "key": "foundation.__developer__",
+                "value": "sys"
+            },
+            {
+                "key": "foundation.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        9,
+                        17,
+                        9,
+                        13,
+                        0,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "foundation.owner",
+                "value": "13ca9a62d10cbc28d55408e0a85d31f5c059fe3bb49316538e1d03064f3f2c8e"
+            },
+            {
+                "key": "masternodes.__code__",
+                "value": "import dao\nimport rewards\nimport stamp_cost\nimport currency\n__nodes = Variable(contract='masternodes', name='nodes')\n__votes = Hash(default_value=False, contract='masternodes', name='votes')\n__total_votes = Variable(contract='masternodes', name='total_votes')\n__types = Variable(contract='masternodes', name='types')\n__registration_fee = Variable(contract='masternodes', name='registration_fee')\n__pending_registrations = Hash(default_value=False, contract='masternodes',\n    name='pending_registrations')\n__pending_leave = Hash(default_value=False, contract='masternodes', name=\n    'pending_leave')\n__holdings = Hash(default_value=0, contract='masternodes', name='holdings')\n\n\ndef ____(genesis_nodes: list, genesis_registration_fee: int):\n    __nodes.set(genesis_nodes)\n    __types.set(['add_member', 'remove_member', 'change_registration_fee',\n        'reward_change', 'dao_payout', 'stamp_cost_change', 'change_types'])\n    __total_votes.set(0)\n    __registration_fee.set(genesis_registration_fee)\n\n\n@__export('masternodes')\ndef propose_vote(type_of_vote: str, arg: Any):\n    assert ctx.caller in __nodes.get(), 'Only nodes can propose new votes'\n    if type_of_vote == 'add_member':\n        assert __pending_registrations[arg\n            ] == True, 'Member must have pending registration'\n    assert type_of_vote in __types.get(), 'Invalid type'\n    proposal_id = __total_votes.get() + 1\n    __votes[proposal_id] = {'yes': 1, 'no': 0, 'type': type_of_vote, 'arg':\n        arg, 'voters': [ctx.caller], 'finalized': False}\n    __total_votes.set(proposal_id)\n    if len(__votes[proposal_id]['voters']) >= len(__nodes.get()) // 2:\n        if not __votes[proposal_id]['finalized']:\n            __finalize_vote(proposal_id)\n    return proposal_id\n\n\n@__export('masternodes')\ndef vote(proposal_id: int, vote: str):\n    assert ctx.caller in __nodes.get(), 'Only nodes can vote'\n    assert __votes[proposal_id], 'Invalid proposal'\n    assert __votes[proposal_id]['finalized'\n        ] == False, 'Proposal already finalized'\n    assert vote in ['yes', 'no'], 'Invalid vote'\n    assert ctx.caller not in __votes[proposal_id]['voters'], 'Already voted'\n    cur_vote = __votes[proposal_id]\n    cur_vote[vote] += 1\n    cur_vote['voters'].append(ctx.caller)\n    __votes[proposal_id] = cur_vote\n    if len(__votes[proposal_id]['voters']) >= len(__nodes.get()) // 2:\n        if not __votes[proposal_id]['finalized']:\n            __finalize_vote(proposal_id)\n    return cur_vote\n\n\ndef __finalize_vote(proposal_id: int):\n    cur_vote = __votes[proposal_id]\n    if cur_vote['yes'] > cur_vote['no']:\n        if cur_vote['type'] == 'add_member':\n            __nodes.set(__nodes.get() + [cur_vote['arg']])\n        elif cur_vote['type'] == 'remove_member':\n            __nodes.set([node for node in __nodes.get() if node != cur_vote\n                ['arg']])\n            __force_leave(cur_vote['arg'])\n        elif cur_vote['type'] == 'reward_change':\n            rewards.set_value(new_value=cur_vote['arg'])\n        elif cur_vote['type'] == 'dao_payout':\n            dao.transfer_from_dao(args=cur_vote['arg'])\n        elif cur_vote['type'] == 'stamp_cost_change':\n            stamp_cost.set_value(new_value=cur_vote['arg'])\n        elif cur_vote['type'] == 'change_registration_fee':\n            __registration_fee.set(cur_vote['arg'])\n        elif cur_vote['type'] == 'change_types':\n            __types.set(cur_vote['arg'])\n    cur_vote['finalized'] = True\n    __votes[proposal_id] = cur_vote\n    return cur_vote\n\n\ndef __force_leave(node: str):\n    __pending_leave[node] = now + datetime.timedelta(days=7)\n\n\n@__export('masternodes')\ndef announce_leave():\n    assert ctx.caller in __nodes.get(), 'Not a node'\n    assert __pending_leave[ctx.caller] == False, 'Already pending leave'\n    __pending_leave[ctx.caller] = now + datetime.timedelta(days=7)\n\n\n@__export('masternodes')\ndef leave():\n    assert __pending_leave[ctx.caller\n        ] < now, 'Leave announcement period not over'\n    if ctx.caller in __nodes.get():\n        __nodes.set([node for node in __nodes.get() if node != ctx.caller])\n    __pending_leave[ctx.caller] = False\n\n\n@__export('masternodes')\ndef register():\n    assert ctx.caller not in __nodes.get(), 'Already a node'\n    assert __pending_registrations[ctx.caller\n        ] == False, 'Already pending registration'\n    currency.transfer_from(amount=__registration_fee.get(), to=ctx.this,\n        main_account=ctx.caller)\n    __holdings[ctx.caller] = __registration_fee.get()\n    __pending_registrations[ctx.caller] = True\n\n\n@__export('masternodes')\ndef unregister():\n    assert ctx.caller not in __nodes.get(\n        ), \"If you're a node already, you can't unregister. You need to leave or be removed.\"\n    assert __pending_registrations[ctx.caller\n        ] == True, 'No pending registration'\n    if __holdings[ctx.caller] > 0:\n        currency.transfer(__holdings[ctx.caller], ctx.caller)\n    __pending_registrations[ctx.caller] = False\n    __holdings[ctx.caller] = 0\n"
+            },
+            {
+                "key": "masternodes.__developer__",
+                "value": "sys"
+            },
+            {
+                "key": "masternodes.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        9,
+                        17,
+                        9,
+                        13,
+                        0,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "masternodes.nodes",
+                "value": [
+                    "13ca9a62d10cbc28d55408e0a85d31f5c059fe3bb49316538e1d03064f3f2c8e",
+                    "d37ddb28488fe1bae65279934d6800fae11b26f7c01511b76ca6e602bbc2398d",
+                    "40447f46cea1260dd7487833cff630a65b7868f19aafdfd6465b989c9a6dba0e",
+                    "8e73052eed03e60d4f27e4e422c0742cd2a755ac034122bd504a87afad746f8a",
+                    "ca9aeee192854dc55a6d3e211bf858cc3ecd41e8b86a55c07740ece29f349597"
+                ]
+            },
+            {
+                "key": "masternodes.registration_fee",
+                "value": 100000
+            },
+            {
+                "key": "masternodes.total_votes",
+                "value": 0
+            },
+            {
+                "key": "masternodes.types",
+                "value": [
+                    "add_member",
+                    "remove_member",
+                    "change_registration_fee",
+                    "reward_change",
+                    "dao_payout",
+                    "stamp_cost_change",
+                    "change_types"
+                ]
+            },
+            {
+                "key": "rewards.S:value",
+                "value": [
+                    {
+                        "__fixed__": "0.3"
+                    },
+                    {
+                        "__fixed__": "0.01"
+                    },
+                    {
+                        "__fixed__": "0.01"
+                    },
+                    {
+                        "__fixed__": "0.68"
+                    }
+                ]
+            },
+            {
+                "key": "rewards.__code__",
+                "value": "__S = Hash(contract='rewards', name='S')\n\n\ndef ____(initial_split: list=[decimal('0.3'), decimal('0.01'), decimal(\n    '0.01'), decimal('0.68')]):\n    __S['value'] = initial_split\n\n\n@__export('rewards')\ndef current_value():\n    return __S['value']\n\n\n@__export('rewards')\ndef set_value(new_value: list):\n    assert len(new_value) == 4, 'New value must be a list of 4 elements'\n    assert sum(new_value) == 1, 'Sum of new value must be 1'\n    assert all([(x > 0) for x in new_value]\n        ), 'There must be no 0 values in the list'\n    __S['value'] = new_value\n"
+            },
+            {
+                "key": "rewards.__developer__",
+                "value": "sys"
+            },
+            {
+                "key": "rewards.__owner__",
+                "value": "masternodes"
+            },
+            {
+                "key": "rewards.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        9,
+                        17,
+                        9,
+                        13,
+                        0,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "stamp_cost.S:value",
+                "value": 20
+            },
+            {
+                "key": "stamp_cost.__code__",
+                "value": "__S = Hash(contract='stamp_cost', name='S')\n\n\ndef ____(initial_rate: int=100):\n    __S['value'] = initial_rate\n\n\n@__export('stamp_cost')\ndef current_value():\n    return __S['value']\n\n\n@__export('stamp_cost')\ndef set_value(new_value: int):\n    assert new_value > 0, 'New value must be greater than 0'\n    __S['value'] = new_value\n"
+            },
+            {
+                "key": "stamp_cost.__developer__",
+                "value": "sys"
+            },
+            {
+                "key": "stamp_cost.__owner__",
+                "value": "masternodes"
+            },
+            {
+                "key": "stamp_cost.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        9,
+                        17,
+                        9,
+                        13,
+                        0,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "team_lock.__code__",
+                "value": "import currency\n__owners = Hash(contract='team_lock', name='owners')\n__required_signatures = Variable(contract='team_lock', name=\n    'required_signatures')\n__owner_count = Variable(contract='team_lock', name='owner_count')\n__transaction_count = Variable(contract='team_lock', name='transaction_count')\n__stream_id = Variable(contract='team_lock', name='stream_id')\n__transactions = Hash(contract='team_lock', name='transactions')\n\n\ndef ____(initial_owners: str, initial_required_signatures: int, stream: str):\n    \"\"\"\n    Initializes the multisig contract.\n    - initial_owners: Comma-separated string of owner addresses.\n    - initial_required_signatures: Number of required signatures to execute a transaction.\n    \"\"\"\n    owner_list = initial_owners.split(',')\n    for owner in owner_list:\n        __owners[owner.strip()] = True\n    __required_signatures.set(initial_required_signatures)\n    __owner_count.set(len(owner_list))\n    __transaction_count.set(0)\n    __stream_id.set(stream)\n\n\n@__export('team_lock')\ndef submit_transaction(to: str=None, amount: float=None, tx_type: str=\n    'transfer'):\n    \"\"\"\n    Submits a new transaction to the multisig wallet.\n    - to: Recipient address.\n    - amount: Amount of tokens to transfer.\n    - tx_type: Type of transaction ('transfer', 'addOwner', 'removeOwner', 'changeRequirement').\n    \"\"\"\n    assert __owners[ctx.caller], 'Only owners can submit transactions.'\n    tx_id = __transaction_count.get() + 1\n    __transaction_count.set(tx_id)\n    __transactions[tx_id, 'type'] = tx_type\n    __transactions[tx_id, 'to'] = to\n    __transactions[tx_id, 'amount'] = amount\n    __transactions[tx_id, 'executed'] = False\n    __transactions[tx_id, 'approvals'] = 0\n    approve_transaction(tx_id)\n    return f'Transaction {tx_id} submitted.'\n\n\n@__export('team_lock')\ndef approve_transaction(tx_id: int):\n    \"\"\"\n    Approves a pending transaction.\n    - tx_id: The ID of the transaction to approve.\n    \"\"\"\n    assert __owners[ctx.caller], 'Only owners can approve transactions.'\n    assert not __transactions[tx_id, 'executed'\n        ], 'Transaction already executed.'\n    assert __transactions[tx_id, 'type'\n        ] is not None, 'Transaction does not exist.'\n    assert not __transactions[tx_id, 'approvers', ctx.caller\n        ], 'Already approved.'\n    __transactions[tx_id, 'approvers', ctx.caller] = True\n    __transactions[tx_id, 'approvals'] += 1\n    return f'Transaction {tx_id} approved by {ctx.caller}.'\n\n\n@__export('team_lock')\ndef execute_transaction(tx_id: int):\n    \"\"\"\n    Executes a transaction if enough approvals are collected.\n    - tx_id: The ID of the transaction to execute.\n    \"\"\"\n    assert __owners[ctx.caller], 'Only owners can execute transactions.'\n    assert not __transactions[tx_id, 'executed'\n        ], 'Transaction already executed.'\n    assert __transactions[tx_id, 'type'\n        ] is not None, 'Transaction does not exist.'\n    approvals = __transactions[tx_id, 'approvals']\n    required = __required_signatures.get()\n    assert approvals >= required, 'Not enough approvals.'\n    tx_type = __transactions[tx_id, 'type']\n    to = __transactions[tx_id, 'to']\n    amount = __transactions[tx_id, 'amount']\n    if tx_type == 'transfer':\n        currency.transfer(amount=amount, to=to)\n    elif tx_type == 'addOwner':\n        assert to is not None, 'No owner specified to add.'\n        assert not __owners[to], 'Address is already an owner.'\n        __owners[to] = True\n        __owner_count.set(__owner_count.get() + 1)\n    elif tx_type == 'removeOwner':\n        assert to is not None, 'No owner specified to remove.'\n        assert __owners[to], 'Address is not an owner.'\n        __owners[to] = False\n        __owner_count.set(__owner_count.get() - 1)\n        if __required_signatures.get() > __owner_count.get():\n            __required_signatures.set(__owner_count.get())\n    elif tx_type == 'changeRequirement':\n        assert amount is not None, 'No new requirement specified.'\n        new_requirement = int(amount)\n        assert new_requirement > 0, 'Requirement must be greater than zero.'\n        total_owners = __owner_count.get()\n        assert new_requirement <= total_owners, 'Requirement cannot be greater than number of owners.'\n        __required_signatures.set(new_requirement)\n    else:\n        return 'Invalid transaction type.'\n    __transactions[tx_id, 'executed'] = True\n    return f'Transaction {tx_id} executed.'\n\n\n@__export('team_lock')\ndef balance_stream():\n    \"\"\"\n    Executes balance_stream function from currency \n    contract which sends tokens to this contract\n    \"\"\"\n    currency.balance_stream(__stream_id.get())\n"
+            },
+            {
+                "key": "team_lock.__developer__",
+                "value": "sys"
+            },
+            {
+                "key": "team_lock.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        9,
+                        17,
+                        9,
+                        13,
+                        0,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "team_lock.owner_count",
+                "value": 3
+            },
+            {
+                "key": "team_lock.owners:081e233f4e122a5fd79ff3c44f9d58848c3214f7110130936661394403100a9a",
+                "value": true
+            },
+            {
+                "key": "team_lock.owners:503ccb3dc04eaaed7c72c3ee6d22368e48a7f7e52b8577f4a4a9989eec51a0be",
+                "value": true
+            },
+            {
+                "key": "team_lock.owners:6ebd8090a80e5fc629f38fceefd05d66035a5a4d4ba2c223319ec8f9b83cb48a",
+                "value": true
+            },
+            {
+                "key": "team_lock.required_signatures",
+                "value": 2
+            },
+            {
+                "key": "team_lock.stream_id",
+                "value": "team_vesting"
+            },
+            {
+                "key": "team_lock.transaction_count",
+                "value": 0
+            }
+        ],
+        "origin": {
+            "signature": "126e6cd397c23e5d1124683adba45818b9416b57234b5f33965feef776485abdcbbad797d458a0fc74dc6b3e0d7f6804941b4b72c91062f70f14149ed72e0c0d",
+            "sender": "13ca9a62d10cbc28d55408e0a85d31f5c059fe3bb49316538e1d03064f3f2c8e"
+        }
+    }
+}

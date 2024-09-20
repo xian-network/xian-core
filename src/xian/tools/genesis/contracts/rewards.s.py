@@ -1,7 +1,7 @@
 S = Hash()
 
 @construct
-def seed(initial_split: list = [0.88, 0.01, 0.01, 0.1]):
+def seed(initial_split: list = [0.30, 0.01, 0.01, 0.68]):
     S['value'] = initial_split
 
 @export

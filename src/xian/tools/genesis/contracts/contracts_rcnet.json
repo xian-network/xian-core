@@ -1,0 +1,55 @@
+{
+	"extension": ".s.py",
+	"contracts": [
+		{
+			"name": "currency",
+			"owner": null,
+			"constructor_args": {
+				"vk": "13ca9a62d10cbc28d55408e0a85d31f5c059fe3bb49316538e1d03064f3f2c8e"
+			}
+		},
+		{
+			"name": "stamp_cost",
+			"owner": "masternodes",
+			"constructor_args": {
+				"initial_rate": 20
+			}
+		},
+		{
+			"name": "rewards",
+			"owner": "masternodes",
+			"constructor_args": null
+		},
+		{
+			"name": "foundation",
+			"owner": null,
+			"constructor_args": {
+				"vk": "13ca9a62d10cbc28d55408e0a85d31f5c059fe3bb49316538e1d03064f3f2c8e"
+			}
+		},
+        {
+            "name": "dao",
+            "owner": "masternodes",
+            "constructor_args": null
+        },
+		{
+            "name": "members",
+			"submit_as": "masternodes",
+			"owner": null,
+            "constructor_args": {
+				"genesis_nodes": ["13ca9a62d10cbc28d55408e0a85d31f5c059fe3bb49316538e1d03064f3f2c8e","d37ddb28488fe1bae65279934d6800fae11b26f7c01511b76ca6e602bbc2398d", "40447f46cea1260dd7487833cff630a65b7868f19aafdfd6465b989c9a6dba0e","8e73052eed03e60d4f27e4e422c0742cd2a755ac034122bd504a87afad746f8a","ca9aeee192854dc55a6d3e211bf858cc3ecd41e8b86a55c07740ece29f349597"],
+				"genesis_registration_fee": 100000
+			}
+		},
+		{
+			"name": "vault",
+			"submit_as": "team_lock",
+			"owner": null,
+			"constructor_args": {
+				"initial_owners":"6ebd8090a80e5fc629f38fceefd05d66035a5a4d4ba2c223319ec8f9b83cb48a,081e233f4e122a5fd79ff3c44f9d58848c3214f7110130936661394403100a9a,503ccb3dc04eaaed7c72c3ee6d22368e48a7f7e52b8577f4a4a9989eec51a0be",
+				"initial_required_signatures": 2,
+				"stream": "team_vesting"
+			}
+		}
+	]
+}

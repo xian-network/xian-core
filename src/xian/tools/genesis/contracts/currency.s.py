@@ -7,9 +7,9 @@ streams = Hash()
 @construct
 def seed(vk: str):
     balances[vk] = 5555555.55 # 5% Team Tokens
-    balances["team_lock"] = 16666666.65 # 15% Team Tokens 5 Year Release, Directly minted into Lock contract
+    balances["team_vesting"] = 16666666.65 # 15% Team Tokens 5 Year Release, Directly minted into Lock contract
     balances["dao"] = 33333333.3 # 30% DAO Tokens, Directly minted into DAO contract
-    balances[vk] += 49999999.95 # 45% Second batch of public tokens, to be sent out after mint
+    balances["team_lock"] += 49999999.95 # 45% Second batch of public tokens, to be sent out after mint
     balances[vk] += 5555555.55 # 5% First batch of public tokens, to be sent out after mint
         
     # TEAM LOCK
@@ -17,7 +17,7 @@ def seed(vk: str):
     # 1824 * 24 * 60 * 60 = 157593600 (seconds in duration)
     # 16666666.65 / 157593600 (release per second)
     
-    setup_seed_stream("team_lock", "team_lock", vk, 0.10575725568804825, 1824)
+    setup_seed_stream("team_vesting", "team_vesting", "team_lock", 0.10575725568804825, 1824)
 
 
 def setup_seed_stream(stream_id: str, sender: str, receiver: str, rate: float, duration_days: int):
