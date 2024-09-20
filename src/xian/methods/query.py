@@ -3,6 +3,8 @@ import json
 import ast
 import re
 import asyncio
+import socket
+import struct
 
 from cometbft.abci.v1beta1.types_pb2 import ResponseQuery
 from xian.utils.encoding import encode_str
@@ -31,6 +33,11 @@ async def query(self, req) -> ResponseQuery:
     loop = asyncio.get_event_loop()
     key = path_parts[1] if len(path_parts) > 1 else ""
     result = None
+
+    if self.block_service_mode:
+        stamp_socket_path = c.STAMPESTIMATOR_SOCKET
+        connection = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        connection.connect(stamp_socket_path)
 
     try:
         # http://localhost:26657/abci_query?path="/get/currency.balances:c93dee52d7dc6cc43af44007c3b1dae5b730ccf18a9e6fb43521f8e4064561e6"
@@ -165,9 +172,13 @@ async def query(self, req) -> ResponseQuery:
             elif path_parts[0] == "calculate_stamps":
                 raw_tx = path_parts[1]
                 byte_data = bytes.fromhex(raw_tx)
-                tx_hex = byte_data.decode("utf-8")
-                tx = json.loads(tx_hex)
-                result = await loop.run_in_executor(None, self.stamp_calculator.execute, tx)
+                message_length = struct.pack('>I', len(byte_data))
+                connection.sendall(message_length + byte_data)
+                recv_length = connection.recv(4)
+                length = struct.unpack('>I', recv_length)[0]
+                recv = connection.recv(length)
+                result = recv.decode()
+                
 
         else:
             error = f'Unknown query path: {path_parts[0]}'

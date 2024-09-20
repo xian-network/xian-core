@@ -7,12 +7,69 @@ from datetime import datetime
 from xian.utils.tx import format_dictionary
 from xian.utils.encoding import stringify_decimals
 import secrets
-
+import socket
+import pathlib
+import json
+import struct
 
 class StampCalculator:
-    def __init__(self, chain_id: str, constants: Constants = Constants):
-        self.chain_id = chain_id
-        self.constants = constants
+    def __init__(self):
+        self.constants = Constants()
+
+    def setup_socket(self):
+        # If the socket file exists, remove it
+        STAMPESTIMATOR_SOCKET = pathlib.Path(self.constants.STAMPESTIMATOR_SOCKET)
+        if STAMPESTIMATOR_SOCKET.exists():
+            STAMPESTIMATOR_SOCKET.unlink()
+
+        # Create a socket
+        self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.socket.bind(self.constants.STAMPESTIMATOR_SOCKET)
+        self.socket.listen(1)
+
+    def listen(self):
+        print('Listening...')
+        while True:
+            connection, client_address = self.socket.accept()
+            print("Client connected")
+            try:
+                # Accept a connection
+                while True:
+                    try:
+                        # Read message length (4 bytes)
+                        raw_msglen = connection.recv(4)
+                        if not raw_msglen:
+                            break
+                        msglen = struct.unpack('>I', raw_msglen)[0]
+                        
+                        # Read the message data
+                        data = connection.recv(msglen)
+                        if not data:
+                            # No more data from client, client closed connection
+                            print("Client disconnected")
+                            break
+
+                        print(f"Received: {data.decode()}")
+                        
+                        tx = data.decode()
+                        tx = json.loads(tx)
+                        try:
+                            response = self.execute(tx)
+                            response = json.dumps(response)
+                            response = response.encode()
+                            message_length = struct.pack('>I', len(response))
+                            connection.sendall(message_length + response)
+                        except BrokenPipeError:
+                            print("Cannot send data, broken pipe.")
+                            break
+                    except ConnectionResetError:
+                        print("Client disconnected")
+                        break
+            finally:
+                # Clean up the connection
+                print("Client disconnected")
+                connection.close()
+                
 
     def generate_environment(self, input_hash='0' * 64, bhash='0' * 64, num=1):
         now = Datetime._from_datetime(
@@ -76,3 +133,8 @@ class StampCalculator:
             driver= driver,
             executor=executor
         )
+
+if __name__ == '__main__':
+    sc = StampCalculator()
+    sc.setup_socket()
+    sc.listen()
