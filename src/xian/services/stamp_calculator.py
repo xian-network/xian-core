@@ -11,9 +11,9 @@ import secrets
 
 class StampCalculator:
     def __init__(self, chain_id: str, constants: Constants = Constants):
-        driver = Driver(storage_home=constants.STORAGE_HOME)
-        self.executor = Executor(metering=False, bypass_balance_amount=True, bypass_cache=True, driver=driver)
         self.chain_id = chain_id
+        self.constants = constants
+
     def generate_environment(self, input_hash='0' * 64, bhash='0' * 64, num=1):
         now = Datetime._from_datetime(
             datetime.now()
@@ -30,10 +30,10 @@ class StampCalculator:
         # Generate a random number with `length//2` bytes and convert to hex
         return secrets.token_hex(nbytes=length // 2)
 
-    def execute_tx(self, transaction, stamp_cost, environment: dict = {}):
-
+    def execute_tx(self, transaction, stamp_cost, environment: dict = {}, driver = None, executor = None):
+        
         balance = 9999999
-        output = self.executor.execute(
+        output = executor.execute(
             sender=transaction['payload']['sender'],
             contract_name=transaction['payload']['contract'],
             function_name=transaction['payload']['function'],
@@ -45,7 +45,7 @@ class StampCalculator:
             metering=True
         )
 
-        self.executor.driver.flush_cache()
+        executor.driver.flush_cache()
 
         writes = [{'key': k, 'value': v} for k, v in output['writes'].items()]
 
@@ -62,13 +62,17 @@ class StampCalculator:
         return tx_output
 
     def execute(self, transaction):
+        driver = Driver(storage_home=self.constants.STORAGE_HOME)
+        executor = Executor(metering=False, bypass_balance_amount=True, bypass_cache=True, driver=driver)
         environment = self.generate_environment()
         try:
-            stamp_cost = int(self.executor.driver.get_var(contract='stamp_cost', variable='S', arguments=['value']))
+            stamp_cost = int(executor.driver.get_var(contract='stamp_cost', variable='S', arguments=['value']))
         except:
             stamp_cost = 20
         return self.execute_tx(
             transaction=transaction,
             environment=environment,
-            stamp_cost=stamp_cost
+            stamp_cost=stamp_cost,
+            driver= driver,
+            executor=executor
         )
