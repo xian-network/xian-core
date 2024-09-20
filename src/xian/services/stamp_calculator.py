@@ -11,6 +11,8 @@ import socket
 import pathlib
 import json
 import struct
+import os
+import signal
 
 class StampCalculator:
     def __init__(self):
