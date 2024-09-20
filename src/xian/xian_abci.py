@@ -26,7 +26,6 @@ from xian.methods import (
 from xian.upgrader import UpgradeHandler
 from xian.validators import ValidatorHandler
 from xian.nonce import NonceStorage
-from xian.services.stamp_calculator import StampCalculator
 from xian.processor import TxProcessor
 from xian.rewards import RewardsHandler
 
@@ -83,8 +82,6 @@ class Xian:
         self.chain_id = self.genesis.get("chain_id", None)
 
         self.block_service_mode = self.cometbft_config["xian"]["block_service_mode"]
-        if self.block_service_mode:
-            self.stamp_calculator = StampCalculator(chain_id=self.chain_id, constants=constants)
 
         self.pruning_enabled = self.cometbft_config["xian"]["pruning_enabled"]
         # If pruning is enabled, this is the number of blocks to keep history for
