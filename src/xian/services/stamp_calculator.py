@@ -11,6 +11,8 @@ import socket
 import pathlib
 import json
 import struct
+import os
+import signal
 
 class StampCalculator:
     def __init__(self):
@@ -138,3 +140,5 @@ if __name__ == '__main__':
     sc = StampCalculator()
     sc.setup_socket()
     sc.listen()
+    # Signal to PM2 that the process is ready
+    os.kill(os.getppid(), signal.SIGINT)
