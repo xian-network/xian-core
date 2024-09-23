@@ -107,6 +107,11 @@ class BDS:
         await self._insert_tx(tx, block_time)
         logger.debug(f'Saved tx in {timer() - start_time:.3f} seconds')
 
+        # State changes
+        start_time = timer()
+        await self._insert_state_changes(tx, block_time)
+        logger.debug(f'Saved state changes in {timer() - start_time:.3f} seconds')
+
         # Rewards
         start_time = timer()
         await self._insert_rewards(tx, block_time)
@@ -122,15 +127,9 @@ class BDS:
         await self._insert_contracts(tx, block_time)
         logger.debug(f'Saved contracts in {timer() - start_time:.3f} seconds')
 
-        # State
         start_time = timer()
         await self._insert_state(tx, block_time)
         logger.debug(f'Saved contracts in {timer() - start_time:.3f} seconds')
-
-        # State changes
-        start_time = timer()
-        await self._insert_state_changes(tx, block_time)
-        logger.debug(f'Saved state changes in {timer() - start_time:.3f} seconds')
 
         logger.debug(f'Processed tx {tx["tx_result"]["hash"]} in {timer() - total_time:.3f} seconds')
 
@@ -378,6 +377,8 @@ class BDS:
                     ])
                 except Exception as e:
                     logger.exception(e)
+
+    
 
     def get_submission_time(self, genesis_state: list, contract_name: str) -> datetime:
         for item in genesis_state:

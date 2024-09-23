@@ -108,23 +108,28 @@ async def query(self, req) -> ResponseQuery:
             # http://localhost:26657/abci_query?path="/state/currency.balances"
             elif path_parts[0] == "state":
                 result = await self.bds.get_state(key, limit, offset)
+                print('state', result)  # TODO: Remove
 
             # http://localhost:26657/abci_query?path="/state_history/currency.balances:ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9/limit=10/offset=20"
             if path_parts[0] == "state_history":
                 result = await self.bds.get_state_history(key, limit, offset)
+                print('state_history', result)  # TODO: Remove
 
             # http://localhost:26657/abci_query?path="/state_for_tx/f39b4ea880088cfae45538acb2f7fdae1e70112185a5523d1027bcf74eac3919"
             elif path_parts[0] == "state_for_tx":
                 result = await self.bds.get_state_for_tx(key)
+                print('state_for_tx', result)  # TODO: Remove
 
             # Block Height: http://localhost:26657/abci_query?path="/state_for_block/662"
             # Block Hash: http://localhost:26657/abci_query?path="/state_for_block/34F1A1C923D23C5C0531490E714FC56F501EDADF05B6BF68C2ED3923234E0CC4"
             elif path_parts[0] == "state_for_block":
                 result = await self.bds.get_state_for_block(key)
+                print('state_for_block', result)  # TODO: Remove
 
             # http://localhost:26657/abci_query?path="/contracts/limit=10/offset=20"
             elif path_parts[0] == "contracts":
                 result = await self.bds.get_contracts(limit, offset)
+                print('contracts', result)  # TODO: Remove
 
             # http://localhost:26657/abci_query?path="/lint/<code>"
             elif path_parts[0] == "lint":

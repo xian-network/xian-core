@@ -102,7 +102,7 @@ class Xian:
         self.current_block_rewards = {}
 
     @classmethod
-    async def create(cls, constants=Constants()):
+    async def create(cls, constants=Constants):
         self = cls(constants=constants)
         if self.block_service_mode:
             self.bds = await BDS().init(cometbft_genesis=self.genesis)
@@ -192,8 +192,11 @@ def main():
         rotation="10 MB",
     )
 
-    app = asyncio.get_event_loop().run_until_complete(Xian.create())
-    ABCIServer(app=app).run()
+    loop = asyncio.get_event_loop()
+    xian_instance = loop.run_until_complete(Xian.create())
+
+    app = ABCIServer(app=xian_instance)
+    app.run()
 
 
 if __name__ == "__main__":
