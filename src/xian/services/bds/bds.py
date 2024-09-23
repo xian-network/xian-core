@@ -82,6 +82,7 @@ class BDS:
                 await self.insert_genesis_state_contract(parts[0], state["value"], submission_time)
             else:
                 await self.insert_genesis_state_change(state["key"], state["value"])
+                await self.insert_genesis_state(state["key"], state["value"])
 
         logger.debug(f'Processed genesis block in {timer() - start_time:.3f} seconds')
 
