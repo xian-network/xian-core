@@ -14,31 +14,6 @@ from timeit import default_timer as timer
 # Custom JSON encoder for our own objects
 class CustomEncoder(json.JSONEncoder):
     def default(self, obj):
-        if isinstance(obj, dict):
-            return self.encode_dict(obj)
-        if isinstance(obj, list):
-            return self.encode_list(obj)
-        return self.encode_value(obj)
-
-    def encode_dict(self, obj):
-        encoded_dict = {}
-        for k, v in obj.items():
-            if isinstance(v, (dict, list)):
-                encoded_dict[k] = self.default(v)
-            else:
-                encoded_dict[k] = self.encode_value(v)
-        return encoded_dict
-
-    def encode_list(self, obj):
-        encoded_list = []
-        for item in obj:
-            if isinstance(item, (dict, list)):
-                encoded_list.append(self.default(item))
-            else:
-                encoded_list.append(self.encode_value(item))
-        return encoded_list
-
-    def encode_value(self, obj):
         if isinstance(obj, ContractingDecimal):
             v = float(str(obj))
             return int(v) if v.is_integer() else v
@@ -47,6 +22,20 @@ class CustomEncoder(json.JSONEncoder):
         if isinstance(obj, Timedelta):
             return str(obj)
         return super().default(obj)
+
+    def encode(self, obj):
+        def process_fixed(o):
+            if isinstance(o, dict):
+                if len(o) == 1 and '__fixed__' in o:
+                    return float(o['__fixed__'])
+                else:
+                    return {k: process_fixed(v) for k, v in o.items()}
+            elif isinstance(o, list):
+                return [process_fixed(v) for v in o]
+            else:
+                return o
+        processed_obj = process_fixed(obj)
+        return super().encode(processed_obj)
 
 
 class BDS:
