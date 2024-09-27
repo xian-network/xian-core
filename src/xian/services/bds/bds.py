@@ -18,10 +18,10 @@ class CustomEncoder(json.JSONEncoder):
             v = float(str(obj))
             return int(v) if v.is_integer() else v
         if isinstance(obj, Datetime):
-            # Convert to ISO 8601 format string
-            return obj._datetime.isoformat()
+            # Convert to ISO 8601 format string with microseconds
+            return obj._datetime.isoformat(timespec='microseconds')
         if isinstance(obj, Timedelta):
-            # Convert to total seconds
+            # Convert to total seconds with microseconds
             return obj._timedelta.total_seconds()
         return super().default(obj)
 
@@ -37,7 +37,8 @@ class CustomEncoder(json.JSONEncoder):
                         # Ensure time_list has exactly 7 elements
                         time_list += [0] * (7 - len(time_list))
                         dt_obj = datetime(*time_list)
-                        return dt_obj.isoformat()
+                        # Convert to ISO 8601 string with microseconds
+                        return dt_obj.isoformat(timespec='microseconds')
                     else:
                         return {k: process(v) for k, v in o.items()}
                 else:
@@ -45,7 +46,7 @@ class CustomEncoder(json.JSONEncoder):
             elif isinstance(o, list):
                 return [process(v) for v in o]
             elif isinstance(o, Datetime):
-                return o._datetime.isoformat()
+                return o._datetime.isoformat(timespec='microseconds')
             elif isinstance(o, Timedelta):
                 return o._timedelta.total_seconds()
             else:
