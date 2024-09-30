@@ -18,24 +18,40 @@ class CustomEncoder(json.JSONEncoder):
             v = float(str(obj))
             return int(v) if v.is_integer() else v
         if isinstance(obj, Datetime):
-            return str(obj)
+            # Convert to ISO 8601 format string with microseconds
+            return obj._datetime.isoformat(timespec='microseconds')
         if isinstance(obj, Timedelta):
-            return str(obj)
+            # Convert to total seconds with microseconds
+            return obj._timedelta.total_seconds()
         return super().default(obj)
 
     def encode(self, obj):
-        def process_fixed(o):
+        def process(o):
             if isinstance(o, dict):
-                if len(o) == 1 and '__fixed__' in o:
-                    return float(o['__fixed__'])
+                if len(o) == 1:
+                    if '__fixed__' in o:
+                        return float(o['__fixed__'])
+                    elif '__time__' in o:
+                        # Convert __time__ list to ISO 8601 string
+                        time_list = o['__time__']
+                        # Ensure time_list has exactly 7 elements
+                        time_list += [0] * (7 - len(time_list))
+                        dt_obj = datetime(*time_list)
+                        # Convert to ISO 8601 string with microseconds
+                        return dt_obj.isoformat(timespec='microseconds')
+                    else:
+                        return {k: process(v) for k, v in o.items()}
                 else:
-                    return {k: process_fixed(v) for k, v in o.items()}
+                    return {k: process(v) for k, v in o.items()}
             elif isinstance(o, list):
-                return [process_fixed(v) for v in o]
+                return [process(v) for v in o]
+            elif isinstance(o, Datetime):
+                return o._datetime.isoformat(timespec='microseconds')
+            elif isinstance(o, Timedelta):
+                return o._timedelta.total_seconds()
             else:
                 return o
-        processed_obj = process_fixed(obj)
-        return super().encode(processed_obj)
+        return super().encode(process(obj))
 
 
 class BDS:
