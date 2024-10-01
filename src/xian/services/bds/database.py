@@ -54,6 +54,7 @@ class DB:
             host=self.cfg.get('db_host'),
             port=self.cfg.get('db_port')
         )
+
     async def execute(self, query: str, params: list = []):
         """
         This is meant for INSERT, UPDATE and DELETE statements
