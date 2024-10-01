@@ -25,12 +25,16 @@ from xian.utils.encoding import (
     stringify_decimals,
     hash_bytes
 )
+from xian.utils.pyth import (
+    get_btc_usd
+)
 from loguru import logger
 
 async def finalize_block(self, req) -> ResponseFinalizeBlock:
     nanos = get_nanotime_from_block_time(req.time)
     hash = convert_binary_to_hex(req.hash)
     block_datetime = convert_cometbft_time_to_datetime(nanos)
+    unix_timestamp = block_datetime.timestamp() 
     height = req.height
     tx_results = []
     reward_writes = []
@@ -39,9 +43,10 @@ async def finalize_block(self, req) -> ResponseFinalizeBlock:
         "nanos": nanos,
         "height": height,
         "hash": hash,
-        "chain_id": self.chain_id
+        "chain_id": self.chain_id,
+        "price_btc_usd": get_btc_usd(unix_timestamp)
     }
-
+    
     for tx_bytes in req.txs:
         tx = decode_transaction_bytes(tx_bytes)
         sender, signature, payload = unpack_transaction(tx)
