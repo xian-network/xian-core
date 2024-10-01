@@ -36,3 +36,6 @@ dwu:
 pull-and-install:
 	make pull
 	make install
+	
+ex-state:
+	python ./src/xian/tools/export_state.py
