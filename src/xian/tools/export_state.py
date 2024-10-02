@@ -59,7 +59,7 @@ def build_genesis_block(founder_sk: str, contract_state: dict, run_state: dict):
 
     print('Populating genesis block...')
     for key, value in contract_state.items():
-        if not is_compiled_key(key):
+        if not is_compiled_key(key) and value is not None:
             genesis_block['genesis'].append({
                 'key': key,
                 'value': value
