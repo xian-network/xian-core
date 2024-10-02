@@ -73,8 +73,9 @@ async def finalize_block(self, req) -> ResponseFinalizeBlock:
 
         tx_events = []
 
-        # Only trigger state change events if tx was successful
+        # Websocket Events - Only trigger state change events if tx was successful
         if result["tx_result"]["status"] == 0:
+
             # Need to replace chars since they are reserved
             translation_table = str.maketrans({'.': '_', ':': '__'})
 
@@ -103,11 +104,13 @@ async def finalize_block(self, req) -> ResponseFinalizeBlock:
             )
         )
 
+        # Save data to BDS - Add tx data to batch
         if self.block_service_mode:
             cometbft_hash = hash_bytes(tx_bytes).upper()
             result["tx_result"]["hash"] = cometbft_hash
             asyncio.create_task(self.bds.insert_full_data(tx | result, block_datetime))
 
+    # Save data to BDS - Process batch
     if self.block_service_mode:
         asyncio.create_task(self.bds.db.commit_batch_to_disk())
 

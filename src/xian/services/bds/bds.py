@@ -14,39 +14,44 @@ from timeit import default_timer as timer
 # Custom JSON encoder for our own objects
 class CustomEncoder(json.JSONEncoder):
     def default(self, obj):
-        if isinstance(obj, dict):
-            return self.encode_dict(obj)
-        if isinstance(obj, list):
-            return self.encode_list(obj)
-        return self.encode_value(obj)
-
-    def encode_dict(self, obj):
-        encoded_dict = {}
-        for k, v in obj.items():
-            if isinstance(v, (dict, list)):
-                encoded_dict[k] = self.default(v)
-            else:
-                encoded_dict[k] = self.encode_value(v)
-        return encoded_dict
-
-    def encode_list(self, obj):
-        encoded_list = []
-        for item in obj:
-            if isinstance(item, (dict, list)):
-                encoded_list.append(self.default(item))
-            else:
-                encoded_list.append(self.encode_value(item))
-        return encoded_list
-
-    def encode_value(self, obj):
         if isinstance(obj, ContractingDecimal):
             v = float(str(obj))
             return int(v) if v.is_integer() else v
         if isinstance(obj, Datetime):
-            return str(obj)
+            # Convert to ISO 8601 format string with microseconds
+            return obj._datetime.isoformat(timespec='microseconds')
         if isinstance(obj, Timedelta):
-            return str(obj)
+            # Convert to total seconds with microseconds
+            return obj._timedelta.total_seconds()
         return super().default(obj)
+
+    def encode(self, obj):
+        def process(o):
+            if isinstance(o, dict):
+                if len(o) == 1:
+                    if '__fixed__' in o:
+                        return float(o['__fixed__'])
+                    elif '__time__' in o:
+                        # Convert __time__ list to ISO 8601 string
+                        time_list = o['__time__']
+                        # Ensure time_list has exactly 7 elements
+                        time_list += [0] * (7 - len(time_list))
+                        dt_obj = datetime(*time_list)
+                        # Convert to ISO 8601 string with microseconds
+                        return dt_obj.isoformat(timespec='microseconds')
+                    else:
+                        return {k: process(v) for k, v in o.items()}
+                else:
+                    return {k: process(v) for k, v in o.items()}
+            elif isinstance(o, list):
+                return [process(v) for v in o]
+            elif isinstance(o, Datetime):
+                return o._datetime.isoformat(timespec='microseconds')
+            elif isinstance(o, Timedelta):
+                return o._timedelta.total_seconds()
+            else:
+                return o
+        return super().encode(process(obj))
 
 
 class BDS:
@@ -108,6 +113,16 @@ class BDS:
         await self._insert_tx(tx, block_time)
         logger.debug(f'Saved tx in {timer() - start_time:.3f} seconds')
 
+        # State
+        start_time = timer()
+        await self._insert_state(tx, block_time)
+        logger.debug(f'Saved contracts in {timer() - start_time:.3f} seconds')
+
+        # State changes
+        start_time = timer()
+        await self._insert_state_changes(tx, block_time)
+        logger.debug(f'Saved state changes in {timer() - start_time:.3f} seconds')
+
         # Rewards
         start_time = timer()
         await self._insert_rewards(tx, block_time)
@@ -119,19 +134,11 @@ class BDS:
         logger.debug(f'Saved addresses in {timer() - start_time:.3f} seconds')
 
         # Contracts
-        start_time = timer()
-        await self._insert_contracts(tx, block_time)
-        logger.debug(f'Saved contracts in {timer() - start_time:.3f} seconds')
-
-        # State
-        start_time = timer()
-        await self._insert_state(tx, block_time)
-        logger.debug(f'Saved contracts in {timer() - start_time:.3f} seconds')
-
-        # State changes
-        start_time = timer()
-        await self._insert_state_changes(tx, block_time)
-        logger.debug(f'Saved state changes in {timer() - start_time:.3f} seconds')
+        # Only save contracts if tx was successful
+        if tx["tx_result"]["status"] == 0:
+            start_time = timer()
+            await self._insert_contracts(tx, block_time)
+            logger.debug(f'Saved contracts in {timer() - start_time:.3f} seconds')
 
         logger.debug(f'Processed tx {tx["tx_result"]["hash"]} in {timer() - total_time:.3f} seconds')
 
