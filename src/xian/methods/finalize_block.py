@@ -8,8 +8,7 @@ from cometbft.abci.v1beta3.types_pb2 import (
 )
 from xian.utils.hash import (
     hash_list,
-    hash_from_rewards,
-    hash_from_validator_updates
+    hash_from_rewards
 )
 from xian.utils.block import (
     get_nanotime_from_block_time,
