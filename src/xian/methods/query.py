@@ -10,7 +10,8 @@ from cometbft.abci.v1beta1.types_pb2 import ResponseQuery
 from xian.utils.encoding import encode_str
 from xian.constants import Constants as c
 
-from contracting.stdlib.bridge.decimal import ContractingDecimal
+from contracting.stdlib.bridge.decimal import ContractingDecimal, CONTEXT
+import decimal
 from contracting.compilation import parser
 from contracting.compilation.linter import Linter
 from contracting.storage.encoder import Encoder
@@ -33,6 +34,7 @@ async def query(self, req) -> ResponseQuery:
     loop = asyncio.get_event_loop()
     key = path_parts[1] if len(path_parts) > 1 else ""
     result = None
+    decimal.setcontext(CONTEXT)
 
     try:
         # http://localhost:26657/abci_query?path="/get/currency.balances:c93dee52d7dc6cc43af44007c3b1dae5b730ccf18a9e6fb43521f8e4064561e6"
