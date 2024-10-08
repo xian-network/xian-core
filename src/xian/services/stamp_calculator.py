@@ -11,8 +11,7 @@ import socket
 import pathlib
 import json
 import struct
-import os
-import signal
+
 
 class StampCalculator:
     def __init__(self):
@@ -71,7 +70,6 @@ class StampCalculator:
                 # Clean up the connection
                 print("Client disconnected")
                 connection.close()
-                
 
     def generate_environment(self, input_hash='0' * 64, bhash='0' * 64, num=1):
         now = Datetime._from_datetime(
