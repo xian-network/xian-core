@@ -35,7 +35,7 @@ async def query(self, req) -> ResponseQuery:
     key = path_parts[1] if len(path_parts) > 1 else ""
     result = None
     decimal.setcontext(CONTEXT)
-
+    print(req.path)
     try:
         # http://localhost:26657/abci_query?path="/get/currency.balances:c93dee52d7dc6cc43af44007c3b1dae5b730ccf18a9e6fb43521f8e4064561e6"
         if path_parts and path_parts[0] == "get":
@@ -200,6 +200,6 @@ async def query(self, req) -> ResponseQuery:
 
     except Exception as err:
         logger.error(err)
-        return ResponseQuery(code=c.ErrorCode, log=err)
+        return ResponseQuery(code=c.ErrorCode)
 
     return ResponseQuery(code=c.OkCode, value=v, info=type_of_data, key=encode_str(key))
