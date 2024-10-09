@@ -1,7 +1,7 @@
 {
     "genesis_time": "2024-02-08T00:17:23.342520258Z",
     "chain_id": "xian-testnet-10",
-    "initial_height": "0",
+    "initial_height": "155",
     "consensus_params": {
         "block": {
             "max_bytes": "22020096",
@@ -43,12 +43,78 @@
     "app_hash": "",
     "abci_genesis": {
         "hash": "31323662643132363639383163636337623062643937346537343631373334343537393138333065396663396166353337353864336263633435373739616163",
-        "number": 141,
+        "number": 155,
         "origin": {
             "signature": "",
             "sender": ""
         },
         "genesis": [
+            {
+                "key": "con_as.__code__",
+                "value": "def ____():\n    for i in range(10):\n        importlib.import_module('currency')\n\n\n@__export('con_as')\ndef test():\n    return 'Hello, World!'\n"
+            },
+            {
+                "key": "con_as.__developer__",
+                "value": "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e"
+            },
+            {
+                "key": "con_as.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        10,
+                        5,
+                        10,
+                        51,
+                        4,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_as2.__code__",
+                "value": "def ____():\n    for i in range(40):\n        importlib.import_module('currency')\n\n\n@__export('con_as2')\ndef test():\n    return 'Hello, World!'\n"
+            },
+            {
+                "key": "con_as2.__developer__",
+                "value": "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e"
+            },
+            {
+                "key": "con_as2.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        10,
+                        5,
+                        10,
+                        54,
+                        7,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_as4.__code__",
+                "value": "def ____():\n    for i in range(40):\n        importlib.import_module('con_pixel_frames_master_v0_1')\n\n\n@__export('con_as4')\ndef test():\n    return 'Hello, World!'\n"
+            },
+            {
+                "key": "con_as4.__developer__",
+                "value": "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e"
+            },
+            {
+                "key": "con_as4.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        10,
+                        5,
+                        10,
+                        54,
+                        38,
+                        0
+                    ]
+                }
+            },
             {
                 "key": "con_counter.__code__",
                 "value": "__counter = Variable(contract='con_counter', name='counter')\n__address_to_counter = Hash(default_value=0, contract='con_counter', name=\n    'address_to_counter')\n__owner = Variable(contract='con_counter', name='owner')\n__stopped = Variable(contract='con_counter', name='stopped')\n\n\ndef ____():\n    __counter.set(0)\n    __owner.set(ctx.caller)\n    __stopped.set(False)\n\n\n@__export('con_counter')\ndef increment_counter():\n    assert not __stopped.get(), 'Contract is stopped'\n    assert 'con_' not in ctx.caller, 'Contracts cannot call this function'\n    __counter.set(__counter.get() + 1)\n    __address_to_counter[ctx.caller] = __address_to_counter[ctx.caller] + 1\n    return __counter.get()\n\n\n@__export('con_counter')\ndef get_counter():\n    return __counter.get()\n\n\n@__export('con_counter')\ndef get_address_counter(address: str):\n    return __address_to_counter[address]\n\n\n@__export('con_counter')\ndef stop():\n    assert ctx.caller == __owner.get(), 'Only the owner can stop the contract'\n    __stopped.set(True)\n    return True\n\n\n@__export('con_counter')\ndef start():\n    assert ctx.caller == __owner.get(), 'Only the owner can start the contract'\n    __stopped.set(False)\n    return True\n\n\n@__export('con_counter')\ndef reset():\n    assert ctx.caller == __owner.get(), 'Only the owner can reset the contract'\n    __counter.set(0)\n    __address_to_counter.clear()\n    return True\n"
@@ -102,6 +168,44 @@
             {
                 "key": "con_counter.stopped",
                 "value": false
+            },
+            {
+                "key": "con_crosstoken.__code__",
+                "value": "__balances = Hash(default_value=0, contract='con_crosstoken', name='balances')\n__metadata = Hash(contract='con_crosstoken', name='metadata')\n\n\ndef ____():\n    __balances[ctx.caller] = 1000000\n    __metadata['token_name'] = 'Cross Token'\n    __metadata['token_symbol'] = 'CT'\n    __metadata['operator'] = ctx.caller\n\n\n@__export('con_crosstoken')\ndef change_metadata(key: str, value: Any):\n    assert ctx.caller == __metadata['operator'\n        ], 'Only operator can set metadata!'\n    __metadata[key] = value\n\n\n@__export('con_crosstoken')\ndef transfer(amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    assert __balances[ctx.caller] >= amount, 'Not enough coins to send!'\n    __balances[ctx.caller] -= amount\n    __balances[to] += amount\n    return f'Sent {amount} to {to}'\n\n\n@__export('con_crosstoken')\ndef approve(amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    __balances[ctx.caller, to] += amount\n    return f'Approved {amount} for {to}'\n\n\n@__export('con_crosstoken')\ndef transfer_from(amount: float, to: str, main_account: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    assert __balances[main_account, ctx.caller\n        ] >= amount, 'Not enough coins approved to send! You have {} and are trying to spend {}'.format(\n        __balances[main_account, ctx.caller], amount)\n    assert __balances[main_account] >= amount, 'Not enough coins to send!'\n    __balances[main_account, ctx.caller] -= amount\n    __balances[main_account] -= amount\n    __balances[to] += amount\n    return f'Sent {amount} to {to} from {main_account}'\n\n\n@__export('con_crosstoken')\ndef balance_of(address: str):\n    return __balances[address]\n"
+            },
+            {
+                "key": "con_crosstoken.__developer__",
+                "value": "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e"
+            },
+            {
+                "key": "con_crosstoken.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        10,
+                        4,
+                        19,
+                        31,
+                        33,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_crosstoken.balances:7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e",
+                "value": 1000000
+            },
+            {
+                "key": "con_crosstoken.metadata:operator",
+                "value": "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e"
+            },
+            {
+                "key": "con_crosstoken.metadata:token_name",
+                "value": "Cross Token"
+            },
+            {
+                "key": "con_crosstoken.metadata:token_symbol",
+                "value": "CT"
             },
             {
                 "key": "con_dafuq.__code__",
@@ -1018,6 +1122,87 @@
                 "value": "text/plain"
             },
             {
+                "key": "con_pixel_frames_info_v0_3.S:1448b25056214625e58f1ea23e8bc8b63647e3a9810c757bf5303db120b5b986",
+                "value": [
+                    "thing",
+                    "type",
+                    "name",
+                    "description",
+                    "owner",
+                    "creator",
+                    "likes",
+                    "price:amount",
+                    "price:hold",
+                    "meta_items"
+                ]
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:1448b25056214625e58f1ea23e8bc8b63647e3a9810c757bf5303db120b5b986:created",
+                "value": {
+                    "__time__": [
+                        2024,
+                        10,
+                        6,
+                        12,
+                        23,
+                        41,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:1448b25056214625e58f1ea23e8bc8b63647e3a9810c757bf5303db120b5b986:creator",
+                "value": "e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931"
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:1448b25056214625e58f1ea23e8bc8b63647e3a9810c757bf5303db120b5b986:description",
+                "value": "765765"
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:1448b25056214625e58f1ea23e8bc8b63647e3a9810c757bf5303db120b5b986:likes",
+                "value": 0
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:1448b25056214625e58f1ea23e8bc8b63647e3a9810c757bf5303db120b5b986:meta:num_of_frames",
+                "value": 1
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:1448b25056214625e58f1ea23e8bc8b63647e3a9810c757bf5303db120b5b986:meta:royalty_percent",
+                "value": 5
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:1448b25056214625e58f1ea23e8bc8b63647e3a9810c757bf5303db120b5b986:meta:speed",
+                "value": 500
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:1448b25056214625e58f1ea23e8bc8b63647e3a9810c757bf5303db120b5b986:meta_items",
+                "value": [
+                    "speed",
+                    "num_of_frames",
+                    "royalty_percent"
+                ]
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:1448b25056214625e58f1ea23e8bc8b63647e3a9810c757bf5303db120b5b986:name",
+                "value": "98797"
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:1448b25056214625e58f1ea23e8bc8b63647e3a9810c757bf5303db120b5b986:owner",
+                "value": "e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931"
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:1448b25056214625e58f1ea23e8bc8b63647e3a9810c757bf5303db120b5b986:price:amount",
+                "value": 0
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:1448b25056214625e58f1ea23e8bc8b63647e3a9810c757bf5303db120b5b986:thing",
+                "value": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBJBBBBBBBBBBBBBBBJJBJBBBBJBBBBBBBBBBBBBBBBBBBJNNNNNBBBBBBBBBBBBBBBBBBNNNNNBNNBBBBBBBBBBBBBBBBNNNNNJJBNBBBBBBBBBBBBBBBNNNNNJBBJNNBBBBBBBBBBBBBBNNNNJBBBBJNBBBBBBBBBBBBBBNNNNBBBBBBNJBBBBBBBBBBBBBNNBBBBBBBNBJJBBBBBBBBBBBBBNNNBBBBBNBBBBBBBBBBBBBBBBNNBNNBNNNBBBBBBBBBBBBBBBBBNNNNNNNBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:1448b25056214625e58f1ea23e8bc8b63647e3a9810c757bf5303db120b5b986:type",
+                "value": "text/plain"
+            },
+            {
                 "key": "con_pixel_frames_info_v0_3.S:16db3b33f6852e84db7ecd548fc6b375059776a9b54c80bb4c0db6c5ba84dbea",
                 "value": [
                     "thing",
@@ -1276,6 +1461,87 @@
             },
             {
                 "key": "con_pixel_frames_info_v0_3.S:1f2605863f8620b176a459d39b31b875ef7a096fd5261b494d31ae828e42e86a:type",
+                "value": "text/plain"
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:31bd626d700bbb232cefdcb98459cedf9638ceb358fec021ef39022ec575ec9e",
+                "value": [
+                    "thing",
+                    "type",
+                    "name",
+                    "description",
+                    "owner",
+                    "creator",
+                    "likes",
+                    "price:amount",
+                    "price:hold",
+                    "meta_items"
+                ]
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:31bd626d700bbb232cefdcb98459cedf9638ceb358fec021ef39022ec575ec9e:created",
+                "value": {
+                    "__time__": [
+                        2024,
+                        10,
+                        5,
+                        10,
+                        59,
+                        34,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:31bd626d700bbb232cefdcb98459cedf9638ceb358fec021ef39022ec575ec9e:creator",
+                "value": "e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931"
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:31bd626d700bbb232cefdcb98459cedf9638ceb358fec021ef39022ec575ec9e:description",
+                "value": "123"
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:31bd626d700bbb232cefdcb98459cedf9638ceb358fec021ef39022ec575ec9e:likes",
+                "value": 0
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:31bd626d700bbb232cefdcb98459cedf9638ceb358fec021ef39022ec575ec9e:meta:num_of_frames",
+                "value": 1
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:31bd626d700bbb232cefdcb98459cedf9638ceb358fec021ef39022ec575ec9e:meta:royalty_percent",
+                "value": 5
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:31bd626d700bbb232cefdcb98459cedf9638ceb358fec021ef39022ec575ec9e:meta:speed",
+                "value": 500
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:31bd626d700bbb232cefdcb98459cedf9638ceb358fec021ef39022ec575ec9e:meta_items",
+                "value": [
+                    "speed",
+                    "num_of_frames",
+                    "royalty_percent"
+                ]
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:31bd626d700bbb232cefdcb98459cedf9638ceb358fec021ef39022ec575ec9e:name",
+                "value": "123"
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:31bd626d700bbb232cefdcb98459cedf9638ceb358fec021ef39022ec575ec9e:owner",
+                "value": "e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931"
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:31bd626d700bbb232cefdcb98459cedf9638ceb358fec021ef39022ec575ec9e:price:amount",
+                "value": 0
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:31bd626d700bbb232cefdcb98459cedf9638ceb358fec021ef39022ec575ec9e:thing",
+                "value": "XXXXXXXXXXXXXXXXXXXXXByyyXXXXXXXXXXXXXXXXXXXXXXyyyXXXXXXXXXXXXXXXXXXXXXXyyyXXXXXXXXXXXXXXXXXXXyyJXXyXXXXXXXXXXXXXXXXXXXXJyXXyXXXXXXXXXXXXXXXXXKKKKyXXXXXXXXXXXXXXXXXXXKJKeeJJXyXXXXXXXXXXXXXXXKJPJeeJJXyXXXXXXXXXKKKyKyJJPeeJJyXXXXXXXXKKKJJJJJJPPeeXJJJXyXXXXXXKJJJPPPPPPPeeXXyyXXXXXXXKJJPPyjJPJJPeeXXyXXXXXXXXKJPyJPJJPPPfeeXXXXXXXXXXXKJPJJJJPPJffeXXXXXXXXXXXfeJPPPjPPffeXXXXXXXXXXXXXfeeeJjPPefeXXXXXXXXXXXXXXfffffffffXXXXXXXXXXXyXXXXXXfffffXXXXXXXXXXXXyyXXXXXXXXXXXXXXXXXXXXXXXyyXXXXXXXXXXXXXXXXXXXXXXyyyXXXXXXXXXXXXXXXXXXXXXXyyyXXXXXXXXXXXXXXXXXXXXXXyyyXXXXXXXXXXXXXXXXXXXXXyyyyXXXXXXXXXXXXXXXXXXXXXyyyyXXXXXXXXXXXXXXXXXXXXXyyyy"
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:31bd626d700bbb232cefdcb98459cedf9638ceb358fec021ef39022ec575ec9e:type",
                 "value": "text/plain"
             },
             {
@@ -1615,6 +1881,87 @@
                 "value": "text/plain"
             },
             {
+                "key": "con_pixel_frames_info_v0_3.S:8211fbf2e9ab5f25128e31346622ff964885b295fdf149660373e87b7388abcc",
+                "value": [
+                    "thing",
+                    "type",
+                    "name",
+                    "description",
+                    "owner",
+                    "creator",
+                    "likes",
+                    "price:amount",
+                    "price:hold",
+                    "meta_items"
+                ]
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:8211fbf2e9ab5f25128e31346622ff964885b295fdf149660373e87b7388abcc:created",
+                "value": {
+                    "__time__": [
+                        2024,
+                        10,
+                        6,
+                        12,
+                        19,
+                        48,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:8211fbf2e9ab5f25128e31346622ff964885b295fdf149660373e87b7388abcc:creator",
+                "value": "e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931"
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:8211fbf2e9ab5f25128e31346622ff964885b295fdf149660373e87b7388abcc:description",
+                "value": "321321321"
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:8211fbf2e9ab5f25128e31346622ff964885b295fdf149660373e87b7388abcc:likes",
+                "value": 0
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:8211fbf2e9ab5f25128e31346622ff964885b295fdf149660373e87b7388abcc:meta:num_of_frames",
+                "value": 1
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:8211fbf2e9ab5f25128e31346622ff964885b295fdf149660373e87b7388abcc:meta:royalty_percent",
+                "value": 5
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:8211fbf2e9ab5f25128e31346622ff964885b295fdf149660373e87b7388abcc:meta:speed",
+                "value": 500
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:8211fbf2e9ab5f25128e31346622ff964885b295fdf149660373e87b7388abcc:meta_items",
+                "value": [
+                    "speed",
+                    "num_of_frames",
+                    "royalty_percent"
+                ]
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:8211fbf2e9ab5f25128e31346622ff964885b295fdf149660373e87b7388abcc:name",
+                "value": "321321321"
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:8211fbf2e9ab5f25128e31346622ff964885b295fdf149660373e87b7388abcc:owner",
+                "value": "e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931"
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:8211fbf2e9ab5f25128e31346622ff964885b295fdf149660373e87b7388abcc:price:amount",
+                "value": 0
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:8211fbf2e9ab5f25128e31346622ff964885b295fdf149660373e87b7388abcc:thing",
+                "value": "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFJJJFFFFFFFFFFJFFJFFFFFFFFJFJJJFFFFFFFFFJFFFFFFFFFFJJFJJFFFJJJFFFJFFFFFFJJJFFJJJFFFJJFJJFFFFFFFFFJFJJFFFFFJJJFFFJJFFFFFFFFJJJFFFFJJJFFFFFFJJFFFFFFFFFFFFFJJFFFFFJFFFJJFFFFFFFFFFFJJFFFFFFFFFJJFFFFFFFFFFJJJFFFFFJFFFJJFFFFFFFFFFJJFFFFFFFFFFJJFFFFFFFFFFJJFFFFFFJFFFJJFFFFFFFFFFFJJFFFFFFFFFJJFFFFFFFFFFFFFFJJFFJFFFJJFFFFFFFFFFFFFFFFJJFFFFJJFFFFFFFFFFFFFFFFFFFJJFFJFFFFFFFFFFFFFFFFFFFFFJJJJFFFFFFFFFFFFFFFFFFFFFFJJFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:8211fbf2e9ab5f25128e31346622ff964885b295fdf149660373e87b7388abcc:type",
+                "value": "text/plain"
+            },
+            {
                 "key": "con_pixel_frames_info_v0_3.S:a92c214f31dae9233203e9f295ff8070e1f60071e36c113892efdb7e0b97e038",
                 "value": [
                     "thing",
@@ -1780,6 +2127,87 @@
             },
             {
                 "key": "con_pixel_frames_info_v0_3.S:aded799648b9d8b71085d8df868180ac40d96bf5e677217092ec76cf410e311a:type",
+                "value": "text/plain"
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:b4aa56225855b700193d1f155b8558c113b802652ff23d5d2b68db6d4bedfff4",
+                "value": [
+                    "thing",
+                    "type",
+                    "name",
+                    "description",
+                    "owner",
+                    "creator",
+                    "likes",
+                    "price:amount",
+                    "price:hold",
+                    "meta_items"
+                ]
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:b4aa56225855b700193d1f155b8558c113b802652ff23d5d2b68db6d4bedfff4:created",
+                "value": {
+                    "__time__": [
+                        2024,
+                        10,
+                        5,
+                        12,
+                        3,
+                        2,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:b4aa56225855b700193d1f155b8558c113b802652ff23d5d2b68db6d4bedfff4:creator",
+                "value": "e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931"
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:b4aa56225855b700193d1f155b8558c113b802652ff23d5d2b68db6d4bedfff4:description",
+                "value": "123"
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:b4aa56225855b700193d1f155b8558c113b802652ff23d5d2b68db6d4bedfff4:likes",
+                "value": 0
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:b4aa56225855b700193d1f155b8558c113b802652ff23d5d2b68db6d4bedfff4:meta:num_of_frames",
+                "value": 1
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:b4aa56225855b700193d1f155b8558c113b802652ff23d5d2b68db6d4bedfff4:meta:royalty_percent",
+                "value": 5
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:b4aa56225855b700193d1f155b8558c113b802652ff23d5d2b68db6d4bedfff4:meta:speed",
+                "value": 500
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:b4aa56225855b700193d1f155b8558c113b802652ff23d5d2b68db6d4bedfff4:meta_items",
+                "value": [
+                    "speed",
+                    "num_of_frames",
+                    "royalty_percent"
+                ]
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:b4aa56225855b700193d1f155b8558c113b802652ff23d5d2b68db6d4bedfff4:name",
+                "value": "12322222"
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:b4aa56225855b700193d1f155b8558c113b802652ff23d5d2b68db6d4bedfff4:owner",
+                "value": "e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931"
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:b4aa56225855b700193d1f155b8558c113b802652ff23d5d2b68db6d4bedfff4:price:amount",
+                "value": 0
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:b4aa56225855b700193d1f155b8558c113b802652ff23d5d2b68db6d4bedfff4:thing",
+                "value": "YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY"
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:b4aa56225855b700193d1f155b8558c113b802652ff23d5d2b68db6d4bedfff4:type",
                 "value": "text/plain"
             },
             {
@@ -2056,6 +2484,10 @@
                 "value": "cf2aa5347515f44bc640b73307817b437238005335b3378d39e229c098fb2878"
             },
             {
+                "key": "con_pixel_frames_info_v0_3.S:names:45efc9bfb4c2f336cde3e91c1499cb73bf061489997d54a275882c428553437c",
+                "value": "b4aa56225855b700193d1f155b8558c113b802652ff23d5d2b68db6d4bedfff4"
+            },
+            {
                 "key": "con_pixel_frames_info_v0_3.S:names:4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a",
                 "value": "4d29b87de51fd13cf856726b57719a4c0cdd98c3d6641ef17be0ce62f24de0df"
             },
@@ -2084,12 +2516,24 @@
                 "value": "eaa3c5985c71c865567083cf9df95b91bfc213785bafb13dc729cf106b3e0b5c"
             },
             {
+                "key": "con_pixel_frames_info_v0_3.S:names:8667c3ec6a3e9bc25b2b8461c8962c8f788458ccb24676449a884a7f9b7a9580",
+                "value": "8211fbf2e9ab5f25128e31346622ff964885b295fdf149660373e87b7388abcc"
+            },
+            {
                 "key": "con_pixel_frames_info_v0_3.S:names:91a73fd806ab2c005c13b4dc19130a884e909dea3f72d46e30266fe1a1f588d8",
                 "value": "18bcb7c5ae87d62b6869b5e8f6bad3dcb20a1cfdecaea7df63788e317a1187f8"
             },
             {
                 "key": "con_pixel_frames_info_v0_3.S:names:932f3c1b56257ce8539ac269d7aab42550dacf8818d075f0bdf1990562aae3ef",
                 "value": "f2962f7be6f82f3b70a8213b85d207d0f6535e77f8e3d781fe4c0b328227c69d"
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:names:a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",
+                "value": "31bd626d700bbb232cefdcb98459cedf9638ceb358fec021ef39022ec575ec9e"
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:names:c38bcf3474a7b0d6ce48860f41f76c2f0b26dccdfc4cb8c268a0880d739d38ac",
+                "value": "1448b25056214625e58f1ea23e8bc8b63647e3a9810c757bf5303db120b5b986"
             },
             {
                 "key": "con_pixel_frames_info_v0_3.S:names:c7e616822f366fb1b5e0756af498cc11d2c0862edcb32ca65882f622ff39de1b",
@@ -2229,7 +2673,7 @@
             },
             {
                 "key": "con_pixel_frames_master_v0_3.balances:e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931",
-                "value": 11
+                "value": 15
             },
             {
                 "key": "con_pixel_frames_master_v0_3.balances:ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9",
@@ -3700,6 +4144,146 @@
                 }
             },
             {
+                "key": "con_testtoken.__code__",
+                "value": "__balances = Hash(default_value=0, contract='con_testtoken', name='balances')\n__metadata = Hash(contract='con_testtoken', name='metadata')\n\n\ndef ____():\n    __balances[ctx.caller] = 9999999999999999\n    __metadata['token_name'] = 'TEST TOKEN'\n    __metadata['token_symbol'] = 'TST'\n    __metadata['token_logo_url'] = 'https://some.token.url/test-token.png'\n    __metadata['token_website'] = 'https://some.token.url'\n    __metadata['operator'] = ctx.caller\n\n\n@__export('con_testtoken')\ndef change_metadata(key: str, value: Any):\n    assert ctx.caller == __metadata['operator'\n        ], 'Only operator can set metadata!'\n    __metadata[key] = value\n\n\n@__export('con_testtoken')\ndef transfer(amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    assert __balances[ctx.caller] >= amount, 'Not enough coins to send!'\n    __balances[ctx.caller] -= amount\n    __balances[to] += amount\n    return f'Sent {amount} to {to}'\n\n\n@__export('con_testtoken')\ndef approve(amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    __balances[ctx.caller, to] += amount\n    return f'Approved {amount} for {to}'\n\n\n@__export('con_testtoken')\ndef transfer_from(amount: float, to: str, main_account: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    assert __balances[main_account, ctx.caller\n        ] >= amount, 'Not enough coins approved to send! You have {} and are trying to spend {}'.format(\n        __balances[main_account, ctx.caller], amount)\n    assert __balances[main_account] >= amount, 'Not enough coins to send!'\n    __balances[main_account, ctx.caller] -= amount\n    __balances[main_account] -= amount\n    __balances[to] += amount\n    return f'Sent {amount} to {to} from {main_account}'\n\n\n@__export('con_testtoken')\ndef balance_of(address: str):\n    return __balances[address]\n"
+            },
+            {
+                "key": "con_testtoken.__developer__",
+                "value": "39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0"
+            },
+            {
+                "key": "con_testtoken.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        10,
+                        6,
+                        12,
+                        26,
+                        18,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_testtoken.balances:39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0",
+                "value": {
+                    "__fixed__": "9999999999999999"
+                }
+            },
+            {
+                "key": "con_testtoken.metadata:operator",
+                "value": "39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0"
+            },
+            {
+                "key": "con_testtoken.metadata:token_logo_url",
+                "value": "https://some.token.url/test-token.png"
+            },
+            {
+                "key": "con_testtoken.metadata:token_name",
+                "value": "TEST TOKEN"
+            },
+            {
+                "key": "con_testtoken.metadata:token_symbol",
+                "value": "TST"
+            },
+            {
+                "key": "con_testtoken.metadata:token_website",
+                "value": "https://some.token.url"
+            },
+            {
+                "key": "con_xiandoge.__code__",
+                "value": "__balances = Hash(default_value=0, contract='con_xiandoge', name='balances')\n__metadata = Hash(contract='con_xiandoge', name='metadata')\n\n\ndef ____():\n    __balances[ctx.caller] = 1000000\n    __metadata['token_name'] = 'xiandoge'\n    __metadata['token_symbol'] = 'xiandoge'\n    __metadata['token_logo_url'] = 'https://some.token.url/test-token.png'\n    __metadata['token_website'] = 'https://some.token.url'\n    __metadata['operator'] = ctx.caller\n\n\n@__export('con_xiandoge')\ndef change_metadata(key: str, value: Any):\n    assert ctx.caller == __metadata['operator'\n        ], 'Only operator can set metadata!'\n    __metadata[key] = value\n\n\n@__export('con_xiandoge')\ndef transfer(amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    assert __balances[ctx.caller] >= amount, 'Not enough coins to send!'\n    __balances[ctx.caller] -= amount\n    __balances[to] += amount\n    return f'Sent {amount} to {to}'\n\n\n@__export('con_xiandoge')\ndef approve(amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    __balances[ctx.caller, to] += amount\n    return f'Approved {amount} for {to}'\n\n\n@__export('con_xiandoge')\ndef transfer_from(amount: float, to: str, main_account: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    assert __balances[main_account, ctx.caller\n        ] >= amount, 'Not enough coins approved to send! You have {} and are trying to spend {}'.format(\n        __balances[main_account, ctx.caller], amount)\n    assert __balances[main_account] >= amount, 'Not enough coins to send!'\n    __balances[main_account, ctx.caller] -= amount\n    __balances[main_account] -= amount\n    __balances[to] += amount\n    return f'Sent {amount} to {to} from {main_account}'\n\n\n@__export('con_xiandoge')\ndef balance_of(address: str):\n    return __balances[address]\n"
+            },
+            {
+                "key": "con_xiandoge.__developer__",
+                "value": "07410c69dfccb05c05b415a33d6d61d8c1105aa783b8a154d4d31fe3b2ffc5bb"
+            },
+            {
+                "key": "con_xiandoge.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        10,
+                        7,
+                        2,
+                        42,
+                        21,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_xiandoge.balances:07410c69dfccb05c05b415a33d6d61d8c1105aa783b8a154d4d31fe3b2ffc5bb",
+                "value": 1000000
+            },
+            {
+                "key": "con_xiandoge.metadata:operator",
+                "value": "07410c69dfccb05c05b415a33d6d61d8c1105aa783b8a154d4d31fe3b2ffc5bb"
+            },
+            {
+                "key": "con_xiandoge.metadata:token_logo_url",
+                "value": "https://some.token.url/test-token.png"
+            },
+            {
+                "key": "con_xiandoge.metadata:token_name",
+                "value": "xiandoge"
+            },
+            {
+                "key": "con_xiandoge.metadata:token_symbol",
+                "value": "xiandoge"
+            },
+            {
+                "key": "con_xiandoge.metadata:token_website",
+                "value": "https://some.token.url"
+            },
+            {
+                "key": "con_xianyu.__code__",
+                "value": "__balances = Hash(default_value=0, contract='con_xianyu', name='balances')\n__metadata = Hash(contract='con_xianyu', name='metadata')\n\n\ndef ____():\n    __balances[ctx.caller] = 1000000\n    __metadata['token_name'] = 'xianyu'\n    __metadata['token_symbol'] = 'xianyu'\n    __metadata['token_logo_url'] = 'https://some.token.url/test-token.png'\n    __metadata['token_website'] = 'https://some.token.url'\n    __metadata['operator'] = ctx.caller\n\n\n@__export('con_xianyu')\ndef change_metadata(key: str, value: Any):\n    assert ctx.caller == __metadata['operator'\n        ], 'Only operator can set metadata!'\n    __metadata[key] = value\n\n\n@__export('con_xianyu')\ndef transfer(amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    assert __balances[ctx.caller] >= amount, 'Not enough coins to send!'\n    __balances[ctx.caller] -= amount\n    __balances[to] += amount\n    return f'Sent {amount} to {to}'\n\n\n@__export('con_xianyu')\ndef approve(amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    __balances[ctx.caller, to] += amount\n    return f'Approved {amount} for {to}'\n\n\n@__export('con_xianyu')\ndef transfer_from(amount: float, to: str, main_account: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    assert __balances[main_account, ctx.caller\n        ] >= amount, 'Not enough coins approved to send! You have {} and are trying to spend {}'.format(\n        __balances[main_account, ctx.caller], amount)\n    assert __balances[main_account] >= amount, 'Not enough coins to send!'\n    __balances[main_account, ctx.caller] -= amount\n    __balances[main_account] -= amount\n    __balances[to] += amount\n    return f'Sent {amount} to {to} from {main_account}'\n\n\n@__export('con_xianyu')\ndef balance_of(address: str):\n    return __balances[address]\n"
+            },
+            {
+                "key": "con_xianyu.__developer__",
+                "value": "07410c69dfccb05c05b415a33d6d61d8c1105aa783b8a154d4d31fe3b2ffc5bb"
+            },
+            {
+                "key": "con_xianyu.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        10,
+                        7,
+                        2,
+                        44,
+                        25,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_xianyu.balances:07410c69dfccb05c05b415a33d6d61d8c1105aa783b8a154d4d31fe3b2ffc5bb",
+                "value": 1000000
+            },
+            {
+                "key": "con_xianyu.metadata:operator",
+                "value": "07410c69dfccb05c05b415a33d6d61d8c1105aa783b8a154d4d31fe3b2ffc5bb"
+            },
+            {
+                "key": "con_xianyu.metadata:token_logo_url",
+                "value": "https://some.token.url/test-token.png"
+            },
+            {
+                "key": "con_xianyu.metadata:token_name",
+                "value": "xianyu"
+            },
+            {
+                "key": "con_xianyu.metadata:token_symbol",
+                "value": "xianyu"
+            },
+            {
+                "key": "con_xianyu.metadata:token_website",
+                "value": "https://some.token.url"
+            },
+            {
                 "key": "currency.__code__",
                 "value": "__balances = Hash(default_value=0, contract='currency', name='balances')\n__metadata = Hash(contract='currency', name='metadata')\n__permits = Hash(contract='currency', name='permits')\n__streams = Hash(contract='currency', name='streams')\nSENDER_KEY = 'sender'\nRECEIVER_KEY = 'receiver'\nSTATUS_KEY = 'status'\nBEGIN_KEY = 'begins'\nCLOSE_KEY = 'closes'\nRATE_KEY = 'rate'\nCLAIMED_KEY = 'claimed'\nSTREAM_ACTIVE = 'active'\nSTREAM_FINALIZED = 'finalized'\nSTREAM_FORFEIT = 'forfeit'\n\n\ndef ____(vk: str):\n    __balances[vk] = decimal('5555555.55')\n    __balances['team_lock'] = decimal('16666666.65')\n    __balances['dao'] = decimal('33333333.3')\n    __balances[vk] += decimal('49999999.95')\n    __balances[vk] += decimal('5555555.55')\n    __setup_seed_stream('team_lock', 'team_lock', vk, decimal(\n        '0.10575725568804825'), 1824)\n\n\ndef __setup_seed_stream(stream_id: str, sender: str, receiver: str, rate:\n    float, duration_days: int):\n    __streams[stream_id, 'status'] = 'active'\n    __streams[stream_id, 'begins'] = now\n    __streams[stream_id, 'closes'] = now + datetime.timedelta(days=\n        duration_days)\n    __streams[stream_id, 'receiver'] = receiver\n    __streams[stream_id, 'sender'] = sender\n    __streams[stream_id, 'rate'] = rate\n    __streams[stream_id, 'claimed'] = 0\n\n\n@__export('currency')\ndef transfer(amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances.'\n    assert __balances[ctx.caller] >= amount, 'Not enough coins to send.'\n    __balances[ctx.caller] -= amount\n    __balances[to] += amount\n\n\n@__export('currency')\ndef approve(amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances.'\n    __balances[ctx.caller, to] += amount\n\n\n@__export('currency')\ndef transfer_from(amount: float, to: str, main_account: str):\n    assert amount > 0, 'Cannot send negative balances.'\n    assert __balances[main_account, ctx.caller\n        ] >= amount, f'Not enough coins approved to send. You have {__balances[main_account, ctx.caller]} and are trying to spend {amount}'\n    assert __balances[main_account] >= amount, 'Not enough coins to send.'\n    __balances[main_account, ctx.caller] -= amount\n    __balances[main_account] -= amount\n    __balances[to] += amount\n\n\n@__export('currency')\ndef balance_of(address: str):\n    return __balances[address]\n\n\n@__export('currency')\ndef permit(owner: str, spender: str, value: float, deadline: str, signature:\n    str):\n    deadline = __strptime_ymdhms(deadline)\n    permit_msg = __construct_permit_msg(owner, spender, value, str(deadline))\n    permit_hash = hashlib.sha3(permit_msg)\n    assert __permits[permit_hash] is None, 'Permit can only be used once.'\n    assert now < deadline, 'Permit has expired.'\n    assert crypto.verify(owner, permit_msg, signature), 'Invalid signature.'\n    __balances[owner, spender] += value\n    __permits[permit_hash] = True\n    return f'Permit granted for {value} to {spender} from {owner}'\n\n\ndef __construct_permit_msg(owner: str, spender: str, value: float, deadline:\n    str):\n    return f'{owner}:{spender}:{value}:{deadline}:{ctx.this}'\n\n\n@__export('currency')\ndef create_stream(receiver: str, rate: float, begins: str, closes: str):\n    begins = __strptime_ymdhms(begins)\n    closes = __strptime_ymdhms(closes)\n    sender = ctx.caller\n    stream_id = __perform_create_stream(sender, receiver, rate, begins, closes)\n    return stream_id\n\n\ndef __perform_create_stream(sender: str, receiver: str, rate: float, begins:\n    str, closes: str):\n    stream_id = hashlib.sha3(f'{sender}:{receiver}:{begins}:{closes}:{rate}')\n    assert __streams[stream_id, STATUS_KEY] is None, 'Stream already exists.'\n    assert begins < closes, 'Stream cannot begin after the close date.'\n    assert rate > 0, 'Rate must be greater than 0.'\n    __streams[stream_id, STATUS_KEY] = STREAM_ACTIVE\n    __streams[stream_id, BEGIN_KEY] = begins\n    __streams[stream_id, CLOSE_KEY] = closes\n    __streams[stream_id, RECEIVER_KEY] = receiver\n    __streams[stream_id, SENDER_KEY] = sender\n    __streams[stream_id, RATE_KEY] = rate\n    __streams[stream_id, CLAIMED_KEY] = 0\n    return stream_id\n\n\n@__export('currency')\ndef create_stream_from_permit(sender: str, receiver: str, rate: float,\n    begins: str, closes: str, deadline: str, signature: str):\n    begins = __strptime_ymdhms(begins)\n    closes = __strptime_ymdhms(closes)\n    deadline = __strptime_ymdhms(deadline)\n    assert now < deadline, 'Permit has expired.'\n    permit_msg = __construct_stream_permit_msg(sender, receiver, rate,\n        begins, closes, deadline)\n    permit_hash = hashlib.sha3(permit_msg)\n    assert __permits[permit_hash] is None, 'Permit can only be used once.'\n    assert crypto.verify(sender, permit_msg, signature), 'Invalid signature.'\n    __permits[permit_hash] = True\n    return __perform_create_stream(sender, receiver, rate, begins, closes)\n\n\n@__export('currency')\ndef balance_stream(stream_id: str):\n    assert __streams[stream_id, STATUS_KEY], 'Stream does not exist.'\n    assert __streams[stream_id, STATUS_KEY\n        ] == STREAM_ACTIVE, 'You can only balance active streams.'\n    assert now > __streams[stream_id, BEGIN_KEY], 'Stream has not started yet.'\n    sender = __streams[stream_id, SENDER_KEY]\n    receiver = __streams[stream_id, RECEIVER_KEY]\n    assert ctx.caller in [sender, receiver\n        ], 'Only sender or receiver can balance a stream.'\n    closes = __streams[stream_id, CLOSE_KEY]\n    begins = __streams[stream_id, BEGIN_KEY]\n    rate = __streams[stream_id, RATE_KEY]\n    claimed = __streams[stream_id, CLAIMED_KEY]\n    outstanding_balance = __calc_outstanding_balance(begins, closes, rate,\n        claimed)\n    assert outstanding_balance > 0, 'No amount due on this stream.'\n    claimable_amount = __calc_claimable_amount(outstanding_balance, sender)\n    __balances[sender] -= claimable_amount\n    __balances[receiver] += claimable_amount\n    __streams[stream_id, CLAIMED_KEY] += claimable_amount\n    return f'Claimed {claimable_amount} tokens from stream'\n\n\n@__export('currency')\ndef change_close_time(stream_id: str, new_close_time: str):\n    new_close_time = __strptime_ymdhms(new_close_time)\n    assert __streams[stream_id, STATUS_KEY], 'Stream does not exist.'\n    assert __streams[stream_id, STATUS_KEY\n        ] == STREAM_ACTIVE, 'Stream is not active.'\n    sender = __streams[stream_id, SENDER_KEY]\n    assert ctx.caller == sender, 'Only sender can extend the close time of a stream.'\n    if new_close_time < __streams[stream_id, BEGIN_KEY] and now < __streams[\n        stream_id, BEGIN_KEY]:\n        __streams[stream_id, CLOSE_KEY] = __streams[stream_id, BEGIN_KEY]\n    elif new_close_time <= now:\n        __streams[stream_id, CLOSE_KEY] = now\n    else:\n        __streams[stream_id, CLOSE_KEY] = new_close_time\n    return f'Changed close time of stream to {__streams[stream_id, CLOSE_KEY]}'\n\n\n@__export('currency')\ndef finalize_stream(stream_id: str):\n    assert __streams[stream_id, STATUS_KEY], 'Stream does not exist.'\n    assert __streams[stream_id, STATUS_KEY\n        ] == STREAM_ACTIVE, 'Stream is not active.'\n    sender = __streams[stream_id, 'sender']\n    receiver = __streams[stream_id, 'receiver']\n    assert ctx.caller in [sender, receiver\n        ], 'Only sender or receiver can finalize a stream.'\n    begins = __streams[stream_id, BEGIN_KEY]\n    closes = __streams[stream_id, CLOSE_KEY]\n    rate = __streams[stream_id, RATE_KEY]\n    claimed = __streams[stream_id, CLAIMED_KEY]\n    assert now <= closes, 'Stream has not closed yet.'\n    outstanding_balance = __calc_outstanding_balance(begins, closes, rate,\n        claimed)\n    assert outstanding_balance == 0, 'Stream has outstanding balance.'\n    __streams[stream_id, STATUS_KEY] = STREAM_FINALIZED\n    return f'Finalized stream {stream_id}'\n\n\n@__export('currency')\ndef close_balance_finalize(stream_id: str):\n    change_close_time(stream_id=stream_id, new_close_time=str(now))\n    balance_finalize(stream_id=stream_id)\n\n\n@__export('currency')\ndef balance_finalize(stream_id: str):\n    balance_stream(stream_id=stream_id)\n    finalize_stream(stream_id=stream_id)\n\n\n@__export('currency')\ndef forfeit_stream(stream_id: str) ->str:\n    assert __streams[stream_id, STATUS_KEY], 'Stream does not exist.'\n    assert __streams[stream_id, STATUS_KEY\n        ] == STREAM_ACTIVE, 'Stream is not active.'\n    receiver = __streams[stream_id, RECEIVER_KEY]\n    assert ctx.caller == receiver, 'Only receiver can forfeit a stream.'\n    __streams[stream_id, STATUS_KEY] = STREAM_FORFEIT\n    __streams[stream_id, CLOSE_KEY] = now\n    return f'Forfeit stream {stream_id}'\n\n\ndef __calc_outstanding_balance(begins: str, closes: str, rate: float,\n    claimed: float) ->float:\n    begins = begins\n    closes = closes\n    claimable_end_point = now if now < closes else closes\n    claimable_period = claimable_end_point - begins\n    claimable_seconds = claimable_period.seconds\n    amount_due = rate * claimable_seconds - claimed\n    return amount_due\n\n\ndef __calc_claimable_amount(amount_due: float, sender: str) ->float:\n    return amount_due if amount_due < __balances[sender] else __balances[sender\n        ]\n\n\ndef __construct_stream_permit_msg(sender: str, receiver: str, rate: float,\n    begins: str, closes: str, deadline: str) ->str:\n    return (\n        f'{sender}:{receiver}:{rate}:{begins}:{closes}:{deadline}:{ctx.this}')\n\n\ndef __strptime_ymdhms(date_string: str) ->datetime.datetime:\n    return datetime.datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S')\n"
             },
@@ -3749,6 +4333,12 @@
                 "key": "currency.balances:03e2669bf5a8190f8472fcf6f1cff2e6f36a81d2c9305020ba444679f196d2cb:con_multisend",
                 "value": {
                     "__fixed__": "899999999121.9003"
+                }
+            },
+            {
+                "key": "currency.balances:07410c69dfccb05c05b415a33d6d61d8c1105aa783b8a154d4d31fe3b2ffc5bb",
+                "value": {
+                    "__fixed__": "5888.70"
                 }
             },
             {
@@ -3968,10 +4558,24 @@
                 }
             },
             {
+                "key": "currency.balances:39BFD8F2A8337E5025EE831AD3B7107BF1FC68D1669AC6C95A596AD0443D97D4",
+                "value": 1
+            },
+            {
+                "key": "currency.balances:39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0",
+                "value": {
+                    "__fixed__": "9993.996"
+                }
+            },
+            {
                 "key": "currency.balances:3a656b720fae8be43b39c9bd5edf96b239822bd57774a529653486c700604201",
                 "value": {
                     "__fixed__": "0.122598389349658522"
                 }
+            },
+            {
+                "key": "currency.balances:3c2161a4dd5beacbaa630d71423b94e466e903ca349149a89c37ea5317ff5677",
+                "value": 1000
             },
             {
                 "key": "currency.balances:3c8cf450e5050cf1af5b2b50923571ee345726c6a4b7781ed909e9d1578e89fa",
@@ -4008,6 +4612,10 @@
                 "value": {
                     "__fixed__": "49.0815677560897834045"
                 }
+            },
+            {
+                "key": "currency.balances:432974a851de4c3d41c5ed5054b55208b9f96a06b3791834d3839f819c12c1f2",
+                "value": 500
             },
             {
                 "key": "currency.balances:4397a1e4756f488b220d988bf18069826d8f13e19cd4b6274420d86f09f0a50b",
@@ -4356,8 +4964,12 @@
             {
                 "key": "currency.balances:7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e",
                 "value": {
-                    "__fixed__": "59126234.54618205352288775"
+                    "__fixed__": "59121202.01888205352288775"
                 }
+            },
+            {
+                "key": "currency.balances:7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e:con_multisend",
+                "value": 10210185
             },
             {
                 "key": "currency.balances:7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e:con_nameservice",
@@ -4500,6 +5112,10 @@
                 "value": {
                     "__fixed__": "5.19690543642048939296"
                 }
+            },
+            {
+                "key": "currency.balances:CE3BDF86A5FF4AC9D054EBF2DCE3ADC9D21C91E893C927A5A36CF4D92568E96E",
+                "value": 2
             },
             {
                 "key": "currency.balances:a2a8d3a3856d903a185e4d65be73cfc7827bd1026c5724af8059f324bab116c7",
@@ -4710,6 +5326,10 @@
                 }
             },
             {
+                "key": "currency.balances:ca9aeee192854dc55a6d3e211bf858cc3ecd41e8b86a55c07740ece29f349597",
+                "value": 903
+            },
+            {
                 "key": "currency.balances:cc81ca9eef4ecb6b87f55dcffd939a44b597fb82f43744a832aa385c84e40c95",
                 "value": {
                     "__fixed__": "5.19690543642048939296"
@@ -4838,7 +5458,7 @@
             {
                 "key": "currency.balances:dff5d54d9c3cdb04d279c3c0a123d6a73a94e0725d7eac955fdf87298dbe45a6",
                 "value": {
-                    "__fixed__": "1736.59920000"
+                    "__fixed__": "1356.83710000"
                 }
             },
             {
@@ -4880,7 +5500,7 @@
             {
                 "key": "currency.balances:e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931",
                 "value": {
-                    "__fixed__": "1037082.54961196584094681140"
+                    "__fixed__": "1026033.72961196584094681140"
                 }
             },
             {
@@ -4904,7 +5524,7 @@
             {
                 "key": "currency.balances:ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9",
                 "value": {
-                    "__fixed__": "906.9914"
+                    "__fixed__": "6.7914"
                 }
             },
             {
@@ -4934,7 +5554,7 @@
             {
                 "key": "currency.balances:f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce",
                 "value": {
-                    "__fixed__": "43355.2390"
+                    "__fixed__": "42371.7382"
                 }
             },
             {
@@ -4974,6 +5594,10 @@
                 }
             },
             {
+                "key": "currency.balances:me",
+                "value": 8
+            },
+            {
                 "key": "currency.balances:team_lock",
                 "value": {
                     "__fixed__": "16656788.18201794647711225"
@@ -4982,6 +5606,10 @@
             {
                 "key": "currency.balances:wallet_address",
                 "value": 7
+            },
+            {
+                "key": "currency.balances:you",
+                "value": 8
             },
             {
                 "key": "currency.streams:team_lock:begins",
@@ -5343,20 +5971,36 @@
         ],
         "nonces": [
             {
+                "key": "07410c69dfccb05c05b415a33d6d61d8c1105aa783b8a154d4d31fe3b2ffc5bb",
+                "value": 3
+            },
+            {
+                "key": "39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0",
+                "value": 6
+            },
+            {
+                "key": "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e",
+                "value": 19
+            },
+            {
                 "key": "9146ca8fed18ef9088bc0d556b62ef624a5df6cc060724b9007ce5f8b0d8a2c6",
                 "value": 0
             },
             {
+                "key": "dff5d54d9c3cdb04d279c3c0a123d6a73a94e0725d7eac955fdf87298dbe45a6",
+                "value": 0
+            },
+            {
                 "key": "e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931",
-                "value": 32
+                "value": 51
             },
             {
                 "key": "ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9",
-                "value": 10
+                "value": 11
             },
             {
                 "key": "f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce",
-                "value": 2
+                "value": 3
             }
         ]
     }
