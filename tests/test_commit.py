@@ -33,9 +33,14 @@ async def deserialize(raw: bytes) -> Response:
 class TestCommit(unittest.IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self):
-        self.app = Xian(constants=TestConstants)
+        self.app = await Xian.create(constants=TestConstants)
         self.app.current_block_meta = {"height": 0, "nanos": 0}
+        self.app.fingerprint_hash = b''
+        self.app.chain_id = "xian-testnet-1"
+        self.app.fingerprint_hashes = []
+        self.app.current_block_rewards = {}
         self.handler = ProtocolHandler(self.app)
+
 
     async def process_request(self, request_type, req):
         raw = await self.handler.process(request_type, req)
@@ -43,6 +48,7 @@ class TestCommit(unittest.IsolatedAsyncioTestCase):
         return resp
 
     async def test_commit(self):
+        # breakpoint()
         request = Request(commit=RequestCommit())
         response = await self.process_request("commit", request)
         self.assertEqual(response.commit.retain_height, 0)
