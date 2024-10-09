@@ -58,6 +58,7 @@ class TestXianHandler(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.app = await Xian.create(constants=TestConstants)
         self.app.current_block_meta = {"height": 0, "nanos": 0}
+        self.app.fingerprint_hash = b''
         self.handler = ProtocolHandler(self.app)
 
     async def process_request(self, request_type, req):
