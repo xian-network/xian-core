@@ -1,5 +1,6 @@
 import binascii
 import marshal
+import json
 
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 from xian.constants import Constants as c
@@ -71,28 +72,75 @@ def is_compiled_key(key):
         return True
     return False
 
+def create_latest_block_json_if_not_exists():
+    try:
+        with open(f"{c.STORAGE_HOME}/__latest_block.json", "x") as f:
+            json.dump({"hash": "", "height": 0}, f)
+    except FileExistsError:
+        pass
 
-def get_latest_block_hash(driver):
-    latest_hash = driver.get(c.LATEST_BLOCK_HASH_KEY)
-    if latest_hash is None:
-        return b""
+
+def get_latest_block_hash():
+    # Get the latest block hash from the json file
+    create_latest_block_json_if_not_exists()
+    try:
+        with open(f"{c.STORAGE_HOME}/__latest_block.json", "r") as f:
+            latest_block = json.load(f)
+            latest_hash = bytes.fromhex(latest_block.get("hash"))
+    except FileNotFoundError:
+        raise Exception("__latest_block.json not found")
+    except json.JSONDecodeError:
+        raise Exception("Error decoding __latest_block.json")
+
     return latest_hash
 
 
-def set_latest_block_hash(h, driver):
-    driver.set(c.LATEST_BLOCK_HASH_KEY, h)
+def set_latest_block_hash(h):
+    # Set the latest block hash in the json file
+    create_latest_block_json_if_not_exists()
+    try:
+        with open(f"{c.STORAGE_HOME}/__latest_block.json", "r") as f:
+            latest_block = json.load(f)
+        
+        # Update the hash while keeping the height intact
+        latest_block["hash"] = h.hex()
+
+        with open(f"{c.STORAGE_HOME}/__latest_block.json", "w") as f:
+            json.dump(latest_block, f)
+    except FileNotFoundError:
+        raise Exception("__latest_block.json not found")
+    except json.JSONDecodeError:
+        raise Exception("Error decoding __latest_block.json")
 
 
-def get_latest_block_height(driver):
-    h = driver.get(c.LATEST_BLOCK_HEIGHT_KEY, save=False)
-    if h is None:
-        return 0
+def get_latest_block_height():
+    # Get the latest block height from the json file
+    create_latest_block_json_if_not_exists()
+    try:
+        with open(f"{c.STORAGE_HOME}/__latest_block.json", "r") as f:
+            latest_block = json.load(f)
+            latest_height = latest_block.get("height")
+    except FileNotFoundError:
+        raise Exception("__latest_block.json not found")
+    except json.JSONDecodeError:
+        raise Exception("Error decoding __latest_block.json")
 
-    if type(h) == ContractingDecimal:
-        h = int(h._d)
-
-    return int(h)
+    return latest_height
 
 
-def set_latest_block_height(h, driver):
-    driver.set(c.LATEST_BLOCK_HEIGHT_KEY, int(h))
+def set_latest_block_height(h):
+    # Set the latest block height in the json file
+    create_latest_block_json_if_not_exists()
+    try:
+        with open(f"{c.STORAGE_HOME}/__latest_block.json", "r") as f:
+            latest_block = json.load(f)
+        
+        # Update the height while keeping the hash intact
+        latest_block["height"] = h
+
+        with open(f"{c.STORAGE_HOME}/__latest_block.json", "w") as f:
+            json.dump(latest_block, f)
+    except FileNotFoundError:
+        raise Exception("__latest_block.json not found")
+    except json.JSONDecodeError:
+        raise Exception("Error decoding __latest_block.json")
