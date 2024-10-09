@@ -10,8 +10,7 @@ from cometbft.abci.v1beta1.types_pb2 import ResponseQuery
 from xian.utils.encoding import encode_str
 from xian.constants import Constants as c
 
-from contracting.stdlib.bridge.decimal import ContractingDecimal, CONTEXT
-import decimal
+from contracting.stdlib.bridge.decimal import ContractingDecimal
 from contracting.compilation import parser
 from contracting.compilation.linter import Linter
 from contracting.storage.encoder import Encoder
@@ -34,33 +33,32 @@ async def query(self, req) -> ResponseQuery:
     loop = asyncio.get_event_loop()
     key = path_parts[1] if len(path_parts) > 1 else ""
     result = None
-    decimal.setcontext(CONTEXT)
     try:
         # http://localhost:26657/abci_query?path="/get/currency.balances:c93dee52d7dc6cc43af44007c3b1dae5b730ccf18a9e6fb43521f8e4064561e6"
         if path_parts and path_parts[0] == "get":
-            result = await loop.run_in_executor(None, self.client.raw_driver.get, path_parts[1])
+            result = self.client.raw_driver.get(path_parts[1])
 
         # http://localhost:26657/abci_query?path="/health"
         elif path_parts[0] == "health":
             result = "OK"
         # http://localhost:26657/abci_query?path="/get_next_nonce/ddd326fddb5d1677595311f298b744a4e9f415b577ac179a6afbf38483dc0791"
         elif path_parts[0] == "get_next_nonce":
-            result = await loop.run_in_executor(None, self.nonce_storage.get_next_nonce, path_parts[1])
+            result = self.nonce_storage.get_next_nonce(path_parts[1])
 
         # http://localhost:26657/abci_query?path="/contract/con_some_contract"
         elif path_parts[0] == "contract":
-            result = await loop.run_in_executor(None, self.client.raw_driver.get_contract, path_parts[1])
+            result = self.client.raw_driver.get_contract(path_parts[1])
 
         # http://localhost:26657/abci_query?path="/contract_methods/con_some_contract"
         elif path_parts[0] == "contract_methods":
-            contract_code = await loop.run_in_executor(None, self.client.raw_driver.get_contract, path_parts[1])
+            contract_code = self.client.raw_driver.get_contract(path_parts[1])
             if contract_code is not None:
                 funcs = parser.methods_for_contract(contract_code)
                 result = {"methods": funcs}
 
         # http://localhost:26657/abci_query?path="/contract_vars/con_some_contract"
         elif path_parts[0] == "contract_vars":
-            contract_code = await loop.run_in_executor(None, self.client.raw_driver.get_contract, path_parts[1])
+            contract_code = self.client.raw_driver.get_contract(path_parts[1])
             if contract_code is not None:
                 result = parser.variables_for_contract(contract_code)
 
@@ -97,7 +95,7 @@ async def query(self, req) -> ResponseQuery:
 
             # http://localhost:26657/abci_query?path="/keys/currency.balances"    
             if path_parts[0] == "keys":
-                list_of_keys = await loop.run_in_executor(None, self.client.raw_driver.keys, path_parts[1])
+                list_of_keys = self.client.raw_driver.keys(path_parts[1])
                 result = [key.split(":")[1] for key in list_of_keys]
                 key = path_parts[1]
 
