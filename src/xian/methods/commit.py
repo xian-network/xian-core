@@ -6,14 +6,14 @@ from xian.utils.block import (
 
 
 async def commit(self) -> ResponseCommit:
-    set_latest_block_hash(self.fingerprint_hash)
+    set_latest_block_hash(self.merkle_root_hash)
     set_latest_block_height(self.current_block_meta["height"])
 
     self.client.raw_driver.hard_apply(str(self.current_block_meta["nanos"]))
 
     # unset current_block_meta & cleanup
     self.fingerprint_hashes = []
-    self.fingerprint_hash = None
+    self.merkle_root_hash = None
     self.current_block_rewards = {}
 
     retain_height = 0 

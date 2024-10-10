@@ -11,6 +11,7 @@ from xian.utils.hash import (
     hash_from_rewards
 )
 from xian.utils.block import (
+    get_latest_block_hash,
     get_nanotime_from_block_time,
     convert_cometbft_time_to_datetime
 )
@@ -33,6 +34,8 @@ async def finalize_block(self, req) -> ResponseFinalizeBlock:
     height = req.height
     tx_results = []
     reward_writes = []
+    latest_block_hash = get_latest_block_hash()
+    self.fingerprint_hashes.append(latest_block_hash.hex())
 
     self.current_block_meta = {
         "nanos": nanos,
@@ -124,11 +127,14 @@ async def finalize_block(self, req) -> ResponseFinalizeBlock:
 
     reward_hash = hash_from_rewards(reward_writes)
     validator_updates = self.validator_handler.build_validator_updates(height)
+    
     self.fingerprint_hashes.append(reward_hash)
-    self.fingerprint_hash = hash_list(self.fingerprint_hashes)
+    
+    # No transactions = no rewards / no change to ABCI state, use previous block hash.
+    self.merkle_root_hash = latest_block_hash if len(req.txs) == 0 else hash_list(self.fingerprint_hashes)
 
     return ResponseFinalizeBlock(
         validator_updates=validator_updates,
         tx_results=tx_results,
-        app_hash=self.fingerprint_hash
+        app_hash=self.merkle_root_hash
     )

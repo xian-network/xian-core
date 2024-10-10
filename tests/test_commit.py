@@ -35,7 +35,7 @@ class TestCommit(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.app = await Xian.create(constants=TestConstants)
         self.app.current_block_meta = {"height": 0, "nanos": 0}
-        self.app.fingerprint_hash = b''
+        self.app.merkle_root_hash = b'abc123'
         self.app.chain_id = "xian-testnet-1"
         self.app.fingerprint_hashes = []
         self.app.current_block_rewards = {}
