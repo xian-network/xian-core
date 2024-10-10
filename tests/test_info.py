@@ -18,7 +18,8 @@ from cometbft.abci.v1beta2.types_pb2 import (
     RequestInfo,
 )
 
-from cometbft.abci.v1beta1.types_pb2 import ResponseInfo
+from cometbft.abci.v1beta1.types_pb2 import ResponseInfo, RequestCommit
+
 
 
 # Disable any kind of logging
@@ -38,6 +39,7 @@ class TestInfo(unittest.IsolatedAsyncioTestCase):
         self.app = await Xian.create(constants=TestConstants)
         self.app.current_block_meta = {"height": 0, "nanos": 0}
         self.handler = ProtocolHandler(self.app)
+        self.app.merkle_root_hash = b''
 
     async def process_request(self, request_type, req):
         raw = await self.handler.process(request_type, req)
@@ -45,6 +47,8 @@ class TestInfo(unittest.IsolatedAsyncioTestCase):
         return resp
 
     async def test_info(self):
+        commit_request = Request(commit=RequestCommit())
+        await self.process_request("commit", commit_request)
         request = Request(info=RequestInfo())
         response = await self.process_request("info", request)
         self.assertEqual(response.info.app_version, 1)
