@@ -1,4 +1,3 @@
-import math
 import hashlib
 
 from loguru import logger
@@ -6,20 +5,28 @@ from datetime import datetime
 from xian.utils.tx import tx_hash_from_tx, format_dictionary
 from xian.utils.block import is_compiled_key
 from contracting.execution.executor import Executor
-from contracting.storage.encoder import convert_dict, safe_repr
 from contracting.stdlib.bridge.time import Datetime
-from contracting.stdlib.bridge.decimal import ContractingDecimal
-
 
 class TxProcessor:
     def __init__(self, client, metering=False):
         self.client = client
         self.executor = Executor(driver=self.client.raw_driver, metering=metering)
 
+    def safe_repr(self, obj, max_len=1024):
+        try:
+            r = repr(obj)
+            rr = r.split(' at 0x')
+            if len(rr) > 1:
+                return rr[0] + '>'
+            return rr[0][:max_len]
+        except Exception:
+            return None
+
     def process_tx(self, tx, enabled_fees=False, rewards_handler=None):
         environment = self.get_environment(tx=tx)
 
         stamp_cost = self.client.get_var(contract='stamp_cost', variable='S', arguments=['value']) or 1
+        stamp_cost = int(stamp_cost)  # Ensure stamp_cost is an integer
 
         try:
             # Execute the transaction
@@ -62,10 +69,12 @@ class TxProcessor:
             }
 
     def execute_tx(self, transaction, stamp_cost, environment: dict = {}, metering=False):
-        # TODO better error handling of anything in here
         logger.debug("Executing transaction...")
 
         try:
+            # Convert kwargs if necessary
+            kwargs = self.convert_special_types(transaction['payload']['kwargs'])
+
             # Execute transaction
             return self.executor.execute(
                 sender=transaction['payload']['sender'],
@@ -73,7 +82,7 @@ class TxProcessor:
                 function_name=transaction['payload']['function'],
                 stamps=transaction['payload']['stamps_supplied'],
                 stamp_cost=stamp_cost,
-                kwargs=convert_dict(transaction['payload']['kwargs']),
+                kwargs=kwargs,
                 environment=environment,
                 auto_commit=False,
                 metering=metering
@@ -89,15 +98,13 @@ class TxProcessor:
                 'function_name': transaction['payload']['function'],
                 'stamps': transaction['payload']['stamps_supplied'],
                 'stamp_cost': stamp_cost,
-                'kwargs': convert_dict(transaction['payload']['kwargs']),
+                'kwargs': kwargs,
                 'environment': environment,
                 'auto_commit': False
             })
             return None
 
     def process_tx_output(self, output, transaction, stamp_cost, rewards_handler):
-        # self.executor.driver.pending_writes.clear()
-        # Log out to the node logs if the tx fails
         logger.debug(f"status code = {output['status_code']}")
 
         if output['status_code'] > 0:
@@ -112,62 +119,77 @@ class TxProcessor:
 
         rewards = None
         if output['status_code'] == 0 and rewards_handler is not None:
+            # Calculate rewards in stamps
             calculated_rewards = rewards_handler.calculate_tx_output_rewards(
                 total_stamps_to_split=output['stamps_used'],
                 contract=transaction['payload']['contract']
             )
-            stamp_rate = self.client.get_var(contract='stamp_cost', variable='S', arguments=['value'])
+            stamp_rate = int(self.client.get_var(contract='stamp_cost', variable='S', arguments=['value']))
             foundation_owner = self.client.get_var(contract='foundation', variable='owner')
             rewards = {
                 'masternode_reward': {},
-                'foundation_reward': {foundation_owner: ContractingDecimal(str(calculated_rewards[1] / stamp_rate))},
+                'foundation_reward': {},
                 'developer_reward': {}
             }
 
-            for masternode in self.client.get_var(contract='masternodes', variable='nodes'):
-                rewards['masternode_reward'][masternode] = ContractingDecimal(str(calculated_rewards[0] / stamp_rate))
+            # Distribute rewards to masternodes
+            masternode_reward_per_node = calculated_rewards[0]  # Assuming this is in stamps
+            masternodes = self.client.get_var(contract='masternodes', variable='nodes') or []
+            for masternode in masternodes:
+                rewards['masternode_reward'][masternode] = masternode_reward_per_node
 
+            # Foundation reward
+            foundation_reward = calculated_rewards[1]  # Assuming this is in stamps
+            rewards['foundation_reward'][foundation_owner] = foundation_reward
+
+            # Developer rewards
             for developer, reward in calculated_rewards[2].items():
                 if developer == 'sys' or developer is None:
-                    developer = self.client.get_var(contract='foundation', variable='owner')
-                rewards['developer_reward'][developer] = ContractingDecimal(str(reward / stamp_rate))
+                    developer = foundation_owner
+                rewards['developer_reward'][developer] = reward  # Assuming reward is in stamps
 
             state_change_key = "currency.balances"
 
-            # Update masternode rewards in output writes
-            for address, reward in rewards['masternode_reward'].items():
+            # Convert stamps to minimal units of currency
+            for address, reward_stamps in rewards['masternode_reward'].items():
+                reward_amount = reward_stamps  # Assuming 1 stamp = 1 minimal unit
                 write_key = f"{state_change_key}:{address}"
-                write_key_balance = self.client.get_var(contract='currency', variable='balances', arguments=[address])
-                if write_key_balance is None:
-                    write_key_balance = 0
+                write_key_balance = self.client.get_var(
+                    contract='currency',
+                    variable='balances',
+                    arguments=[address]
+                ) or 0
                 if write_key in output['writes']:
-                    output['writes'][write_key] += ContractingDecimal(str(reward))
+                    output['writes'][write_key] += reward_amount
                 else:
-                    output['writes'][write_key] = write_key_balance + ContractingDecimal(str(reward))
+                    output['writes'][write_key] = write_key_balance + reward_amount
 
-            # Update foundation reward in output writes
-            for address, reward in rewards['foundation_reward'].items():
+            for address, reward_stamps in rewards['foundation_reward'].items():
+                reward_amount = reward_stamps
                 write_key = f"{state_change_key}:{address}"
-                write_key_balance = self.client.get_var(contract='currency', variable='balances', arguments=[foundation_owner])
-                if write_key_balance is None:
-                    write_key_balance = 0
+                write_key_balance = self.client.get_var(
+                    contract='currency',
+                    variable='balances',
+                    arguments=[address]
+                ) or 0
                 if write_key in output['writes']:
-                    output['writes'][write_key] += ContractingDecimal(str(reward))
+                    output['writes'][write_key] += reward_amount
                 else:
-                    output['writes'][write_key] = write_key_balance + ContractingDecimal(str(reward))
+                    output['writes'][write_key] = write_key_balance + reward_amount
 
-            # Update developer rewards in output writes
-            for address, reward in rewards['developer_reward'].items():
+            for address, reward_stamps in rewards['developer_reward'].items():
+                reward_amount = reward_stamps
                 write_key = f"{state_change_key}:{address}"
-                write_key_balance = self.client.get_var(contract='currency', variable='balances', arguments=[address])
-                if write_key_balance is None:
-                    write_key_balance = 0
+                write_key_balance = self.client.get_var(
+                    contract='currency',
+                    variable='balances',
+                    arguments=[address]
+                ) or 0
                 if write_key in output['writes']:
-                    output['writes'][write_key] += ContractingDecimal(str(reward))
+                    output['writes'][write_key] += reward_amount
                 else:
-                    output['writes'][write_key] = write_key_balance + ContractingDecimal(str(reward))
+                    output['writes'][write_key] = write_key_balance + reward_amount
 
-                    
         writes = self.determine_writes_from_output(
             status_code=output['status_code'],
             ouput_writes=output['writes'],
@@ -178,7 +200,7 @@ class TxProcessor:
         )
 
         for write in writes:
-            self.client.raw_driver.set(key=write['key'], value=write['value'])        
+            self.client.raw_driver.set(key=write['key'], value=write['value'])
 
         tx_output = {
             'hash': tx_hash,
@@ -186,7 +208,7 @@ class TxProcessor:
             'status': output['status_code'],
             'state': writes,
             'stamps_used': output['stamps_used'],
-            'result': safe_repr(output['result']),
+            'result': self.safe_repr(output['result']),
             'rewards': rewards if rewards else None
         }
 
@@ -204,21 +226,14 @@ class TxProcessor:
                 variable='balances',
                 arguments=[tx_sender],
                 mark=False
-            )
+            ) or 0
 
             # Calculate only stamp deductions
-            to_deduct = stamps_used / stamp_cost
-            new_bal = 0
-            try:
-                new_bal = sender_balance - to_deduct
-                assert new_bal > 0
-            except TypeError:
-                pass
-            except AssertionError:
-                new_bal = 0
+            to_deduct = (stamps_used + stamp_cost - 1) // stamp_cost
+            new_bal = max(sender_balance - to_deduct, 0)
 
             writes = [{
-                'key': 'currency.balances:{}'.format(tx_sender),
+                'key': f'currency.balances:{tx_sender}',
                 'value': new_bal
             }]
 
@@ -235,14 +250,9 @@ class TxProcessor:
         signature = tx['metadata']['signature']
         chain_id = block_meta["chain_id"]
 
-        # Nanos is set at the time of block being processed, and is shared between all txns in a block.
-        # TODO : confirm this w/ CometBFT docs.
-        # it's a deterministic value which is the average of times from validators who voted for this block
-        # it's set during the consensus agreement & voting for block between all validators.
-
         return {
-            'block_hash': block_meta["hash"],  # hash nanos
-            'block_num': block_meta["height"],  # block number
+            'block_hash': block_meta["hash"],
+            'block_num': block_meta["height"],
             '__input_hash': self.get_timestamp_hash_from_tx(nanos, signature),
             'now': self.get_now_from_nanos(nanos=nanos),
             'AUXILIARY_SALT': signature,
@@ -251,12 +261,12 @@ class TxProcessor:
 
     def get_timestamp_hash_from_tx(self, nanos, signature):
         h = hashlib.sha3_256()
-        h.update('{}'.format(str(nanos)+signature).encode())
+        h.update(f'{nanos}{signature}'.encode())
         return h.hexdigest()
 
     def get_now_from_nanos(self, nanos):
         return Datetime._from_datetime(
-            datetime.utcfromtimestamp(math.ceil(nanos / 1e9))
+            datetime.utcfromtimestamp(nanos // 1_000_000_000)
         )
 
     def prune_tx_result(self, tx_result: dict):
@@ -265,3 +275,16 @@ class TxProcessor:
         # remove original sent transaction
         tx_result.pop("transaction")
         return tx_result
+
+    def convert_special_types(self, obj):
+        """
+        Recursively converts special types in dictionaries or lists.
+        """
+        if isinstance(obj, dict):
+            return {k: self.convert_special_types(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [self.convert_special_types(item) for item in obj]
+        elif isinstance(obj, float):
+            raise TypeError("Float values are not allowed due to precision loss. Use integers or strings.")
+        else:
+            return obj

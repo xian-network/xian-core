@@ -4,7 +4,6 @@ from loguru import logger
 from datetime import datetime
 from xian.services.bds import sql
 from xian.services.bds.config import Config
-from contracting.stdlib.bridge.decimal import ContractingDecimal
 from contracting.stdlib.bridge.time import Datetime, Timedelta
 from xian.services.bds.database import DB, result_to_json
 from xian_py.wallet import key_is_valid
@@ -14,41 +13,27 @@ from timeit import default_timer as timer
 # Custom JSON encoder for our own objects
 class CustomEncoder(json.JSONEncoder):
     def default(self, obj):
-        if isinstance(obj, ContractingDecimal):
-            v = float(str(obj))
-            return int(v) if v.is_integer() else v
         if isinstance(obj, Datetime):
             # Convert to ISO 8601 format string with microseconds
             return obj._datetime.isoformat(timespec='microseconds')
         if isinstance(obj, Timedelta):
-            # Convert to total seconds with microseconds
+            # Convert to total seconds
             return obj._timedelta.total_seconds()
         return super().default(obj)
 
     def encode(self, obj):
         def process(o):
             if isinstance(o, dict):
-                if len(o) == 1:
-                    if '__fixed__' in o:
-                        return float(o['__fixed__'])
-                    elif '__time__' in o:
-                        # Convert __time__ list to ISO 8601 string
-                        time_list = o['__time__']
-                        # Ensure time_list has exactly 7 elements
-                        time_list += [0] * (7 - len(time_list))
-                        dt_obj = datetime(*time_list)
-                        # Convert to ISO 8601 string with microseconds
-                        return dt_obj.isoformat(timespec='microseconds')
-                    else:
-                        return {k: process(v) for k, v in o.items()}
-                else:
-                    return {k: process(v) for k, v in o.items()}
+                return {k: process(v) for k, v in o.items()}
             elif isinstance(o, list):
                 return [process(v) for v in o]
             elif isinstance(o, Datetime):
                 return o._datetime.isoformat(timespec='microseconds')
             elif isinstance(o, Timedelta):
                 return o._timedelta.total_seconds()
+            elif isinstance(o, float):
+                # Raise an error to prevent precision loss
+                raise TypeError("Float values are not allowed due to precision loss. Use integers or strings.")
             else:
                 return o
         return super().encode(process(obj))
@@ -74,12 +59,12 @@ class BDS:
         start_time = timer()
         genesis_state = cometbft_genesis["abci_genesis"]["genesis"]
 
-        # insert genesis txn
+        # Insert genesis transaction
         await self.insert_genesis_txn(genesis_state)
 
-        # process each item in the genesis block
-        for index, state in enumerate(genesis_state):         
-            logger.debug(f"processing item {index} from genesis_state")
+        # Process each item in the genesis block
+        for index, state in enumerate(genesis_state):
+            logger.debug(f"Processing item {index} from genesis_state")
             parts = state["key"].split(".")
 
             if parts[1] == "__code__":
@@ -104,46 +89,44 @@ class BDS:
         except Exception as e:
             logger.exception(e)
 
-
     async def insert_full_data(self, tx: dict, block_time: datetime):
         total_time = timer()
 
-        # Tx
+        # Insert transaction
         start_time = timer()
         await self._insert_tx(tx, block_time)
-        logger.debug(f'Saved tx in {timer() - start_time:.3f} seconds')
+        logger.debug(f'Saved transaction in {timer() - start_time:.3f} seconds')
 
-        # State
+        # Insert state
         start_time = timer()
         await self._insert_state(tx, block_time)
-        logger.debug(f'Saved contracts in {timer() - start_time:.3f} seconds')
+        logger.debug(f'Saved state in {timer() - start_time:.3f} seconds')
 
-        # State changes
+        # Insert state changes
         start_time = timer()
         await self._insert_state_changes(tx, block_time)
         logger.debug(f'Saved state changes in {timer() - start_time:.3f} seconds')
 
-        # Rewards
+        # Insert rewards
         start_time = timer()
         await self._insert_rewards(tx, block_time)
         logger.debug(f'Saved rewards in {timer() - start_time:.3f} seconds')
 
-        # Addresses
+        # Insert addresses
         start_time = timer()
         await self._insert_addresses(tx, block_time)
         logger.debug(f'Saved addresses in {timer() - start_time:.3f} seconds')
 
-        # Contracts
-        # Only save contracts if tx was successful
+        # Insert contracts
         if tx["tx_result"]["status"] == 0:
             start_time = timer()
             await self._insert_contracts(tx, block_time)
             logger.debug(f'Saved contracts in {timer() - start_time:.3f} seconds')
 
-        logger.debug(f'Processed tx {tx["tx_result"]["hash"]} in {timer() - total_time:.3f} seconds')
+        logger.debug(f'Processed transaction {tx["tx_result"]["hash"]} in {timer() - total_time:.3f} seconds')
 
     async def _insert_tx(self, tx: dict, block_time: datetime):
-        status = True if tx['tx_result']['status'] == 0 else False
+        status = tx['tx_result']['status'] == 0
         result = None if tx['tx_result']['result'] == 'None' else tx['tx_result']['result']
 
         try:
@@ -175,7 +158,6 @@ class BDS:
                     json.dumps(state_change['value'], cls=CustomEncoder),
                     block_time
                 ])
-
             except Exception as e:
                 logger.exception(e)
 
@@ -187,16 +169,15 @@ class BDS:
                     json.dumps(state_change['value'], cls=CustomEncoder),
                     block_time
                 ])
-
             except Exception as e:
                 logger.exception(e)
 
     async def _insert_rewards(self, tx: dict, block_time: datetime):
-        async def insert(type, key, value):
+        async def insert(reward_type, key, value):
             self.db.add_query_to_batch(sql.insert_rewards(), [
                 None,
                 tx['tx_result']['hash'],
-                type,
+                reward_type,
                 key,
                 json.dumps(value, cls=CustomEncoder),
                 block_time
@@ -208,21 +189,21 @@ class BDS:
             # Developer reward
             for address, reward in rewards['developer_reward'].items():
                 try:
-                    await insert('developer', address, float(reward))
+                    await insert('developer', address, reward)
                 except Exception as e:
                     logger.exception(e)
 
             # Masternode reward
             for address, reward in rewards['masternode_reward'].items():
                 try:
-                    await insert('masternode', address, float(reward))
+                    await insert('masternode', address, reward)
                 except Exception as e:
                     logger.exception(e)
 
             # Foundation reward
             for address, reward in rewards['foundation_reward'].items():
                 try:
-                    await insert('foundation', address, float(reward))
+                    await insert('foundation', address, reward)
                 except Exception as e:
                     logger.exception(e)
 
@@ -257,10 +238,7 @@ class BDS:
         try:
             result = await self.db.fetch(sql.select_contracts(), [limit, offset])
 
-            results = []
-            for row in result:
-                row_dict = dict(row)
-                results.append(row_dict)
+            results = [dict(row) for row in result]
 
             # Convert the list of dictionaries to JSON
             results_json = json.dumps(results, default=str)
@@ -273,10 +251,7 @@ class BDS:
         try:
             result = await self.db.fetch(sql.select_state(), [key, limit, offset])
 
-            results = []
-            for row in result:
-                row_dict = dict(row)
-                results.append(row_dict)
+            results = [dict(row) for row in result]
 
             # Convert the list of dictionaries to JSON
             results_json = json.dumps(results, default=str)
@@ -328,11 +303,11 @@ class BDS:
 
         if 'balances=Hash(' not in code:
             return False
-        if '@export\ndeftransfer(amount:float,to:str):' not in code:
+        if '@export\ndeftransfer(amount:int,to:str):' not in code:
             return False
-        if '@export\ndefapprove(amount:float,to:str):' not in code:
+        if '@export\ndefapprove(amount:int,to:str):' not in code:
             return False
-        if '@export\ndeftransfer_from(amount:float,to:str,main_account:str):' not in code:
+        if '@export\ndeftransfer_from(amount:int,to:str,main_account:str):' not in code:
             return False
         return True
 
@@ -356,43 +331,43 @@ class BDS:
     async def insert_genesis_state_contract(self, contract_name, code, submission_time):
         try:
             await self.db.execute(sql.insert_contracts(), [
-                f"GENESIS",
+                "GENESIS",
                 contract_name,
                 code,
                 self.is_XSC0001(code),
                 submission_time
             ])
         except Exception as e:
-            logger.exception(e)      
+            logger.exception(e)
 
     async def insert_genesis_state_change(self, key, value):
-                try:
-                    await self.db.execute(sql.insert_state_changes(), [
-                        None,
-                        f"GENESIS",
-                        key,
-                        json.dumps(value, cls=CustomEncoder),
-                        datetime.now()
-                    ])
-                except Exception as e:
-                    logger.exception(e)
+        try:
+            await self.db.execute(sql.insert_state_changes(), [
+                None,
+                "GENESIS",
+                key,
+                json.dumps(value, cls=CustomEncoder),
+                datetime.now()
+            ])
+        except Exception as e:
+            logger.exception(e)
 
     async def insert_genesis_state(self, key, value):
-                try:
-                    await self.db.execute(sql.insert_or_update_state(), [
-                        key,
-                        json.dumps(value, cls=CustomEncoder),
-                        datetime.now()
-                    ])
-                except Exception as e:
-                    logger.exception(e)
+        try:
+            await self.db.execute(sql.insert_or_update_state(), [
+                key,
+                json.dumps(value, cls=CustomEncoder),
+                datetime.now()
+            ])
+        except Exception as e:
+            logger.exception(e)
 
     def get_submission_time(self, genesis_state: list, contract_name: str) -> datetime:
         for item in genesis_state:
             if "con_" not in contract_name:
                 if contract_name == "submission":
-                    return datetime(1970,1,1,0,0,0,0)
-                return datetime(1970,1,1,1,0,0,0)
+                    return datetime(1970, 1, 1, 0, 0, 0, 0)
+                return datetime(1970, 1, 1, 1, 0, 0, 0)
             if isinstance(item, dict) and item.get('key') == f"{contract_name}.__submitted__":
                 return datetime(*item["value"].get("__time__"))
         return datetime.now()

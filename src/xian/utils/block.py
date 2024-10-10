@@ -1,10 +1,7 @@
 import binascii
 import marshal
-import json
 
-from contracting.stdlib.bridge.decimal import ContractingDecimal
 from xian.constants import Constants as c
-from contracting.storage.encoder import convert_dict
 from loguru import logger
 
 from google.protobuf.timestamp_pb2 import Timestamp
@@ -30,6 +27,28 @@ def compile_contract_from_source(s: dict):
     return hexadecimal_string
 
 
+def convert_special_types(obj):
+    """
+    Recursively converts special types in dictionaries or lists.
+    """
+    if isinstance(obj, dict):
+        return {k: convert_special_types(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_special_types(item) for item in obj]
+    elif isinstance(obj, float):
+        # Raise an error if floats are not allowed
+        raise TypeError("Float values are not allowed due to precision loss. Use integers or strings.")
+    elif isinstance(obj, bytes):
+        try:
+            return obj.decode("utf-8")
+        except UnicodeDecodeError:
+            return str(obj)
+    elif isinstance(obj, datetime):
+        return obj.isoformat()
+    else:
+        return obj
+
+
 def apply_state_changes_from_block(client, nonce_storage, block):
     state_changes = block.get('genesis', [])
     rewards = block.get('rewards', [])
@@ -44,8 +63,8 @@ def apply_state_changes_from_block(client, nonce_storage, block):
             logger.info(f'Processing contract: {parts[0]}')
             compiled_code = compile_contract_from_source(s)
             client.raw_driver.set(f"{parts[0]}.__compiled__", compiled_code)
-        if type(s['value']) is dict:
-            s['value'] = convert_dict(s['value'])
+        if isinstance(s['value'], dict):
+            s['value'] = convert_special_types(s['value'])
 
         client.raw_driver.set(s['key'], s['value'])
 
@@ -53,8 +72,8 @@ def apply_state_changes_from_block(client, nonce_storage, block):
         nonce_storage.set_nonce(n["key"], n["value"])
 
     for s in rewards:
-        if type(s['value']) is dict:
-            s['value'] = convert_dict(s['value'])
+        if isinstance(s['value'], dict):
+            s['value'] = convert_special_types(s['value'])
 
         client.raw_driver.set(s['key'], s['value'])
 
@@ -68,79 +87,27 @@ async def store_genesis_block(client, nonce_storage, genesis_block: dict):
 
 def is_compiled_key(key):
     parts = key.split(".")
-    if parts[1] == "__compiled__":
-        return True
-    return False
-
-def create_latest_block_json_if_not_exists():
-    try:
-        with open(f"{c.STORAGE_HOME}/__latest_block.json", "x") as f:
-            json.dump({"hash": "", "height": 0}, f)
-    except FileExistsError:
-        pass
+    return parts[1] == "__compiled__"
 
 
-def get_latest_block_hash():
-    # Get the latest block hash from the json file
-    create_latest_block_json_if_not_exists()
-    try:
-        with open(f"{c.STORAGE_HOME}/__latest_block.json", "r") as f:
-            latest_block = json.load(f)
-            latest_hash = bytes.fromhex(latest_block.get("hash"))
-    except FileNotFoundError:
-        raise Exception("__latest_block.json not found")
-    except json.JSONDecodeError:
-        raise Exception("Error decoding __latest_block.json")
-
+def get_latest_block_hash(driver):
+    latest_hash = driver.get(c.LATEST_BLOCK_HASH_KEY)
+    if latest_hash is None:
+        return b""
     return latest_hash
 
 
-def set_latest_block_hash(h):
-    # Set the latest block hash in the json file
-    create_latest_block_json_if_not_exists()
-    try:
-        with open(f"{c.STORAGE_HOME}/__latest_block.json", "r") as f:
-            latest_block = json.load(f)
-        
-        # Update the hash while keeping the height intact
-        latest_block["hash"] = h.hex()
-
-        with open(f"{c.STORAGE_HOME}/__latest_block.json", "w") as f:
-            json.dump(latest_block, f)
-    except FileNotFoundError:
-        raise Exception("__latest_block.json not found")
-    except json.JSONDecodeError:
-        raise Exception("Error decoding __latest_block.json")
+def set_latest_block_hash(h, driver):
+    driver.set(c.LATEST_BLOCK_HASH_KEY, h)
 
 
-def get_latest_block_height():
-    # Get the latest block height from the json file
-    create_latest_block_json_if_not_exists()
-    try:
-        with open(f"{c.STORAGE_HOME}/__latest_block.json", "r") as f:
-            latest_block = json.load(f)
-            latest_height = latest_block.get("height")
-    except FileNotFoundError:
-        raise Exception("__latest_block.json not found")
-    except json.JSONDecodeError:
-        raise Exception("Error decoding __latest_block.json")
+def get_latest_block_height(driver):
+    h = driver.get(c.LATEST_BLOCK_HEIGHT_KEY, save=False)
+    if h is None:
+        return 0
 
-    return latest_height
+    return int(h)
 
 
-def set_latest_block_height(h):
-    # Set the latest block height in the json file
-    create_latest_block_json_if_not_exists()
-    try:
-        with open(f"{c.STORAGE_HOME}/__latest_block.json", "r") as f:
-            latest_block = json.load(f)
-        
-        # Update the height while keeping the hash intact
-        latest_block["height"] = h
-
-        with open(f"{c.STORAGE_HOME}/__latest_block.json", "w") as f:
-            json.dump(latest_block, f)
-    except FileNotFoundError:
-        raise Exception("__latest_block.json not found")
-    except json.JSONDecodeError:
-        raise Exception("Error decoding __latest_block.json")
+def set_latest_block_height(h, driver):
+    driver.set(c.LATEST_BLOCK_HEIGHT_KEY, int(h))

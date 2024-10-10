@@ -11,7 +11,6 @@ from xian.utils.hash import (
     hash_from_rewards
 )
 from xian.utils.block import (
-    get_latest_block_hash,
     get_nanotime_from_block_time,
     convert_cometbft_time_to_datetime
 )
@@ -22,25 +21,23 @@ from xian.utils.tx import (
 from xian.utils.encoding import (
     decode_transaction_bytes,
     convert_binary_to_hex,
-    stringify_decimals,
+    convert_special_types,
     hash_bytes
 )
 from loguru import logger
 
 async def finalize_block(self, req) -> ResponseFinalizeBlock:
     nanos = get_nanotime_from_block_time(req.time)
-    hash = convert_binary_to_hex(req.hash)
+    block_hash = convert_binary_to_hex(req.hash)
     block_datetime = convert_cometbft_time_to_datetime(nanos)
     height = req.height
     tx_results = []
     reward_writes = []
-    latest_block_hash = get_latest_block_hash()
-    self.fingerprint_hashes.append(latest_block_hash.hex())
 
     self.current_block_meta = {
         "nanos": nanos,
         "height": height,
-        "hash": hash,
+        "hash": block_hash,
         "chain_id": self.chain_id
     }
 
@@ -70,7 +67,7 @@ async def finalize_block(self, req) -> ResponseFinalizeBlock:
         self.nonce_storage.set_nonce_by_tx(tx)
         tx_hash = result["tx_result"]["hash"]
         self.fingerprint_hashes.append(tx_hash)
-        parsed_tx_result = json.dumps(stringify_decimals(result["tx_result"]))
+        parsed_tx_result = json.dumps(convert_special_types(result["tx_result"]))
         logger.debug(f"Parsed tx result: {parsed_tx_result}")
 
         tx_events = []
@@ -110,7 +107,7 @@ async def finalize_block(self, req) -> ResponseFinalizeBlock:
         if self.block_service_mode:
             cometbft_hash = hash_bytes(tx_bytes).upper()
             result["tx_result"]["hash"] = cometbft_hash
-            asyncio.create_task(self.bds.insert_full_data(tx | result, block_datetime))
+            asyncio.create_task(self.bds.insert_full_data({**tx, **result}, block_datetime))
 
     # Save data to BDS - Process batch
     if self.block_service_mode:
@@ -118,7 +115,7 @@ async def finalize_block(self, req) -> ResponseFinalizeBlock:
 
     if self.static_rewards:
         try:
-            reward_writes.append(self.rewards_handler.distribute_static_rewards(
+            reward_writes.extend(self.rewards_handler.distribute_static_rewards(
                 master_reward=self.static_rewards_amount_validators,
                 foundation_reward=self.static_rewards_amount_foundation,
             ))
@@ -127,14 +124,11 @@ async def finalize_block(self, req) -> ResponseFinalizeBlock:
 
     reward_hash = hash_from_rewards(reward_writes)
     validator_updates = self.validator_handler.build_validator_updates(height)
-    
     self.fingerprint_hashes.append(reward_hash)
-    
-    # No transactions = no rewards / no change to ABCI state, use previous block hash.
-    self.merkle_root_hash = latest_block_hash if len(req.txs) == 0 else hash_list(self.fingerprint_hashes)
+    self.fingerprint_hash = hash_list(self.fingerprint_hashes)
 
     return ResponseFinalizeBlock(
         validator_updates=validator_updates,
         tx_results=tx_results,
-        app_hash=self.merkle_root_hash
+        app_hash=self.fingerprint_hash.encode()
     )

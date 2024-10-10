@@ -1,17 +1,29 @@
+from contracting.stdlib.bridge.decimal import ContractingDecimal
 from xian.constants import Constants
 from contracting.execution.executor import Executor
-from contracting.storage.encoder import safe_repr
 from contracting.storage.driver import Driver
 from contracting.stdlib.bridge.time import Datetime
 from datetime import datetime
 from xian.utils.tx import format_dictionary
-from xian.utils.encoding import stringify_decimals
 import secrets
 import socket
 import pathlib
 import json
 import struct
 
+# Ensure that ContractingInteger is correctly imported from your codebase
+# from contracting.stdlib.bridge.integer import ContractingInteger
+
+def safe_repr(obj, max_len=1024):
+    try:
+        r = repr(obj)
+        # Remove memory address from representation if present
+        rr = r.split(' at 0x')
+        if len(rr) > 1:
+            return rr[0] + '>'
+        return rr[0][:max_len]
+    except Exception:
+        return None
 
 class StampCalculator:
     def __init__(self):
@@ -34,7 +46,6 @@ class StampCalculator:
             connection, client_address = self.socket.accept()
             print("Client connected")
             try:
-                # Accept a connection
                 while True:
                     try:
                         # Read message length (4 bytes)
@@ -42,24 +53,32 @@ class StampCalculator:
                         if not raw_msglen:
                             break
                         msglen = struct.unpack('>I', raw_msglen)[0]
-                        
+
                         # Read the message data
-                        data = connection.recv(msglen)
+                        data = b''
+                        while len(data) < msglen:
+                            packet = connection.recv(msglen - len(data))
+                            if not packet:
+                                break
+                            data += packet
+
                         if not data:
                             # No more data from client, client closed connection
                             print("Client disconnected")
                             break
 
                         print(f"Received: {data.decode()}")
-                        
+
                         tx = data.decode()
                         tx = json.loads(tx)
+
                         try:
                             response = self.execute(tx)
-                            response = json.dumps(response)
-                            response = response.encode()
-                            message_length = struct.pack('>I', len(response))
-                            connection.sendall(message_length + response)
+                            # Use custom encoder for JSON serialization
+                            response_json = json.dumps(response, default=self.json_encoder)
+                            response_bytes = response_json.encode()
+                            message_length = struct.pack('>I', len(response_bytes))
+                            connection.sendall(message_length + response_bytes)
                         except BrokenPipeError:
                             print("Cannot send data, broken pipe.")
                             break
@@ -72,9 +91,7 @@ class StampCalculator:
                 connection.close()
 
     def generate_environment(self, input_hash='0' * 64, bhash='0' * 64, num=1):
-        now = Datetime._from_datetime(
-            datetime.now()
-        )
+        now = Datetime._from_datetime(datetime.now())
         return {
             'block_hash': self.generate_random_hex_string(),
             'block_num': num,
@@ -87,8 +104,7 @@ class StampCalculator:
         # Generate a random number with `length//2` bytes and convert to hex
         return secrets.token_hex(nbytes=length // 2)
 
-    def execute_tx(self, transaction, stamp_cost, environment: dict = {}, driver = None, executor = None):
-        
+    def execute_tx(self, transaction, stamp_cost, environment: dict = {}, driver=None, executor=None):
         balance = 9999999
         output = executor.execute(
             sender=transaction['payload']['sender'],
@@ -114,25 +130,42 @@ class StampCalculator:
             'result': safe_repr(output['result'])
         }
 
-        tx_output = stringify_decimals(format_dictionary(tx_output))
+        # Since we're using integers now, we can remove stringify_decimals
+        tx_output = format_dictionary(tx_output)
 
         return tx_output
 
     def execute(self, transaction):
         driver = Driver(storage_home=self.constants.STORAGE_HOME)
-        executor = Executor(metering=False, bypass_balance_amount=True, bypass_cache=True, driver=driver)
+        executor = Executor(
+            metering=False,
+            bypass_balance_amount=True,
+            bypass_cache=True,
+            driver=driver
+        )
         environment = self.generate_environment()
         try:
-            stamp_cost = int(executor.driver.get_var(contract='stamp_cost', variable='S', arguments=['value']))
+            stamp_cost_var = executor.driver.get_var(contract='stamp_cost', variable='S', arguments=['value'])
+            stamp_cost = int(stamp_cost_var)
         except:
             stamp_cost = 20
         return self.execute_tx(
             transaction=transaction,
             environment=environment,
             stamp_cost=stamp_cost,
-            driver= driver,
+            driver=driver,
             executor=executor
         )
+
+    def json_encoder(self, obj):
+        if isinstance(obj, Datetime):
+            return obj.isoformat()
+        elif isinstance(obj, ContractingDecimal):
+            return str(obj)
+        elif isinstance(obj, datetime):
+            return obj.isoformat()
+        else:
+            return safe_repr(obj)
 
 if __name__ == '__main__':
     sc = StampCalculator()
