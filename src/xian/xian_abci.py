@@ -78,7 +78,7 @@ class Xian:
         self.rewards_handler = RewardsHandler(client=self.client)
         self.current_block_meta: dict = None
         self.fingerprint_hashes = []
-        self.fingerprint_hash = None
+        self.merkle_root_hash = None
         self.chain_id = self.genesis.get("chain_id", None)
 
         self.block_service_mode = self.cometbft_config["xian"]["block_service_mode"]
