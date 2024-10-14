@@ -1,6 +1,6 @@
 from xian.constants import Constants
 from contracting.execution.executor import Executor
-from contracting.storage.encoder import safe_repr
+from contracting.storage.encoder import safe_repr, convert_dict
 from contracting.storage.driver import Driver
 from contracting.stdlib.bridge.time import Datetime
 from datetime import datetime
@@ -96,7 +96,7 @@ class StampCalculator:
             function_name=transaction['payload']['function'],
             stamps=balance * stamp_cost,
             stamp_cost=stamp_cost,
-            kwargs=transaction['payload']['kwargs'],
+            kwargs=convert_dict(transaction['payload']['kwargs']),
             environment=environment,
             auto_commit=False,
             metering=True
