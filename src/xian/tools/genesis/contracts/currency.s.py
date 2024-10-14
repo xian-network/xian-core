@@ -8,16 +8,29 @@ streams = Hash()
 def seed(vk: str):
     balances[vk] = 5555555.55 # 5% Team Tokens
     balances["team_vesting"] = 16666666.65 # 15% Team Tokens 5 Year Release, Directly minted into Lock contract
-    balances["dao"] = 33333333.3 # 30% DAO Tokens, Directly minted into DAO contract
+    balances["dao"] = 6666666.66 # 6% Tokens Upfront to DAO
+    balances["dao_funding_stream"] = 26666666.64 # 15% DAO Tokens, to be sent out after mint
     balances["team_lock"] += 49999999.95 # 45% Second batch of public tokens, to be sent out after mint
     balances[vk] += 5555555.55 # 5% First batch of public tokens, to be sent out after mint
         
     # TEAM LOCK
-    # 365 * 4 + 364 = 1824 (4 years + 1 leap-year)
-    # 1824 * 24 * 60 * 60 = 157593600 (seconds in duration)
-    # 16666666.65 / 157593600 (release per second)
+
+    # 365 * 3 + 364 * 2 = 1823 (3 years + 2 leap-year)
+    # 1823 * 24 * 60 * 60 = 157507200 (seconds in duration)
+    # 16666666.65 / 157507200 (release per second)
+    # 0.10581526844487109 per second
     
-    setup_seed_stream("team_vesting", "team_vesting", "team_lock", 0.10575725568804825, 1824)
+    setup_seed_stream(stream_id="team_vesting", sender="team_vesting", receiver='team_lock', rate=0.10581526844487109, duration_days=1823)
+    
+    # DAO VESTING
+
+    # 26666666.64 over 6 years
+    # 365 * 4 + 366 * 2 = 2192 (4 years + 2 leap-years)
+    # 2192 * 24 * 60 * 60 = 189388800 (seconds in duration)
+    # 26666666.64 / 189388800 (release per second)
+    # 0.1408266581499446 per second
+    
+    setup_seed_stream(stream_id="dao_funding_stream", sender="dao_funding_stream", receiver="dao", rate=0.1408266581499446, duration_days=2192)
 
 
 def setup_seed_stream(stream_id: str, sender: str, receiver: str, rate: float, duration_days: int):
@@ -280,8 +293,6 @@ def forfeit_stream(stream_id: str) -> str:
 
 
 def calc_outstanding_balance(begins: str, closes: str, rate: float, claimed: float) -> float:
-    begins = begins
-    closes = closes
 
     claimable_end_point = now if now < closes else closes
     claimable_period = claimable_end_point - begins
