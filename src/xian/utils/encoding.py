@@ -3,6 +3,7 @@ import binascii
 import hashlib
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 from contracting.stdlib.bridge.time import Datetime
+import decimal
 
 
 def encode_str(value):
@@ -34,9 +35,10 @@ def convert_binary_to_hex(binary_data):
 
 
 def stringify_decimals(obj):
-    target_class = ContractingDecimal
     try:
-        if isinstance(obj, target_class):
+        if isinstance(obj, ContractingDecimal):
+            return str(obj)
+        elif isinstance(obj, decimal.Decimal):
             return str(obj)
         elif isinstance(obj, dict):
             return {key: stringify_decimals(val) for key, val in obj.items()}
