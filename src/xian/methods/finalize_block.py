@@ -35,7 +35,6 @@ async def finalize_block(self, req) -> ResponseFinalizeBlock:
     tx_results = []
     reward_writes = []
     latest_block_hash = get_latest_block_hash()
-    logger.debug(latest_block_hash.hex())
     self.fingerprint_hashes.append(latest_block_hash.hex())
 
     self.current_block_meta = {
@@ -130,10 +129,9 @@ async def finalize_block(self, req) -> ResponseFinalizeBlock:
     validator_updates = self.validator_handler.build_validator_updates(height)
     
     self.fingerprint_hashes.append(reward_hash)
-    logger.debug(f'reward hash : {reward_hash}')
     
+    # No transactions = no rewards / no change to ABCI state, use previous block hash.
     self.merkle_root_hash = latest_block_hash if len(req.txs) == 0 else hash_list(self.fingerprint_hashes)
-    logger.debug(f'merkle root hash : {self.merkle_root_hash}')
 
     return ResponseFinalizeBlock(
         validator_updates=validator_updates,
