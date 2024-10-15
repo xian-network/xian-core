@@ -85,6 +85,9 @@ def finalize_vote(proposal_id: int):
     votes[proposal_id] = cur_vote
     return cur_vote
 
+def balance_dao_stream():
+    dao.balance_dao_stream()
+
 def force_leave(node: str):
     pending_leave[node] = now + datetime.timedelta(days=7)
 
