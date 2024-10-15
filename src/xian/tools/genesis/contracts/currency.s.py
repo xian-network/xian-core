@@ -8,8 +8,8 @@ streams = Hash()
 def seed(vk: str):
     balances[vk] = 5555555.55 # 5% Team Tokens
     balances["team_vesting"] = 16666666.65 # 15% Team Tokens 5 Year Release, Directly minted into Lock contract
-    balances["dao"] = 6666666.66 # 30% DAO Tokens, Directly minted into DAO contract
-    balances["dao_funding_stream"] = 26666666.64 # 15% DAO Tokens, to be sent out after mint
+    balances["dao"] = 10999999.989 # 33% DAO Tokens, Directly minted into DAO contract
+    balances["dao_funding_stream"] = 22333333.311 # 67% DAO Tokens, to be streamed over 6 years.
     balances["team_lock"] += 49999999.95 # 45% Second batch of public tokens, to be sent out after mint
     balances[vk] += 5555555.55 # 5% First batch of public tokens, to be sent out after mint
         
@@ -23,9 +23,9 @@ def seed(vk: str):
     # DAO FUNDING STREAM
     # 365 * 5 + 364 = 2189 (5 years + 1 leap-year)
     # 2189 * 24 * 60 * 60 = 189129600 (seconds in duration)
-    # 26666666.64 / 189129600 = 0.14099679077204202 (release per second)
+    # 22333333.311 / 189129600 = 0.1180848122715852 (release per second)
     
-    setup_seed_stream(stream_id="dao_funding_stream", sender="dao_funding_stream", receiver="dao", rate=0.14099679077204202, duration_days=2189)
+    setup_seed_stream(stream_id="dao_funding_stream", sender="dao_funding_stream", receiver="dao", rate=0.1180848122715852, duration_days=2189)
 
 def setup_seed_stream(stream_id: str, sender: str, receiver: str, rate: float, duration_days: int):
     streams[stream_id, 'status'] = "active"
