@@ -11,6 +11,7 @@ def seed(vk: str):
     balances["dao"] = 10999999.989 # 33% DAO Tokens, Directly minted into DAO contract
     balances["dao_funding_stream"] = 22333333.311 # 67% DAO Tokens, to be streamed over 6 years.
     balances["team_lock"] += 49999999.95 # 45% Second batch of public tokens, to be sent out after mint
+    balances[vk] += 5555555.55 # 5% Seed participation tokens
         
     # TEAM LOCK
     # 365 * 4 + 364 = 1824 (4 years + 1 leap-year)
