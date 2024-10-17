@@ -11,13 +11,20 @@ import hashlib
 import decimal
 import re
 
-def expo_notation_check(msg: str):
-    expo = re.findall(r'(\d+\.\d+e-\d+)', msg)
+# Helper function to find and replace scientific notation with decimal precision
+def expo_notation_check(msg: str) -> str:
+    # Update the regex to match both 'e' and 'E', and ensure it captures the scientific notation correctly
+    expo = re.findall(r'(\d+\.\d+[eE][-+]?\d+)', msg)
     if expo:
-        # Replace the exponent notation with the float value
+        # Replace the exponent notation with the float value using decimal.Decimal
         for e in expo:
-            msg = msg.replace(e, str(decimal.Decimal(e)))
+            sci_decimal = decimal.Decimal(e)
+            fixed_point_decimal = format(sci_decimal, 'f')
+            msg = msg.replace(e, fixed_point_decimal)
+            
+           
     return msg
+
 
 def verify(vk: str, msg: str, signature: str) -> bool:
     str_msg = msg
