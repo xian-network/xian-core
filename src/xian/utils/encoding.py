@@ -40,13 +40,20 @@ def extract_payload_string(json_str):
     if start_brace_index == -1:
         raise ValueError("Malformed JSON: No opening brace for 'payload'.")
 
-    # Use a stack to find the matching closing brace
+    # Use a stack to find the matching closing brace, ignoring braces within strings
     brace_count = 0
+    in_string = False
     for i in range(start_brace_index, len(json_str)):
-        if json_str[i] == '{':
-            brace_count += 1
-        elif json_str[i] == '}':
-            brace_count -= 1
+        char = json_str[i]
+        
+        if char == '"' and (i == 0 or json_str[i-1] != '\\'):
+            in_string = not in_string
+        
+        if not in_string:
+            if char == '{':
+                brace_count += 1
+            elif char == '}':
+                brace_count -= 1
         
         # When brace_count is zero, we've found the matching closing brace
         if brace_count == 0:

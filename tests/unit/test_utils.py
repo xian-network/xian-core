@@ -23,6 +23,11 @@ class TestPayloadStrExtraction(unittest.TestCase):
             True
         ),
         (
+            "bracket_in_payload_string",
+            '{"metadata":{"signature":"f47871676c33d17d5a86bd8b2f12832e35e2b73692b0f28321be2f9acd3379c755440333ddc5e5bf40255256adb946aecae6729e8cb3a9028b08cdd995609f05"},"payload":{"chain_id":"xian-local","contract":"currency","function":"transfer","kwargs":{"amount":0.00000252,"to":"JAVASCRIPT_TRANSACTION_TEST}"},"nonce":40,"sender":"e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931","stamps_supplied":10}}',
+            True
+        ),
+        (
             "no_payload_field",
             '{"id": 2, "other_field": "data"}',
             False
@@ -32,11 +37,49 @@ class TestPayloadStrExtraction(unittest.TestCase):
             '{"id": 3, "payload": "", "other_field": "data"}',
             False
         ),
-
+        (
+            "escaped_quotes_in_payload",
+            '{"metadata":{"signature":"abc"},"payload":{"text":"This is a \\"quoted\\" string","number":123}}',
+            True
+        ),
+        (
+            "special_characters_in_payload",
+            '{"metadata":{"signature":"abc"},"payload":{"text":"Special characters !@#$%^&*()_+-=~`"}}',
+            True
+        ),
+        (
+            "payload_with_empty_object",
+            '{"metadata":{"signature":"abc"},"payload":{}}',
+            True
+        ),
+        (
+            "payload_with_empty_array",
+            '{"metadata":{"signature":"abc"},"payload":{"array":[]}}',
+            True
+        ),
+        (
+            "payload_with_large_numbers",
+            '{"metadata":{"signature":"abc"},"payload":{"large_number":12345678901234567890}}',
+            True
+        ),
+        (
+            "payload_with_unicode_characters",
+            '{"metadata":{"signature":"abc"},"payload":{"text":"Unicode test: \u2603 \u2764"}}',
+            True
+        ),
+        (
+            "payload_with_boolean_values",
+            '{"metadata":{"signature":"abc"},"payload":{"flag":true,"status":false}}',
+            True
+        ),
+        (
+            "payload_with_null_value",
+            '{"metadata":{"signature":"abc"},"payload":{"nullable":null}}',
+            True
+        )
     ])
     def test_extract_payload(self, name, tx_str, has_payload, should_match=True):
         complete_json = json.loads(tx_str)
-        
         if has_payload:
             result = json.loads(extract_payload_string(tx_str))
             if should_match:
