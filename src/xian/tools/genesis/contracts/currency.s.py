@@ -8,10 +8,10 @@ streams = Hash()
 def seed(vk: str):
     balances[vk] = 5555555.55 # 5% Team Tokens
     balances["team_vesting"] = 16666666.65 # 15% Team Tokens 5 Year Release, Directly minted into Lock contract
-    balances["dao"] = 6666666.66 # 6% Tokens Upfront to DAO
-    balances["dao_funding_stream"] = 26666666.64 # 15% DAO Tokens, to be sent out after mint
+    balances["dao"] = 10999999.989 # 33% DAO Tokens, Directly minted into DAO contract
+    balances["dao_funding_stream"] = 22333333.311 # 67% DAO Tokens, to be streamed over 6 years.
     balances["team_lock"] += 49999999.95 # 45% Second batch of public tokens, to be sent out after mint
-    balances[vk] += 5555555.55 # 5% First batch of public tokens, to be sent out after mint
+    balances[vk] += 5555555.55 # 5% Seed participation tokens
         
     # TEAM LOCK
 
@@ -20,18 +20,14 @@ def seed(vk: str):
     # 16666666.65 / 157507200 (release per second)
     # 0.10581526844487109 per second
     
-    setup_seed_stream(stream_id="team_vesting", sender="team_vesting", receiver='team_lock', rate=0.10581526844487109, duration_days=1823)
-    
-    # DAO VESTING
+    setup_seed_stream(stream_id="team_vesting", sender="team_vesting", receiver="team_lock", rate=0.10575725568804825, duration_days=1824)
 
-    # 26666666.64 over 6 years
-    # 365 * 4 + 366 * 2 = 2192 (4 years + 2 leap-years)
-    # 2192 * 24 * 60 * 60 = 189388800 (seconds in duration)
-    # 26666666.64 / 189388800 (release per second)
-    # 0.1408266581499446 per second
+    # DAO FUNDING STREAM
+    # 365 * 5 + 364 = 2189 (5 years + 1 leap-year)
+    # 2189 * 24 * 60 * 60 = 189129600 (seconds in duration)
+    # 22333333.311 / 189129600 = 0.1180848122715852 (release per second)
     
-    setup_seed_stream(stream_id="dao_funding_stream", sender="dao_funding_stream", receiver="dao", rate=0.1408266581499446, duration_days=2192)
-
+    setup_seed_stream(stream_id="dao_funding_stream", sender="dao_funding_stream", receiver="dao", rate=0.1180848122715852, duration_days=2189)
 
 def setup_seed_stream(stream_id: str, sender: str, receiver: str, rate: float, duration_days: int):
     streams[stream_id, 'status'] = "active"
@@ -56,7 +52,7 @@ def transfer(amount: float, to: str):
 
 @export
 def approve(amount: float, to: str):
-    assert amount > 0, 'Cannot send negative balances.'
+    assert amount >= 0, 'Cannot approve negative balances.'
     balances[ctx.caller, to] = amount
 
     return f"Approved {amount} for {to}"
@@ -292,8 +288,7 @@ def forfeit_stream(stream_id: str) -> str:
     return f"Forfeit stream {stream_id}"
 
 
-def calc_outstanding_balance(begins: str, closes: str, rate: float, claimed: float) -> float:
-
+def calc_outstanding_balance(begins: datetime.datetime, closes: datetime.datetime, rate: float, claimed: float) -> float:
     claimable_end_point = now if now < closes else closes
     claimable_period = claimable_end_point - begins
     claimable_seconds = claimable_period.seconds
@@ -307,6 +302,7 @@ def calc_claimable_amount(amount_due: float, sender:str) -> float:
 
 def construct_stream_permit_msg(sender:str, receiver:str, rate:float, begins:str, closes:str, deadline:str) -> str:
     return f"{sender}:{receiver}:{rate}:{begins}:{closes}:{deadline}:{ctx.this}:{chain_id}"
+
 
 def strptime_ymdhms(date_string: str) -> datetime.datetime:
     return datetime.datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S')
