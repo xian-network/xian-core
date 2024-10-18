@@ -6,7 +6,7 @@ from argparse import ArgumentParser
 from contracting.storage.driver import Driver
 from contracting.storage.encoder import encode
 from xian_py.wallet import Wallet
-from xian.utils.block import is_compiled_key
+from xian.utils.block import is_compiled_key, get_latest_block_height, get_latest_block_hash
 
 
 def hash_genesis_block_state_changes(state_changes: list) -> str:
@@ -36,12 +36,13 @@ def fetch_filebased_state():
     driver = Driver()
     contract_state = driver.get_all_contract_state()
     run_state = driver.get_run_state()
+    print('run_state', run_state)
     return contract_state, run_state
 
 
 def build_genesis_block(founder_sk: str, contract_state: dict, run_state: dict):
-    hash = run_state["__latest_block.hash"].hex()
-    block_number = run_state["__latest_block.height"]
+    hash = get_latest_block_hash()['__bytes__']
+    block_number = get_latest_block_height()
 
     genesis_block = {
         'hash': hash,
