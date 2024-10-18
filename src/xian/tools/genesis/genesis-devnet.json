@@ -42,8 +42,10 @@
     ],
     "app_hash": "",
     "abci_genesis": {
-        "hash": "31323662643132363639383163636337623062643937346537343631373334343537393138333065396663396166353337353864336263633435373739616163",
-        "number": 155,
+        "hash": {
+            "__bytes__": "32643635653762376336346331623939366436663063373330626131663235386231343934613261323733396364316639643538356337333538303634316165"
+        },
+        "number": 382,
         "origin": {
             "signature": "",
             "sender": ""
@@ -114,6 +116,114 @@
                         0
                     ]
                 }
+            },
+            {
+                "key": "con_big2.__code__",
+                "value": "__balances = Hash(default_value=0, contract='con_big2', name='balances')\n__metadata = Hash(contract='con_big2', name='metadata')\n\n\ndef ____():\n    __balances[ctx.caller] = 300000000000000000000000000000\n    __metadata['token_name'] = 'TEST TOKEN'\n    __metadata['token_symbol'] = 'TST'\n    __metadata['token_logo_url'] = 'https://some.token.url/test-token.png'\n    __metadata['token_website'] = 'https://some.token.url'\n    __metadata['operator'] = ctx.caller\n\n\n@__export('con_big2')\ndef change_metadata(key: str, value: Any):\n    assert ctx.caller == __metadata['operator'\n        ], 'Only operator can set metadata!'\n    __metadata[key] = value\n\n\n@__export('con_big2')\ndef transfer(amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    assert __balances[ctx.caller] >= amount, 'Not enough coins to send!'\n    __balances[ctx.caller] -= amount\n    __balances[to] += amount\n    return f'Sent {amount} to {to}'\n\n\n@__export('con_big2')\ndef approve(amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    __balances[ctx.caller, to] += amount\n    return f'Approved {amount} for {to}'\n\n\n@__export('con_big2')\ndef transfer_from(amount: float, to: str, main_account: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    assert __balances[main_account, ctx.caller\n        ] >= amount, 'Not enough coins approved to send! You have {} and are trying to spend {}'.format(\n        __balances[main_account, ctx.caller], amount)\n    assert __balances[main_account] >= amount, 'Not enough coins to send!'\n    __balances[main_account, ctx.caller] -= amount\n    __balances[main_account] -= amount\n    __balances[to] += amount\n    return f'Sent {amount} to {to} from {main_account}'\n\n\n@__export('con_big2')\ndef balance_of(address: str):\n    return __balances[address]\n"
+            },
+            {
+                "key": "con_big2.__developer__",
+                "value": "39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0"
+            },
+            {
+                "key": "con_big2.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        10,
+                        10,
+                        20,
+                        15,
+                        42,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_big2.balances:39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0",
+                "value": {
+                    "__fixed__": "-0"
+                }
+            },
+            {
+                "key": "con_big2.balances:holder",
+                "value": {
+                    "__fixed__": "100000000000000000000000000000"
+                }
+            },
+            {
+                "key": "con_big2.metadata:operator",
+                "value": "39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0"
+            },
+            {
+                "key": "con_big2.metadata:token_logo_url",
+                "value": "https://some.token.url/test-token.png"
+            },
+            {
+                "key": "con_big2.metadata:token_name",
+                "value": "TEST TOKEN"
+            },
+            {
+                "key": "con_big2.metadata:token_symbol",
+                "value": "TST"
+            },
+            {
+                "key": "con_big2.metadata:token_website",
+                "value": "https://some.token.url"
+            },
+            {
+                "key": "con_bigtoken.__code__",
+                "value": "__balances = Hash(default_value=0, contract='con_bigtoken', name='balances')\n__metadata = Hash(contract='con_bigtoken', name='metadata')\n\n\ndef ____():\n    __balances[ctx.caller] = 55000000000000000000000000000\n    __balances['holder2'] = 99999999999999999999999999999\n    __metadata['token_name'] = 'TEST TOKEN'\n    __metadata['token_symbol'] = 'TST'\n    __metadata['token_logo_url'] = 'https://some.token.url/test-token.png'\n    __metadata['token_website'] = 'https://some.token.url'\n    __metadata['operator'] = ctx.caller\n\n\n@__export('con_bigtoken')\ndef change_metadata(key: str, value: Any):\n    assert ctx.caller == __metadata['operator'\n        ], 'Only operator can set metadata!'\n    __metadata[key] = value\n\n\n@__export('con_bigtoken')\ndef transfer(amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    assert __balances[ctx.caller] >= amount, 'Not enough coins to send!'\n    __balances[ctx.caller] -= amount\n    __balances[to] += amount\n    return f'Sent {amount} to {to}'\n\n\n@__export('con_bigtoken')\ndef approve(amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    __balances[ctx.caller, to] += amount\n    return f'Approved {amount} for {to}'\n\n\n@__export('con_bigtoken')\ndef transfer_from(amount: float, to: str, main_account: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    assert __balances[main_account, ctx.caller\n        ] >= amount, 'Not enough coins approved to send! You have {} and are trying to spend {}'.format(\n        __balances[main_account, ctx.caller], amount)\n    assert __balances[main_account] >= amount, 'Not enough coins to send!'\n    __balances[main_account, ctx.caller] -= amount\n    __balances[main_account] -= amount\n    __balances[to] += amount\n    return f'Sent {amount} to {to} from {main_account}'\n\n\n@__export('con_bigtoken')\ndef balance_of(address: str):\n    return __balances[address]\n"
+            },
+            {
+                "key": "con_bigtoken.__developer__",
+                "value": "39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0"
+            },
+            {
+                "key": "con_bigtoken.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        10,
+                        10,
+                        20,
+                        11,
+                        17,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_bigtoken.balances:39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0",
+                "value": {
+                    "__fixed__": "-0"
+                }
+            },
+            {
+                "key": "con_bigtoken.balances:holder2",
+                "value": {
+                    "__fixed__": "100000000000000000000000000000"
+                }
+            },
+            {
+                "key": "con_bigtoken.metadata:operator",
+                "value": "39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0"
+            },
+            {
+                "key": "con_bigtoken.metadata:token_logo_url",
+                "value": "https://some.token.url/test-token.png"
+            },
+            {
+                "key": "con_bigtoken.metadata:token_name",
+                "value": "TEST TOKEN"
+            },
+            {
+                "key": "con_bigtoken.metadata:token_symbol",
+                "value": "TST"
+            },
+            {
+                "key": "con_bigtoken.metadata:token_website",
+                "value": "https://some.token.url"
             },
             {
                 "key": "con_counter.__code__",
@@ -392,6 +502,616 @@
                 "value": "https://some.token.url"
             },
             {
+                "key": "con_dextest_001.__code__",
+                "value": "MINIMUM_LIQUIDITY = decimal('1e-08')\nMAX_ROUTE = 8\n__toks_to_pair = Hash(default_value=False, contract='con_dextest_001', name\n    ='toks_to_pair')\n__pairs = Hash(default_value=0, contract='con_dextest_001', name='pairs')\n__pairs_num = Variable(contract='con_dextest_001', name='pairs_num')\n__feeTo = Variable(contract='con_dextest_001', name='feeTo')\n__owner = Variable(contract='con_dextest_001', name='owner')\ntoken_interface = [importlib.Func('transfer_from', args=('amount', 'to',\n    'main_account')), importlib.Func('transfer', args=('amount', 'to')),\n    importlib.Var('balances', Hash)]\n\n\ndef ____():\n    __pairs_num.set(0)\n    __owner.set(ctx.signer)\n    __feeTo.set(ctx.signer)\n\n\n@__export('con_dextest_001')\ndef pairFor(tokenA: str, tokenB: str):\n    if tokenB < tokenA:\n        tokenA, tokenB = tokenB, tokenA\n    return __toks_to_pair[tokenA, tokenB]\n\n\n@__export('con_dextest_001')\ndef liqTransfer(pair: int, amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    assert __pairs[pair, 'balances', ctx.caller\n        ] >= amount, 'Not enough coins to send!'\n    __pairs[pair, 'balances', ctx.caller] -= amount\n    __pairs[pair, 'balances', to] += amount\n\n\n@__export('con_dextest_001')\ndef liqApprove(pair: int, amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    __pairs[pair, 'balances', ctx.caller, to] += amount\n\n\n@__export('con_dextest_001')\ndef liqTransfer_from(pair: int, amount: float, to: str, main_account: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    assert __pairs[pair, 'balances', main_account, ctx.caller\n        ] >= amount, 'Not enough coins approved to send! You have {} and are trying to spend {}'.format(\n        __pairs[pair, 'balances', main_account, ctx.caller], amount)\n    assert __pairs[pair, 'balances', main_account\n        ] >= amount, 'Not enough coins to send!'\n    __pairs[pair, 'balances', main_account, ctx.caller] -= amount\n    __pairs[pair, 'balances', main_account] -= amount\n    __pairs[pair, 'balances', to] += amount\n\n\ndef __safeTransferFrom(token: str, src: str, to: str, value: float):\n    t = importlib.import_module(token)\n    assert importlib.enforce_interface(t, token_interface\n        ), 'Bad token interface!'\n    t.transfer_from(value, to, src)\n\n\ndef __safeTransferFromToPair(pair: int, token: str, src: str, value: float):\n    t = importlib.import_module(token)\n    assert importlib.enforce_interface(t, token_interface\n        ), 'Bad token interface!'\n    __tok_balances = ForeignHash(foreign_contract=token, foreign_name=\n        'balances', contract='con_dextest_001', name='tok_balances')\n    prev_balance = __tok_balances[ctx.this]\n    if prev_balance == None:\n        prev_balance = 0\n    if token == __pairs[pair, 'token0']:\n        t.transfer_from(value, ctx.this, src)\n        new_balance = __tok_balances[ctx.this]\n        assert new_balance >= prev_balance, 'Negative income!'\n        __pairs[pair, 'balance0'] += new_balance - prev_balance\n        return True\n    elif token == __pairs[pair, 'token1']:\n        t.transfer_from(value, ctx.this, src)\n        new_balance = __tok_balances[ctx.this]\n        assert new_balance >= prev_balance, 'Negative income!'\n        __pairs[pair, 'balance1'] += new_balance - prev_balance\n        return True\n    assert False, 'Wrong token!'\n\n\ndef __safeTransferFromPair(pair: int, token: str, to: str, value: float):\n    t = importlib.import_module(token)\n    assert importlib.enforce_interface(t, token_interface\n        ), 'Bad token interface!'\n    __tok_balances = ForeignHash(foreign_contract=token, foreign_name=\n        'balances', contract='con_dextest_001', name='tok_balances')\n    prev_balance = __tok_balances[ctx.this]\n    if prev_balance == None:\n        prev_balance = 0\n    if token == __pairs[pair, 'token0']:\n        assert __pairs[pair, 'balance0'] >= value, 'Not enough coins to send!'\n        t.transfer(value, to)\n        new_balance = __tok_balances[ctx.this]\n        assert new_balance >= 0, 'Negative balance!'\n        __pairs[pair, 'balance0'] += new_balance - prev_balance\n        assert __pairs[pair, 'balance0'] >= 0, 'Negative pair balance0!'\n        return True\n    elif token == __pairs[pair, 'token1']:\n        assert __pairs[pair, 'balance1'] >= value, 'Not enough coins to send!'\n        t.transfer(value, to)\n        new_balance = __tok_balances[ctx.this]\n        assert new_balance >= 0, 'Negative balance!'\n        __pairs[pair, 'balance1'] += new_balance - prev_balance\n        assert __pairs[pair, 'balance1'] >= 0, 'Negative pair balance1!'\n        return True\n    assert False, 'Wrong token!'\n    return False\n\n\ndef __quote(amountA: float, reserveA: float, reserveB: float):\n    assert amountA > 0, '__DEXNAME: INSUFFICIENT_AMOUNT'\n    assert reserveA > 0 and reserveB > 0, '__DEXNAME: INSUFFICIENT_LIQUIDITY'\n    return amountA * reserveB / reserveA\n\n\ndef __createPair(tokenA: str, tokenB: str):\n    assert tokenA != tokenB, '__DEXNAME: IDENTICAL_ADDRESSES'\n    assert __toks_to_pair[tokenA, tokenB] == False, '__DEXNAME: PAIR_EXISTS'\n    p_num = __pairs_num.get() + 1\n    __pairs_num.set(p_num)\n    __pairs[p_num, 'token0'] = tokenA\n    __pairs[p_num, 'token1'] = tokenB\n    __pairs[p_num, 'reserve0'] = 0\n    __pairs[p_num, 'reserve1'] = 0\n    __pairs[p_num, 'balance0'] = 0\n    __pairs[p_num, 'balance1'] = 0\n    __pairs[p_num, 'blockTimestampLast'] = now\n    __pairs[p_num, 'totalSupply'] = 0\n    __pairs[p_num, 'kLast'] = 0\n    __pairs[p_num, 'creationTime'] = now\n    __toks_to_pair[tokenA, tokenB] = p_num\n    return p_num\n\n\ndef __getReserves(pair: int):\n    return __pairs[pair, 'reserve0'], __pairs[pair, 'reserve1'], __pairs[\n        pair, 'blockTimestampLast']\n\n\ndef __internal_update(pair: int, balance0: float, balance1: float):\n    __pairs[pair, 'reserve0'] = balance0\n    __pairs[pair, 'reserve1'] = balance1\n    __pairs[pair, 'blockTimestampLast'] = now\n\n\ndef __internal_mintFee(pair: int, reserve0: float, reserve1: float):\n    feeto = __feeTo.get()\n    feeOn = feeto != False\n    kLast = __pairs[pair, 'kLast']\n    if feeOn:\n        if kLast != 0:\n            rootK = (reserve0 * reserve1) ** decimal('0.5')\n            rootKLast = kLast ** decimal('0.5')\n            if rootK > rootKLast:\n                numerator = __pairs[pair, 'totalSupply'] * (rootK - rootKLast)\n                denominator = rootK * 5 + rootKLast\n                liquidity = numerator / denominator\n                if liquidity > 0:\n                    __mint(pair, feeto.get(), liquidity)\n        elif kLast != 0:\n            __pairs[pair, 'kLast'] = 0\n    return feeOn\n\n\ndef __internal_burn(pair: int, src: str, value: float):\n    __pairs[pair, 'totalSupply'] -= value\n    assert __pairs[pair, 'totalSupply'] >= 0, 'Negative supply!'\n    __pairs[pair, 'balances', src] -= value\n    assert __pairs[pair, 'balances', src] >= 0, 'Negative balance!'\n\n\ndef __burn(pair: int, to: str):\n    reserve0, reserve1, ignore = __getReserves(pair)\n    token0 = __pairs[pair, 'token0']\n    token1 = __pairs[pair, 'token1']\n    balance0 = __pairs[pair, 'balance0']\n    balance1 = __pairs[pair, 'balance1']\n    liquidity = __pairs[pair, 'balances', ctx.this]\n    feeOn = __internal_mintFee(pair, reserve0, reserve1)\n    totalSupply = __pairs[pair, 'totalSupply']\n    amount0 = liquidity * balance0 / totalSupply\n    amount1 = liquidity * balance1 / totalSupply\n    assert amount0 > 0 and amount1 > 0, '__DEXNAME: INSUFFICIENT_LIQUIDITY_BURNED'\n    __internal_burn(pair, ctx.this, liquidity)\n    __safeTransferFromPair(pair, token0, to, amount0)\n    __safeTransferFromPair(pair, token1, to, amount1)\n    balance0 = __pairs[pair, 'balance0']\n    balance1 = __pairs[pair, 'balance1']\n    __internal_update(pair, balance0, balance1)\n    if feeOn:\n        __pairs[pair, 'kLast'] = balance0 * balance1\n    return amount0, amount1\n\n\ndef __internal_mint(pair: int, to: str, value: float):\n    __pairs[pair, 'totalSupply'] += value\n    __pairs[pair, 'balances', to] += value\n\n\ndef __mint(pair: int, to: str):\n    reserve0, reserve1, ignore = __getReserves(pair)\n    balance0 = __pairs[pair, 'balance0']\n    balance1 = __pairs[pair, 'balance1']\n    amount0 = balance0 - reserve0\n    amount1 = balance1 - reserve1\n    feeOn = __internal_mintFee(pair, reserve0, reserve1)\n    totalSupply = __pairs[pair, 'totalSupply']\n    liquidity = 0\n    if totalSupply == 0:\n        liquidity = (amount0 * amount1) ** decimal('0.5') - MINIMUM_LIQUIDITY\n        __internal_mint(pair, 'DEAD', MINIMUM_LIQUIDITY)\n    else:\n        liquidity = min(amount0 * totalSupply / reserve0, amount1 *\n            totalSupply / reserve1)\n    assert liquidity > 0, 'UniswapV2: INSUFFICIENT_LIQUIDITY_MINTED'\n    __internal_mint(pair, to, liquidity)\n    __internal_update(pair, balance0, balance1)\n    if feeOn:\n        __pairs[pair, 'kLast'] = balance0 * balance1\n    return liquidity\n\n\ndef __internal_addLiquidity(tokenA: str, tokenB: str, amountADesired: float,\n    amountBDesired: float, amountAMin: float, amountBMin: float):\n    desired_pair = __toks_to_pair[tokenA, tokenB]\n    if desired_pair == False:\n        desired_pair = __createPair(tokenA, tokenB)\n    reserveA, reserveB, ignore = __getReserves(desired_pair)\n    if reserveA == 0 and reserveB == 0:\n        return amountADesired, amountBDesired\n    else:\n        amountBOptimal = __quote(amountADesired, reserveA, reserveB)\n        if amountBOptimal <= amountBDesired:\n            assert amountBOptimal >= amountBMin, '__DEXNAME: INSUFFICIENT_B_AMOUNT'\n            return amountADesired, amountBOptimal\n        else:\n            amountAOptimal = __quote(amountBDesired, reserveB, reserveA)\n            assert amountAOptimal <= amountADesired\n            assert amountAOptimal >= amountAMin, '__DEXNAME: INSUFFICIENT_A_AMOUNT'\n            return amountAOptimal, amountBDesired\n\n\n@__export('con_dextest_001')\ndef addLiquidity(tokenA: str, tokenB: str, amountADesired: float,\n    amountBDesired: float, amountAMin: float, amountBMin: float, to: str,\n    deadline: int):\n    if tokenB < tokenA:\n        tokenA, tokenB = tokenB, tokenA\n    amountA, amountB = __internal_addLiquidity(tokenA, tokenB,\n        amountADesired, amountBDesired, amountAMin, amountBMin)\n    pair = __toks_to_pair[tokenA, tokenB]\n    __safeTransferFromToPair(pair, tokenA, ctx.caller, amountA)\n    __safeTransferFromToPair(pair, tokenB, ctx.caller, amountB)\n    liquidity = __mint(pair, to)\n    return amountA, amountB, liquidity\n\n\n@__export('con_dextest_001')\ndef removeLiquidity(tokenA: str, tokenB: str, liquidity: float, amountAMin:\n    float, amountBMin: float, to: str, deadline: int):\n    desired_pair = __toks_to_pair[tokenA, tokenB]\n    assert desired_pair != False, \"Pair doesn't exist!\"\n    liqTransfer(desired_pair, liquidity, ctx.this)\n    amountA, amountB = __burn(desired_pair, to)\n    assert amountA >= amountAMin, '__DEXNAME: INSUFFICIENT_A_AMOUNT'\n    assert amountB >= amountBMin, '__DEXNAME: INSUFFICIENT_B_AMOUNT'\n    return amountA, amountB\n\n\ndef __getAmountOut(amountIn: float, reserveIn: float, reserveOut: float):\n    assert amountIn > 0, '__DEXNAME: INSUFFICIENT_INPUT_AMOUNT'\n    assert reserveIn > 0 and reserveOut > 0, '__DEXNAME: INSUFFICIENT_LIQUIDITY'\n    amountInWithFee = amountIn * 997\n    numerator = amountInWithFee * reserveOut\n    denominator = reserveIn * 1000 + amountInWithFee\n    return numerator / denominator\n\n\ndef __swap(pair: int, amount0Out: float, amount1Out: float, to: str):\n    assert amount0Out > 0 or amount1Out > 0, 'UniswapV2: INSUFFICIENT_OUTPUT_AMOUNT'\n    reserve0, reserve1, ignore = __getReserves(pair)\n    assert amount0Out < reserve0 and amount1Out < reserve1, 'UniswapV2: INSUFFICIENT_LIQUIDITY'\n    token0 = __pairs[pair, 'token0']\n    token1 = __pairs[pair, 'token1']\n    assert to != token0 and to != token1, 'UniswapV2: INVALID_TO'\n    if amount0Out > 0:\n        __safeTransferFromPair(pair, token0, to, amount0Out)\n    if amount1Out > 0:\n        __safeTransferFromPair(pair, token1, to, amount1Out)\n    balance0 = __pairs[pair, 'balance0']\n    balance1 = __pairs[pair, 'balance1']\n    amount0In = balance0 - (reserve0 - amount0Out\n        ) if balance0 > reserve0 - amount0Out else 0\n    amount1In = balance1 - (reserve1 - amount1Out\n        ) if balance1 > reserve1 - amount1Out else 0\n    assert amount0In > 0 or amount1In > 0, 'UniswapV2: INSUFFICIENT_INPUT_AMOUNT'\n    balance0Adjusted = balance0 * 1000 - amount0In * 3\n    balance1Adjusted = balance1 * 1000 - amount1In * 3\n    assert balance0Adjusted * balance1Adjusted >= reserve0 * reserve1 * 1000 ** 2 or abs(\n        balance0Adjusted * balance1Adjusted - reserve0 * reserve1 * 1000 ** 2\n        ) < decimal('1e-16'), 'UniswapV2: K'\n    __internal_update(pair, balance0, balance1)\n\n\n@__export('con_dextest_001')\ndef swapExactTokensForTokens(amountIn: float, amountOutMin: float, pair:\n    int, src: str, to: str, deadline: int):\n    reserve0, reserve1, ignore = __getReserves(pair)\n    order = src == __pairs[pair, 'token0']\n    if not order:\n        reserve0, reserve1 = reserve1, reserve0\n    amount = __getAmountOut(amountIn, reserve0, reserve1)\n    assert amount >= amountOutMin, '__DEXNAMEe: INSUFFICIENT_OUTPUT_AMOUNT'\n    __safeTransferFromToPair(pair, src, ctx.caller, amountIn)\n    out0 = 0 if order else amount\n    out1 = amount if order else 0\n    return __swap(pair, out0, out1, to)\n"
+            },
+            {
+                "key": "con_dextest_001.__developer__",
+                "value": "39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0"
+            },
+            {
+                "key": "con_dextest_001.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        10,
+                        11,
+                        6,
+                        52,
+                        30,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_dextest_001.feeTo",
+                "value": "39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0"
+            },
+            {
+                "key": "con_dextest_001.owner",
+                "value": "39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0"
+            },
+            {
+                "key": "con_dextest_001.pairs:1:balance0",
+                "value": {
+                    "__fixed__": "90933891060.289169773574611257615713376376"
+                }
+            },
+            {
+                "key": "con_dextest_001.pairs:1:balance1",
+                "value": {
+                    "__fixed__": "1.1"
+                }
+            },
+            {
+                "key": "con_dextest_001.pairs:1:balances:39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0",
+                "value": {
+                    "__fixed__": "316227.766015246794369801211930197176"
+                }
+            },
+            {
+                "key": "con_dextest_001.pairs:1:balances:DEAD",
+                "value": {
+                    "__fixed__": "1E-8"
+                }
+            },
+            {
+                "key": "con_dextest_001.pairs:1:blockTimestampLast",
+                "value": {
+                    "__time__": [
+                        2024,
+                        10,
+                        13,
+                        19,
+                        24,
+                        11,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_dextest_001.pairs:1:creationTime",
+                "value": {
+                    "__time__": [
+                        2024,
+                        10,
+                        13,
+                        19,
+                        24,
+                        0,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_dextest_001.pairs:1:kLast",
+                "value": 99999999999
+            },
+            {
+                "key": "con_dextest_001.pairs:1:reserve0",
+                "value": {
+                    "__fixed__": "90933891060.289169773574611257615713376376"
+                }
+            },
+            {
+                "key": "con_dextest_001.pairs:1:reserve1",
+                "value": {
+                    "__fixed__": "1.1"
+                }
+            },
+            {
+                "key": "con_dextest_001.pairs:1:token0",
+                "value": "con_testtoken"
+            },
+            {
+                "key": "con_dextest_001.pairs:1:token1",
+                "value": "currency"
+            },
+            {
+                "key": "con_dextest_001.pairs:1:totalSupply",
+                "value": {
+                    "__fixed__": "316227.766015256794369801211930197176"
+                }
+            },
+            {
+                "key": "con_dextest_001.pairs_num",
+                "value": 1
+            },
+            {
+                "key": "con_dextest_001.toks_to_pair:con_testtoken:currency",
+                "value": 1
+            },
+            {
+                "key": "con_dextest_002.__code__",
+                "value": "MINIMUM_LIQUIDITY = decimal('1e-08')\nMAX_ROUTE = 8\n__toks_to_pair = Hash(default_value=False, contract='con_dextest_002', name\n    ='toks_to_pair')\n__pairs = Hash(default_value=0, contract='con_dextest_002', name='pairs')\n__pairs_num = Variable(contract='con_dextest_002', name='pairs_num')\n__feeTo = Variable(contract='con_dextest_002', name='feeTo')\n__owner = Variable(contract='con_dextest_002', name='owner')\ntoken_interface = [importlib.Func('transfer_from', args=('amount', 'to',\n    'main_account')), importlib.Func('transfer', args=('amount', 'to')),\n    importlib.Var('balances', Hash)]\n\n\ndef ____():\n    __pairs_num.set(0)\n    __owner.set(ctx.signer)\n    __feeTo.set(ctx.signer)\n\n\n@__export('con_dextest_002')\ndef pairFor(tokenA: str, tokenB: str):\n    if tokenB < tokenA:\n        tokenA, tokenB = tokenB, tokenA\n    return __toks_to_pair[tokenA, tokenB]\n\n\n@__export('con_dextest_002')\ndef liqTransfer(pair: int, amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    assert __pairs[pair, 'balances', ctx.caller\n        ] >= amount, 'Not enough coins to send!'\n    __pairs[pair, 'balances', ctx.caller] -= amount\n    __pairs[pair, 'balances', to] += amount\n\n\n@__export('con_dextest_002')\ndef liqApprove(pair: int, amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    __pairs[pair, 'balances', ctx.caller, to] += amount\n\n\n@__export('con_dextest_002')\ndef liqTransfer_from(pair: int, amount: float, to: str, main_account: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    assert __pairs[pair, 'balances', main_account, ctx.caller\n        ] >= amount, 'Not enough coins approved to send! You have {} and are trying to spend {}'.format(\n        __pairs[pair, 'balances', main_account, ctx.caller], amount)\n    assert __pairs[pair, 'balances', main_account\n        ] >= amount, 'Not enough coins to send!'\n    __pairs[pair, 'balances', main_account, ctx.caller] -= amount\n    __pairs[pair, 'balances', main_account] -= amount\n    __pairs[pair, 'balances', to] += amount\n\n\ndef __safeTransferFrom(token: str, src: str, to: str, value: float):\n    t = importlib.import_module(token)\n    assert importlib.enforce_interface(t, token_interface)\n    t.transfer_from(value, to, src)\n\n\ndef __safeTransferFromToPair(pair: int, token: str, src: str, value: float):\n    t = importlib.import_module(token)\n    assert importlib.enforce_interface(t, token_interface)\n    __tok_balances = ForeignHash(foreign_contract=token, foreign_name=\n        'balances', contract='con_dextest_002', name='tok_balances')\n    prev_balance = __tok_balances[ctx.this]\n    if prev_balance == None:\n        prev_balance = 0\n    if token == __pairs[pair, 'token0']:\n        t.transfer_from(value, ctx.this, src)\n        new_balance = __tok_balances[ctx.this]\n        assert new_balance >= prev_balance, 'Negative income!'\n        __pairs[pair, 'balance0'] += new_balance - prev_balance\n        return True\n    elif token == __pairs[pair, 'token1']:\n        t.transfer_from(value, ctx.this, src)\n        new_balance = __tok_balances[ctx.this]\n        assert new_balance >= prev_balance, 'Negative income!'\n        __pairs[pair, 'balance1'] += new_balance - prev_balance\n        return True\n    assert False, 'Wrong token!'\n\n\ndef __safeTransferFromPair(pair: int, token: str, to: str, value: float):\n    t = importlib.import_module(token)\n    assert importlib.enforce_interface(t, token_interface)\n    __tok_balances = ForeignHash(foreign_contract=token, foreign_name=\n        'balances', contract='con_dextest_002', name='tok_balances')\n    prev_balance = __tok_balances[ctx.this]\n    if prev_balance == None:\n        prev_balance = 0\n    if token == __pairs[pair, 'token0']:\n        assert __pairs[pair, 'balance0'] >= value, 'Not enough coins to send!'\n        t.transfer(value, to)\n        new_balance = __tok_balances[ctx.this]\n        assert new_balance >= 0, 'Negative balance!'\n        __pairs[pair, 'balance0'] += new_balance - prev_balance\n        assert __pairs[pair, 'balance0'] >= 0, 'Negative pair balance0!'\n        return True\n    elif token == __pairs[pair, 'token1']:\n        assert __pairs[pair, 'balance1'] >= value, 'Not enough coins to send!'\n        t.transfer(value, to)\n        new_balance = __tok_balances[ctx.this]\n        assert new_balance >= 0, 'Negative balance!'\n        __pairs[pair, 'balance1'] += new_balance - prev_balance\n        assert __pairs[pair, 'balance1'] >= 0, 'Negative pair balance1!'\n        return True\n    assert False, 'Wrong token!'\n    return False\n\n\ndef __quote(amountA: float, reserveA: float, reserveB: float):\n    assert amountA > 0, '__DEXNAME: INSUFFICIENT_AMOUNT'\n    assert reserveA > 0 and reserveB > 0, '__DEXNAME: INSUFFICIENT_LIQUIDITY'\n    return amountA * reserveB / reserveA\n\n\ndef __createPair(tokenA: str, tokenB: str):\n    assert tokenA != tokenB, '__DEXNAME: IDENTICAL_ADDRESSES'\n    assert __toks_to_pair[tokenA, tokenB] == False, '__DEXNAME: PAIR_EXISTS'\n    p_num = __pairs_num.get() + 1\n    __pairs_num.set(p_num)\n    __pairs[p_num, 'token0'] = tokenA\n    __pairs[p_num, 'token1'] = tokenB\n    __pairs[p_num, 'reserve0'] = 0\n    __pairs[p_num, 'reserve1'] = 0\n    __pairs[p_num, 'balance0'] = 0\n    __pairs[p_num, 'balance1'] = 0\n    __pairs[p_num, 'blockTimestampLast'] = now\n    __pairs[p_num, 'totalSupply'] = 0\n    __pairs[p_num, 'kLast'] = 0\n    __pairs[p_num, 'creationTime'] = now\n    __toks_to_pair[tokenA, tokenB] = p_num\n    return p_num\n\n\ndef __getReserves(pair: int):\n    return __pairs[pair, 'reserve0'], __pairs[pair, 'reserve1'], __pairs[\n        pair, 'blockTimestampLast']\n\n\ndef __internal_update(pair: int, balance0: float, balance1: float):\n    __pairs[pair, 'reserve0'] = balance0\n    __pairs[pair, 'reserve1'] = balance1\n    __pairs[pair, 'blockTimestampLast'] = now\n\n\ndef __internal_mintFee(pair: int, reserve0: float, reserve1: float):\n    feeOn = __feeTo != False\n    kLast = __pairs[pair, 'kLast']\n    if feeOn:\n        if kLast != 0:\n            rootK = (reserve0 * reserve1) ** decimal('0.5')\n            rootKLast = kLast ** decimal('0.5')\n            if rootK > rootKLast:\n                numerator = __pairs[pair, 'totalSupply'] * (rootK - rootKLast)\n                denominator = rootK * 5 + rootKLast\n                liquidity = numerator / denominator\n                if liquidity > 0:\n                    __mint(pair, __feeTo.get(), liquidity)\n        elif kLast != 0:\n            __pairs[pair, 'kLast'] = 0\n    return feeOn\n\n\ndef __internal_burn(pair: int, src: str, value: float):\n    __pairs[pair, 'totalSupply'] -= value\n    assert __pairs[pair, 'totalSupply'] >= 0, 'Negative supply!'\n    __pairs[pair, 'balances', src] -= value\n    assert __pairs[pair, 'balances', src] >= 0, 'Negative balance!'\n\n\ndef __burn(pair: int, to: str):\n    reserve0, reserve1, ignore = __getReserves(pair)\n    token0 = __pairs[pair, 'token0']\n    token1 = __pairs[pair, 'token1']\n    balance0 = __pairs[pair, 'balance0']\n    balance1 = __pairs[pair, 'balance1']\n    liquidity = __pairs[pair, 'balances', ctx.this]\n    feeOn = __internal_mintFee(pair, reserve0, reserve1)\n    totalSupply = __pairs[pair, 'totalSupply']\n    amount0 = liquidity * balance0 / totalSupply\n    amount1 = liquidity * balance1 / totalSupply\n    assert amount0 > 0 and amount1 > 0, '__DEXNAME: INSUFFICIENT_LIQUIDITY_BURNED'\n    __internal_burn(pair, ctx.this, liquidity)\n    __safeTransferFromPair(pair, token0, to, amount0)\n    __safeTransferFromPair(pair, token1, to, amount1)\n    balance0 = __pairs[pair, 'balance0']\n    balance1 = __pairs[pair, 'balance1']\n    __internal_update(pair, balance0, balance1)\n    if feeOn:\n        __pairs[pair, 'kLast'] = balance0 * balance1\n    return amount0, amount1\n\n\ndef __internal_mint(pair: int, to: str, value: float):\n    __pairs[pair, 'totalSupply'] += value\n    __pairs[pair, 'balances', to] += value\n\n\ndef __mint(pair: int, to: str):\n    reserve0, reserve1, ignore = __getReserves(pair)\n    balance0 = __pairs[pair, 'balance0']\n    balance1 = __pairs[pair, 'balance1']\n    amount0 = balance0 - reserve0\n    amount1 = balance1 - reserve1\n    feeOn = __internal_mintFee(pair, reserve0, reserve1)\n    totalSupply = __pairs[pair, 'totalSupply']\n    liquidity = 0\n    if totalSupply == 0:\n        liquidity = (amount0 * amount1) ** decimal('0.5') - MINIMUM_LIQUIDITY\n        __internal_mint(pair, 'DEAD', MINIMUM_LIQUIDITY)\n    else:\n        liquidity = min(amount0 * totalSupply / reserve0, amount1 *\n            totalSupply / reserve1)\n    assert liquidity > 0, 'UniswapV2: INSUFFICIENT_LIQUIDITY_MINTED'\n    __internal_mint(pair, to, liquidity)\n    __internal_update(pair, balance0, balance1)\n    if feeOn:\n        __pairs[pair, 'kLast'] = balance0 * balance1\n    return liquidity\n\n\ndef __internal_addLiquidity(tokenA: str, tokenB: str, amountADesired: float,\n    amountBDesired: float, amountAMin: float, amountBMin: float):\n    desired_pair = __toks_to_pair[tokenA, tokenB]\n    if desired_pair == False:\n        desired_pair = __createPair(tokenA, tokenB)\n    reserveA, reserveB, ignore = __getReserves(desired_pair)\n    if reserveA == 0 and reserveB == 0:\n        return amountADesired, amountBDesired\n    else:\n        amountBOptimal = __quote(amountADesired, reserveA, reserveB)\n        if amountBOptimal <= amountBDesired:\n            assert amountBOptimal >= amountBMin, '__DEXNAME: INSUFFICIENT_B_AMOUNT'\n            return amountADesired, amountBOptimal\n        else:\n            amountAOptimal = __quote(amountBDesired, reserveB, reserveA)\n            assert amountAOptimal <= amountADesired\n            assert amountAOptimal >= amountAMin, '__DEXNAME: INSUFFICIENT_A_AMOUNT'\n            return amountAOptimal, amountBDesired\n\n\n@__export('con_dextest_002')\ndef addLiquidity(tokenA: str, tokenB: str, amountADesired: float,\n    amountBDesired: float, amountAMin: float, amountBMin: float, to: str,\n    deadline: int):\n    if tokenB < tokenA:\n        tokenA, tokenB = tokenB, tokenA\n    amountA, amountB = __internal_addLiquidity(tokenA, tokenB,\n        amountADesired, amountBDesired, amountAMin, amountBMin)\n    pair = __toks_to_pair[tokenA, tokenB]\n    __safeTransferFromToPair(pair, tokenA, ctx.caller, amountA)\n    __safeTransferFromToPair(pair, tokenB, ctx.caller, amountB)\n    liquidity = __mint(pair, to)\n    return amountA, amountB, liquidity\n\n\n@__export('con_dextest_002')\ndef removeLiquidity(tokenA: str, tokenB: str, liquidity: float, amountAMin:\n    float, amountBMin: float, to: str, deadline: int):\n    desired_pair = __toks_to_pair[tokenA, tokenB]\n    assert desired_pair != False, \"Pair doesn't exist!\"\n    liqTransfer(desired_pair, liquidity, ctx.this)\n    amountA, amountB = __burn(desired_pair, to)\n    assert amountA >= amountAMin, '__DEXNAME: INSUFFICIENT_A_AMOUNT'\n    assert amountB >= amountBMin, '__DEXNAME: INSUFFICIENT_B_AMOUNT'\n    return amountA, amountB\n\n\ndef __getAmountOut(amountIn: float, reserveIn: float, reserveOut: float):\n    assert amountIn > 0, '__DEXNAME: INSUFFICIENT_INPUT_AMOUNT'\n    assert reserveIn > 0 and reserveOut > 0, '__DEXNAME: INSUFFICIENT_LIQUIDITY'\n    amountInWithFee = amountIn * 997\n    numerator = amountInWithFee * reserveOut\n    denominator = reserveIn * 1000 + amountInWithFee\n    return numerator / denominator\n\n\ndef __swap(pair: int, amount0Out: float, amount1Out: float, to: str):\n    assert amount0Out > 0 or amount1Out > 0, 'UniswapV2: INSUFFICIENT_OUTPUT_AMOUNT'\n    reserve0, reserve1, ignore = __getReserves(pair)\n    assert amount0Out < reserve0 and amount1Out < reserve1, 'UniswapV2: INSUFFICIENT_LIQUIDITY'\n    token0 = __pairs[pair, 'token0']\n    token1 = __pairs[pair, 'token1']\n    assert to != token0 and to != token1, 'UniswapV2: INVALID_TO'\n    if amount0Out > 0:\n        __safeTransferFromPair(pair, token0, to, amount0Out)\n    if amount1Out > 0:\n        __safeTransferFromPair(pair, token1, to, amount1Out)\n    balance0 = __pairs[pair, 'balance0']\n    balance1 = __pairs[pair, 'balance1']\n    amount0In = balance0 - (reserve0 - amount0Out\n        ) if balance0 > reserve0 - amount0Out else 0\n    amount1In = balance1 - (reserve1 - amount1Out\n        ) if balance1 > reserve1 - amount1Out else 0\n    assert amount0In > 0 or amount1In > 0, 'UniswapV2: INSUFFICIENT_INPUT_AMOUNT'\n    balance0Adjusted = balance0 * 1000 - amount0In * 3\n    balance1Adjusted = balance1 * 1000 - amount1In * 3\n    return (amount0In * 3, amount0Out * 3, amount0Out, amount1Out, reserve0,\n        reserve1, balance0, balance1, balance0Adjusted, balance1Adjusted, \n        balance0Adjusted * balance1Adjusted, reserve0 * reserve1)\n    assert balance0Adjusted * balance1Adjusted >= reserve0 * reserve1 * 1000 ** 2 or abs(\n        balance0Adjusted * balance1Adjusted - reserve0 * reserve1 * 1000 ** 2\n        ) < decimal('1e-16'), 'UniswapV2: K'\n    __internal_update(pair, balance0, balance1)\n\n\n@__export('con_dextest_002')\ndef swapExactTokensForTokens(amountIn: float, amountOutMin: float, pair:\n    int, src: str, to: str, deadline: int):\n    reserve0, reserve1, ignore = __getReserves(pair)\n    order = src == __pairs[pair, 'token0']\n    if not order:\n        reserve0, reserve1 = reserve1, reserve0\n    amount = __getAmountOut(amountIn, reserve0, reserve1)\n    assert amount >= amountOutMin, '__DEXNAMEe: INSUFFICIENT_OUTPUT_AMOUNT'\n    __safeTransferFromToPair(pair, src, ctx.caller, amountIn)\n    out0 = 0 if order else amount\n    out1 = amount if order else 0\n    return __swap(pair, out0, out1, to)\n"
+            },
+            {
+                "key": "con_dextest_002.__developer__",
+                "value": "39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0"
+            },
+            {
+                "key": "con_dextest_002.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        10,
+                        13,
+                        19,
+                        40,
+                        21,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_dextest_002.feeTo",
+                "value": "39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0"
+            },
+            {
+                "key": "con_dextest_002.owner",
+                "value": "39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0"
+            },
+            {
+                "key": "con_dextest_002.pairs:1:balance0",
+                "value": {
+                    "__fixed__": "9093389106118.941529508047649358916068018551"
+                }
+            },
+            {
+                "key": "con_dextest_002.pairs:1:balance1",
+                "value": {
+                    "__fixed__": "1.1"
+                }
+            },
+            {
+                "key": "con_dextest_002.pairs:1:balances:39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0",
+                "value": {
+                    "__fixed__": "3162277.660168211218115885121513271513"
+                }
+            },
+            {
+                "key": "con_dextest_002.pairs:1:balances:DEAD",
+                "value": {
+                    "__fixed__": "1E-8"
+                }
+            },
+            {
+                "key": "con_dextest_002.pairs:1:blockTimestampLast",
+                "value": {
+                    "__time__": [
+                        2024,
+                        10,
+                        13,
+                        19,
+                        45,
+                        21,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_dextest_002.pairs:1:creationTime",
+                "value": {
+                    "__time__": [
+                        2024,
+                        10,
+                        13,
+                        19,
+                        45,
+                        21,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_dextest_002.pairs:1:kLast",
+                "value": 9999999999999
+            },
+            {
+                "key": "con_dextest_002.pairs:1:reserve0",
+                "value": 9999999999999
+            },
+            {
+                "key": "con_dextest_002.pairs:1:reserve1",
+                "value": 1
+            },
+            {
+                "key": "con_dextest_002.pairs:1:token0",
+                "value": "con_testtoken"
+            },
+            {
+                "key": "con_dextest_002.pairs:1:token1",
+                "value": "currency"
+            },
+            {
+                "key": "con_dextest_002.pairs:1:totalSupply",
+                "value": {
+                    "__fixed__": "3162277.660168221218115885121513271513"
+                }
+            },
+            {
+                "key": "con_dextest_002.pairs_num",
+                "value": 1
+            },
+            {
+                "key": "con_dextest_002.toks_to_pair:con_testtoken:currency",
+                "value": 1
+            },
+            {
+                "key": "con_dextest_003.__code__",
+                "value": "MINIMUM_LIQUIDITY = decimal('1e-08')\nMAX_ROUTE = 8\n__toks_to_pair = Hash(default_value=False, contract='con_dextest_003', name\n    ='toks_to_pair')\n__pairs = Hash(default_value=0, contract='con_dextest_003', name='pairs')\n__pairs_num = Variable(contract='con_dextest_003', name='pairs_num')\n__feeTo = Variable(contract='con_dextest_003', name='feeTo')\n__owner = Variable(contract='con_dextest_003', name='owner')\ntoken_interface = [importlib.Func('transfer_from', args=('amount', 'to',\n    'main_account')), importlib.Func('transfer', args=('amount', 'to')),\n    importlib.Var('balances', Hash)]\n\n\ndef ____():\n    __pairs_num.set(0)\n    __owner.set(ctx.signer)\n    __feeTo.set(ctx.signer)\n\n\n@__export('con_dextest_003')\ndef pairFor(tokenA: str, tokenB: str):\n    if tokenB < tokenA:\n        tokenA, tokenB = tokenB, tokenA\n    return __toks_to_pair[tokenA, tokenB]\n\n\n@__export('con_dextest_003')\ndef liqTransfer(pair: int, amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    assert __pairs[pair, 'balances', ctx.caller\n        ] >= amount, 'Not enough coins to send!'\n    __pairs[pair, 'balances', ctx.caller] -= amount\n    __pairs[pair, 'balances', to] += amount\n\n\n@__export('con_dextest_003')\ndef liqApprove(pair: int, amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    __pairs[pair, 'balances', ctx.caller, to] += amount\n\n\n@__export('con_dextest_003')\ndef liqTransfer_from(pair: int, amount: float, to: str, main_account: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    assert __pairs[pair, 'balances', main_account, ctx.caller\n        ] >= amount, 'Not enough coins approved to send! You have {} and are trying to spend {}'.format(\n        __pairs[pair, 'balances', main_account, ctx.caller], amount)\n    assert __pairs[pair, 'balances', main_account\n        ] >= amount, 'Not enough coins to send!'\n    __pairs[pair, 'balances', main_account, ctx.caller] -= amount\n    __pairs[pair, 'balances', main_account] -= amount\n    __pairs[pair, 'balances', to] += amount\n\n\ndef __safeTransferFrom(token: str, src: str, to: str, value: float):\n    t = importlib.import_module(token)\n    assert importlib.enforce_interface(t, token_interface)\n    t.transfer_from(value, to, src)\n\n\ndef __safeTransferFromToPair(pair: int, token: str, src: str, value: float):\n    t = importlib.import_module(token)\n    assert importlib.enforce_interface(t, token_interface)\n    __tok_balances = ForeignHash(foreign_contract=token, foreign_name=\n        'balances', contract='con_dextest_003', name='tok_balances')\n    prev_balance = __tok_balances[ctx.this]\n    if prev_balance == None:\n        prev_balance = 0\n    if token == __pairs[pair, 'token0']:\n        t.transfer_from(value, ctx.this, src)\n        new_balance = __tok_balances[ctx.this]\n        assert new_balance >= prev_balance, 'Negative income!'\n        __pairs[pair, 'balance0'] += new_balance - prev_balance\n        return True\n    elif token == __pairs[pair, 'token1']:\n        t.transfer_from(value, ctx.this, src)\n        new_balance = __tok_balances[ctx.this]\n        assert new_balance >= prev_balance, 'Negative income!'\n        __pairs[pair, 'balance1'] += new_balance - prev_balance\n        return True\n    assert False, 'Wrong token!'\n\n\ndef __safeTransferFromPair(pair: int, token: str, to: str, value: float):\n    t = importlib.import_module(token)\n    assert importlib.enforce_interface(t, token_interface)\n    __tok_balances = ForeignHash(foreign_contract=token, foreign_name=\n        'balances', contract='con_dextest_003', name='tok_balances')\n    prev_balance = __tok_balances[ctx.this]\n    if prev_balance == None:\n        prev_balance = 0\n    if token == __pairs[pair, 'token0']:\n        assert __pairs[pair, 'balance0'] >= value, 'Not enough coins to send!'\n        t.transfer(value, to)\n        new_balance = __tok_balances[ctx.this]\n        assert new_balance >= 0, 'Negative balance!'\n        __pairs[pair, 'balance0'] += new_balance - prev_balance\n        assert __pairs[pair, 'balance0'] >= 0, 'Negative pair balance0!'\n        return True\n    elif token == __pairs[pair, 'token1']:\n        assert __pairs[pair, 'balance1'] >= value, 'Not enough coins to send!'\n        t.transfer(value, to)\n        new_balance = __tok_balances[ctx.this]\n        assert new_balance >= 0, 'Negative balance!'\n        __pairs[pair, 'balance1'] += new_balance - prev_balance\n        assert __pairs[pair, 'balance1'] >= 0, 'Negative pair balance1!'\n        return True\n    assert False, 'Wrong token!'\n    return False\n\n\ndef __quote(amountA: float, reserveA: float, reserveB: float):\n    assert amountA > 0, '__DEXNAME: INSUFFICIENT_AMOUNT'\n    assert reserveA > 0 and reserveB > 0, '__DEXNAME: INSUFFICIENT_LIQUIDITY'\n    return amountA * reserveB / reserveA\n\n\ndef __createPair(tokenA: str, tokenB: str):\n    assert tokenA != tokenB, '__DEXNAME: IDENTICAL_ADDRESSES'\n    assert __toks_to_pair[tokenA, tokenB] == False, '__DEXNAME: PAIR_EXISTS'\n    p_num = __pairs_num.get() + 1\n    __pairs_num.set(p_num)\n    __pairs[p_num, 'token0'] = tokenA\n    __pairs[p_num, 'token1'] = tokenB\n    __pairs[p_num, 'reserve0'] = 0\n    __pairs[p_num, 'reserve1'] = 0\n    __pairs[p_num, 'balance0'] = 0\n    __pairs[p_num, 'balance1'] = 0\n    __pairs[p_num, 'blockTimestampLast'] = now\n    __pairs[p_num, 'totalSupply'] = 0\n    __pairs[p_num, 'kLast'] = 0\n    __pairs[p_num, 'creationTime'] = now\n    __toks_to_pair[tokenA, tokenB] = p_num\n    return p_num\n\n\ndef __getReserves(pair: int):\n    return __pairs[pair, 'reserve0'], __pairs[pair, 'reserve1'], __pairs[\n        pair, 'blockTimestampLast']\n\n\ndef __internal_update(pair: int, balance0: float, balance1: float):\n    __pairs[pair, 'reserve0'] = balance0\n    __pairs[pair, 'reserve1'] = balance1\n    __pairs[pair, 'blockTimestampLast'] = now\n\n\ndef __internal_mintFee(pair: int, reserve0: float, reserve1: float):\n    feeOn = __feeTo != False\n    kLast = __pairs[pair, 'kLast']\n    if feeOn:\n        if kLast != 0:\n            rootK = (reserve0 * reserve1) ** decimal('0.5')\n            rootKLast = kLast ** decimal('0.5')\n            if rootK > rootKLast:\n                numerator = __pairs[pair, 'totalSupply'] * (rootK - rootKLast)\n                denominator = rootK * 5 + rootKLast\n                liquidity = numerator / denominator\n                if liquidity > 0:\n                    __mint(pair, __feeTo.get(), liquidity)\n        elif kLast != 0:\n            __pairs[pair, 'kLast'] = 0\n    return feeOn\n\n\ndef __internal_burn(pair: int, src: str, value: float):\n    __pairs[pair, 'totalSupply'] -= value\n    assert __pairs[pair, 'totalSupply'] >= 0, 'Negative supply!'\n    __pairs[pair, 'balances', src] -= value\n    assert __pairs[pair, 'balances', src] >= 0, 'Negative balance!'\n\n\ndef __burn(pair: int, to: str):\n    reserve0, reserve1, ignore = __getReserves(pair)\n    token0 = __pairs[pair, 'token0']\n    token1 = __pairs[pair, 'token1']\n    balance0 = __pairs[pair, 'balance0']\n    balance1 = __pairs[pair, 'balance1']\n    liquidity = __pairs[pair, 'balances', ctx.this]\n    feeOn = __internal_mintFee(pair, reserve0, reserve1)\n    totalSupply = __pairs[pair, 'totalSupply']\n    amount0 = liquidity * balance0 / totalSupply\n    amount1 = liquidity * balance1 / totalSupply\n    assert amount0 > 0 and amount1 > 0, '__DEXNAME: INSUFFICIENT_LIQUIDITY_BURNED'\n    __internal_burn(pair, ctx.this, liquidity)\n    __safeTransferFromPair(pair, token0, to, amount0)\n    __safeTransferFromPair(pair, token1, to, amount1)\n    balance0 = __pairs[pair, 'balance0']\n    balance1 = __pairs[pair, 'balance1']\n    __internal_update(pair, balance0, balance1)\n    if feeOn:\n        __pairs[pair, 'kLast'] = balance0 * balance1\n    return amount0, amount1\n\n\ndef __internal_mint(pair: int, to: str, value: float):\n    __pairs[pair, 'totalSupply'] += value\n    __pairs[pair, 'balances', to] += value\n\n\ndef __mint(pair: int, to: str):\n    reserve0, reserve1, ignore = __getReserves(pair)\n    balance0 = __pairs[pair, 'balance0']\n    balance1 = __pairs[pair, 'balance1']\n    amount0 = balance0 - reserve0\n    amount1 = balance1 - reserve1\n    feeOn = __internal_mintFee(pair, reserve0, reserve1)\n    totalSupply = __pairs[pair, 'totalSupply']\n    liquidity = 0\n    if totalSupply == 0:\n        liquidity = (amount0 * amount1) ** decimal('0.5') - MINIMUM_LIQUIDITY\n        __internal_mint(pair, 'DEAD', MINIMUM_LIQUIDITY)\n    else:\n        liquidity = min(amount0 * totalSupply / reserve0, amount1 *\n            totalSupply / reserve1)\n    assert liquidity > 0, 'UniswapV2: INSUFFICIENT_LIQUIDITY_MINTED'\n    __internal_mint(pair, to, liquidity)\n    __internal_update(pair, balance0, balance1)\n    if feeOn:\n        __pairs[pair, 'kLast'] = balance0 * balance1\n    return liquidity\n\n\ndef __internal_addLiquidity(tokenA: str, tokenB: str, amountADesired: float,\n    amountBDesired: float, amountAMin: float, amountBMin: float):\n    desired_pair = __toks_to_pair[tokenA, tokenB]\n    if desired_pair == False:\n        desired_pair = __createPair(tokenA, tokenB)\n    reserveA, reserveB, ignore = __getReserves(desired_pair)\n    if reserveA == 0 and reserveB == 0:\n        return amountADesired, amountBDesired\n    else:\n        amountBOptimal = __quote(amountADesired, reserveA, reserveB)\n        if amountBOptimal <= amountBDesired:\n            assert amountBOptimal >= amountBMin, '__DEXNAME: INSUFFICIENT_B_AMOUNT'\n            return amountADesired, amountBOptimal\n        else:\n            amountAOptimal = __quote(amountBDesired, reserveB, reserveA)\n            assert amountAOptimal <= amountADesired\n            assert amountAOptimal >= amountAMin, '__DEXNAME: INSUFFICIENT_A_AMOUNT'\n            return amountAOptimal, amountBDesired\n\n\n@__export('con_dextest_003')\ndef addLiquidity(tokenA: str, tokenB: str, amountADesired: float,\n    amountBDesired: float, amountAMin: float, amountBMin: float, to: str,\n    deadline: int):\n    if tokenB < tokenA:\n        tokenA, tokenB = tokenB, tokenA\n    amountA, amountB = __internal_addLiquidity(tokenA, tokenB,\n        amountADesired, amountBDesired, amountAMin, amountBMin)\n    pair = __toks_to_pair[tokenA, tokenB]\n    __safeTransferFromToPair(pair, tokenA, ctx.caller, amountA)\n    __safeTransferFromToPair(pair, tokenB, ctx.caller, amountB)\n    liquidity = __mint(pair, to)\n    return amountA, amountB, liquidity\n\n\n@__export('con_dextest_003')\ndef removeLiquidity(tokenA: str, tokenB: str, liquidity: float, amountAMin:\n    float, amountBMin: float, to: str, deadline: int):\n    desired_pair = __toks_to_pair[tokenA, tokenB]\n    assert desired_pair != False, \"Pair doesn't exist!\"\n    liqTransfer(desired_pair, liquidity, ctx.this)\n    amountA, amountB = __burn(desired_pair, to)\n    assert amountA >= amountAMin, f'__DEXNAME: INSUFFICIENT_A_AMOUNT {amountA}'\n    assert amountB >= amountBMin, f'__DEXNAME: INSUFFICIENT_B_AMOUNT {amountB}'\n    return amountA, amountB\n\n\ndef __getAmountOut(amountIn: float, reserveIn: float, reserveOut: float):\n    assert amountIn > 0, '__DEXNAME: INSUFFICIENT_INPUT_AMOUNT'\n    assert reserveIn > 0 and reserveOut > 0, '__DEXNAME: INSUFFICIENT_LIQUIDITY'\n    amountInWithFee = amountIn * 997\n    numerator = amountInWithFee * reserveOut\n    denominator = reserveIn * 1000 + amountInWithFee\n    return numerator / denominator\n\n\ndef __swap(pair: int, amount0Out: float, amount1Out: float, to: str):\n    assert amount0Out > 0 or amount1Out > 0, 'UniswapV2: INSUFFICIENT_OUTPUT_AMOUNT'\n    reserve0, reserve1, ignore = __getReserves(pair)\n    assert amount0Out < reserve0 and amount1Out < reserve1, 'UniswapV2: INSUFFICIENT_LIQUIDITY'\n    token0 = __pairs[pair, 'token0']\n    token1 = __pairs[pair, 'token1']\n    assert to != token0 and to != token1, 'UniswapV2: INVALID_TO'\n    if amount0Out > 0:\n        __safeTransferFromPair(pair, token0, to, amount0Out)\n    if amount1Out > 0:\n        __safeTransferFromPair(pair, token1, to, amount1Out)\n    balance0 = __pairs[pair, 'balance0']\n    balance1 = __pairs[pair, 'balance1']\n    amount0In = balance0 - (reserve0 - amount0Out\n        ) if balance0 > reserve0 - amount0Out else 0\n    amount1In = balance1 - (reserve1 - amount1Out\n        ) if balance1 > reserve1 - amount1Out else 0\n    assert amount0In > 0 or amount1In > 0, 'UniswapV2: INSUFFICIENT_INPUT_AMOUNT'\n    balance0Adjusted = balance0 * 1000 - amount0In * 3\n    balance1Adjusted = balance1 * 1000 - amount1In * 3\n    return (amount0In * 3, amount0Out * 3, amount0Out, amount1Out, reserve0,\n        reserve1, balance0, balance1, balance0Adjusted, balance1Adjusted, \n        balance0Adjusted * balance1Adjusted, reserve0 * reserve1)\n    assert balance0Adjusted * balance1Adjusted >= reserve0 * reserve1 * 1000 ** 2 or abs(\n        balance0Adjusted * balance1Adjusted - reserve0 * reserve1 * 1000 ** 2\n        ) < decimal('1e-16'), 'UniswapV2: K'\n    __internal_update(pair, balance0, balance1)\n\n\n@__export('con_dextest_003')\ndef swapExactTokensForTokens(amountIn: float, amountOutMin: float, pair:\n    int, src: str, to: str, deadline: int):\n    reserve0, reserve1, ignore = __getReserves(pair)\n    order = src == __pairs[pair, 'token0']\n    if not order:\n        reserve0, reserve1 = reserve1, reserve0\n    amount = __getAmountOut(amountIn, reserve0, reserve1)\n    assert amount >= amountOutMin, '__DEXNAMEe: INSUFFICIENT_OUTPUT_AMOUNT'\n    __safeTransferFromToPair(pair, src, ctx.caller, amountIn)\n    out0 = 0 if order else amount\n    out1 = amount if order else 0\n    return __swap(pair, out0, out1, to)\n"
+            },
+            {
+                "key": "con_dextest_003.__developer__",
+                "value": "39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0"
+            },
+            {
+                "key": "con_dextest_003.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        10,
+                        13,
+                        19,
+                        47,
+                        1,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_dextest_003.feeTo",
+                "value": "39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0"
+            },
+            {
+                "key": "con_dextest_003.owner",
+                "value": "39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0"
+            },
+            {
+                "key": "con_dextest_003.pairs:1:balance0",
+                "value": {
+                    "__fixed__": "109.579070046566934739187634467823"
+                }
+            },
+            {
+                "key": "con_dextest_003.pairs:1:balance1",
+                "value": {
+                    "__fixed__": "0.001000011496015569361148261145"
+                }
+            },
+            {
+                "key": "con_dextest_003.pairs:1:balances:39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0",
+                "value": {
+                    "__fixed__": "0.330487201053987389668947217084"
+                }
+            },
+            {
+                "key": "con_dextest_003.pairs:1:balances:DEAD",
+                "value": {
+                    "__fixed__": "1E-8"
+                }
+            },
+            {
+                "key": "con_dextest_003.pairs:1:balances:con_dextest_003",
+                "value": 0
+            },
+            {
+                "key": "con_dextest_003.pairs:1:blockTimestampLast",
+                "value": {
+                    "__time__": [
+                        2024,
+                        10,
+                        14,
+                        19,
+                        42,
+                        3,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_dextest_003.pairs:1:creationTime",
+                "value": {
+                    "__time__": [
+                        2024,
+                        10,
+                        13,
+                        19,
+                        52,
+                        3,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_dextest_003.pairs:1:kLast",
+                "value": {
+                    "__fixed__": "0.109251592559122565384297439076"
+                }
+            },
+            {
+                "key": "con_dextest_003.pairs:1:reserve0",
+                "value": {
+                    "__fixed__": "9503431.15838297780810322887888717735"
+                }
+            },
+            {
+                "key": "con_dextest_003.pairs:1:reserve1",
+                "value": {
+                    "__fixed__": "1.1496015569361148261145E-8"
+                }
+            },
+            {
+                "key": "con_dextest_003.pairs:1:token0",
+                "value": "con_testtoken"
+            },
+            {
+                "key": "con_dextest_003.pairs:1:token1",
+                "value": "currency"
+            },
+            {
+                "key": "con_dextest_003.pairs:1:totalSupply",
+                "value": {
+                    "__fixed__": "0.330487211053987389668947217084"
+                }
+            },
+            {
+                "key": "con_dextest_003.pairs_num",
+                "value": 1
+            },
+            {
+                "key": "con_dextest_003.toks_to_pair:con_testtoken:currency",
+                "value": 1
+            },
+            {
+                "key": "con_dextest_004.__code__",
+                "value": "MINIMUM_LIQUIDITY = decimal('1e-08')\nMAX_ROUTE = 8\n__toks_to_pair = Hash(default_value=False, contract='con_dextest_004', name\n    ='toks_to_pair')\n__pairs = Hash(default_value=0, contract='con_dextest_004', name='pairs')\n__pairs_num = Variable(contract='con_dextest_004', name='pairs_num')\n__feeTo = Variable(contract='con_dextest_004', name='feeTo')\n__owner = Variable(contract='con_dextest_004', name='owner')\ntoken_interface = [importlib.Func('transfer_from', args=('amount', 'to',\n    'main_account')), importlib.Func('transfer', args=('amount', 'to')),\n    importlib.Var('balances', Hash)]\n\n\ndef ____():\n    __pairs_num.set(0)\n    __owner.set(ctx.signer)\n    __feeTo.set(ctx.signer)\n\n\n@__export('con_dextest_004')\ndef pairFor(tokenA: str, tokenB: str):\n    if tokenB < tokenA:\n        tokenA, tokenB = tokenB, tokenA\n    return __toks_to_pair[tokenA, tokenB]\n\n\n@__export('con_dextest_004')\ndef liqTransfer(pair: int, amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    assert __pairs[pair, 'balances', ctx.caller\n        ] >= amount, 'Not enough coins to send!'\n    __pairs[pair, 'balances', ctx.caller] -= amount\n    __pairs[pair, 'balances', to] += amount\n\n\n@__export('con_dextest_004')\ndef liqApprove(pair: int, amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    __pairs[pair, 'balances', ctx.caller, to] += amount\n\n\n@__export('con_dextest_004')\ndef liqTransfer_from(pair: int, amount: float, to: str, main_account: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    assert __pairs[pair, 'balances', main_account, ctx.caller\n        ] >= amount, 'Not enough coins approved to send! You have {} and are trying to spend {}'.format(\n        __pairs[pair, 'balances', main_account, ctx.caller], amount)\n    assert __pairs[pair, 'balances', main_account\n        ] >= amount, 'Not enough coins to send!'\n    __pairs[pair, 'balances', main_account, ctx.caller] -= amount\n    __pairs[pair, 'balances', main_account] -= amount\n    __pairs[pair, 'balances', to] += amount\n\n\ndef __safeTransferFrom(token: str, src: str, to: str, value: float):\n    t = importlib.import_module(token)\n    assert importlib.enforce_interface(t, token_interface)\n    t.transfer_from(value, to, src)\n\n\ndef __safeTransferFromToPair(pair: int, token: str, src: str, value: float):\n    t = importlib.import_module(token)\n    assert importlib.enforce_interface(t, token_interface)\n    __tok_balances = ForeignHash(foreign_contract=token, foreign_name=\n        'balances', contract='con_dextest_004', name='tok_balances')\n    prev_balance = __tok_balances[ctx.this]\n    if prev_balance == None:\n        prev_balance = 0\n    if token == __pairs[pair, 'token0']:\n        t.transfer_from(value, ctx.this, src)\n        new_balance = __tok_balances[ctx.this]\n        assert new_balance >= prev_balance, 'Negative income!'\n        __pairs[pair, 'balance0'] += new_balance - prev_balance\n        return True\n    elif token == __pairs[pair, 'token1']:\n        t.transfer_from(value, ctx.this, src)\n        new_balance = __tok_balances[ctx.this]\n        assert new_balance >= prev_balance, 'Negative income!'\n        __pairs[pair, 'balance1'] += new_balance - prev_balance\n        return True\n    assert False, 'Wrong token!'\n\n\ndef __safeTransferFromPair(pair: int, token: str, to: str, value: float):\n    t = importlib.import_module(token)\n    assert importlib.enforce_interface(t, token_interface)\n    __tok_balances = ForeignHash(foreign_contract=token, foreign_name=\n        'balances', contract='con_dextest_004', name='tok_balances')\n    prev_balance = __tok_balances[ctx.this]\n    if prev_balance == None:\n        prev_balance = 0\n    if token == __pairs[pair, 'token0']:\n        assert __pairs[pair, 'balance0'] >= value, 'Not enough coins to send!'\n        t.transfer(value, to)\n        new_balance = __tok_balances[ctx.this]\n        assert new_balance >= 0, 'Negative balance!'\n        __pairs[pair, 'balance0'] += new_balance - prev_balance\n        assert __pairs[pair, 'balance0'] >= 0, 'Negative pair balance0!'\n        return True\n    elif token == __pairs[pair, 'token1']:\n        assert __pairs[pair, 'balance1'] >= value, 'Not enough coins to send!'\n        t.transfer(value, to)\n        new_balance = __tok_balances[ctx.this]\n        assert new_balance >= 0, 'Negative balance!'\n        __pairs[pair, 'balance1'] += new_balance - prev_balance\n        assert __pairs[pair, 'balance1'] >= 0, 'Negative pair balance1!'\n        return True\n    assert False, 'Wrong token!'\n    return False\n\n\ndef __quote(amountA: float, reserveA: float, reserveB: float):\n    assert amountA > 0, '__DEXNAME: INSUFFICIENT_AMOUNT'\n    assert reserveA > 0 and reserveB > 0, '__DEXNAME: INSUFFICIENT_LIQUIDITY'\n    return amountA * reserveB / reserveA\n\n\ndef __createPair(tokenA: str, tokenB: str):\n    assert tokenA != tokenB, '__DEXNAME: IDENTICAL_ADDRESSES'\n    assert __toks_to_pair[tokenA, tokenB] == False, '__DEXNAME: PAIR_EXISTS'\n    p_num = __pairs_num.get() + 1\n    __pairs_num.set(p_num)\n    __pairs[p_num, 'token0'] = tokenA\n    __pairs[p_num, 'token1'] = tokenB\n    __pairs[p_num, 'reserve0'] = 0\n    __pairs[p_num, 'reserve1'] = 0\n    __pairs[p_num, 'balance0'] = 0\n    __pairs[p_num, 'balance1'] = 0\n    __pairs[p_num, 'blockTimestampLast'] = now\n    __pairs[p_num, 'totalSupply'] = 0\n    __pairs[p_num, 'kLast'] = 0\n    __pairs[p_num, 'creationTime'] = now\n    __toks_to_pair[tokenA, tokenB] = p_num\n    return p_num\n\n\ndef __getReserves(pair: int):\n    return __pairs[pair, 'reserve0'], __pairs[pair, 'reserve1'], __pairs[\n        pair, 'blockTimestampLast']\n\n\ndef __internal_update(pair: int, balance0: float, balance1: float):\n    __pairs[pair, 'reserve0'] = balance0\n    __pairs[pair, 'reserve1'] = balance1\n    __pairs[pair, 'blockTimestampLast'] = now\n\n\ndef __internal_mintFee(pair: int, reserve0: float, reserve1: float):\n    feeOn = __feeTo.get() != False\n    kLast = __pairs[pair, 'kLast']\n    if feeOn:\n        if kLast != 0:\n            rootK = (reserve0 * reserve1) ** decimal('0.5')\n            rootKLast = kLast ** decimal('0.5')\n            if rootK > rootKLast:\n                numerator = __pairs[pair, 'totalSupply'] * (rootK - rootKLast)\n                denominator = rootK * 5 + rootKLast\n                liquidity = numerator / denominator\n                if liquidity > 0:\n                    __mint(pair, __feeTo.get(), liquidity)\n    elif kLast != 0:\n        __pairs[pair, 'kLast'] = 0\n    return feeOn\n\n\ndef __internal_burn(pair: int, src: str, value: float):\n    __pairs[pair, 'totalSupply'] -= value\n    assert __pairs[pair, 'totalSupply'] >= 0, 'Negative supply!'\n    __pairs[pair, 'balances', src] -= value\n    assert __pairs[pair, 'balances', src] >= 0, 'Negative balance!'\n\n\ndef __burn(pair: int, to: str):\n    reserve0, reserve1, ignore = __getReserves(pair)\n    token0 = __pairs[pair, 'token0']\n    token1 = __pairs[pair, 'token1']\n    balance0 = __pairs[pair, 'balance0']\n    balance1 = __pairs[pair, 'balance1']\n    liquidity = __pairs[pair, 'balances', ctx.this]\n    feeOn = __internal_mintFee(pair, reserve0, reserve1)\n    totalSupply = __pairs[pair, 'totalSupply']\n    amount0 = liquidity * balance0 / totalSupply\n    amount1 = liquidity * balance1 / totalSupply\n    assert amount0 > 0 and amount1 > 0, '__DEXNAME: INSUFFICIENT_LIQUIDITY_BURNED'\n    __internal_burn(pair, ctx.this, liquidity)\n    __safeTransferFromPair(pair, token0, to, amount0)\n    __safeTransferFromPair(pair, token1, to, amount1)\n    balance0 = __pairs[pair, 'balance0']\n    balance1 = __pairs[pair, 'balance1']\n    __internal_update(pair, balance0, balance1)\n    if feeOn:\n        __pairs[pair, 'kLast'] = balance0 * balance1\n    return amount0, amount1\n\n\ndef __internal_mint(pair: int, to: str, value: float):\n    __pairs[pair, 'totalSupply'] += value\n    __pairs[pair, 'balances', to] += value\n\n\ndef __mint(pair: int, to: str):\n    reserve0, reserve1, ignore = __getReserves(pair)\n    balance0 = __pairs[pair, 'balance0']\n    balance1 = __pairs[pair, 'balance1']\n    amount0 = balance0 - reserve0\n    amount1 = balance1 - reserve1\n    feeOn = __internal_mintFee(pair, reserve0, reserve1)\n    totalSupply = __pairs[pair, 'totalSupply']\n    liquidity = 0\n    if totalSupply == 0:\n        liquidity = (amount0 * amount1) ** decimal('0.5') - MINIMUM_LIQUIDITY\n        __internal_mint(pair, 'DEAD', MINIMUM_LIQUIDITY)\n    else:\n        liquidity = min(amount0 * totalSupply / reserve0, amount1 *\n            totalSupply / reserve1)\n    assert liquidity > 0, 'UniswapV2: INSUFFICIENT_LIQUIDITY_MINTED'\n    __internal_mint(pair, to, liquidity)\n    __internal_update(pair, balance0, balance1)\n    if feeOn:\n        __pairs[pair, 'kLast'] = balance0 * balance1\n    return liquidity\n\n\ndef __internal_addLiquidity(tokenA: str, tokenB: str, amountADesired: float,\n    amountBDesired: float, amountAMin: float, amountBMin: float):\n    desired_pair = __toks_to_pair[tokenA, tokenB]\n    if desired_pair == False:\n        desired_pair = __createPair(tokenA, tokenB)\n    reserveA, reserveB, ignore = __getReserves(desired_pair)\n    if reserveA == 0 and reserveB == 0:\n        return amountADesired, amountBDesired\n    else:\n        amountBOptimal = __quote(amountADesired, reserveA, reserveB)\n        if amountBOptimal <= amountBDesired:\n            assert amountBOptimal >= amountBMin, '__DEXNAME: INSUFFICIENT_B_AMOUNT'\n            return amountADesired, amountBOptimal\n        else:\n            amountAOptimal = __quote(amountBDesired, reserveB, reserveA)\n            assert amountAOptimal <= amountADesired\n            assert amountAOptimal >= amountAMin, '__DEXNAME: INSUFFICIENT_A_AMOUNT'\n            return amountAOptimal, amountBDesired\n\n\n@__export('con_dextest_004')\ndef addLiquidity(tokenA: str, tokenB: str, amountADesired: float,\n    amountBDesired: float, amountAMin: float, amountBMin: float, to: str,\n    deadline: int):\n    if tokenB < tokenA:\n        tokenA, tokenB = tokenB, tokenA\n    amountA, amountB = __internal_addLiquidity(tokenA, tokenB,\n        amountADesired, amountBDesired, amountAMin, amountBMin)\n    pair = __toks_to_pair[tokenA, tokenB]\n    __safeTransferFromToPair(pair, tokenA, ctx.caller, amountA)\n    __safeTransferFromToPair(pair, tokenB, ctx.caller, amountB)\n    liquidity = __mint(pair, to)\n    assert __pairs[pair, 'balance0'] == __pairs[pair, 'reserve0'], '0: bnr'\n    assert __pairs[pair, 'balance1'] == __pairs[pair, 'reserve1'], '1: bnr'\n    return amountA, amountB, liquidity\n\n\n@__export('con_dextest_004')\ndef removeLiquidity(tokenA: str, tokenB: str, liquidity: float, amountAMin:\n    float, amountBMin: float, to: str, deadline: int):\n    desired_pair = __toks_to_pair[tokenA, tokenB]\n    assert desired_pair != False, \"Pair doesn't exist!\"\n    liqTransfer(desired_pair, liquidity, ctx.this)\n    amountA, amountB = __burn(desired_pair, to)\n    assert amountA >= amountAMin, '__DEXNAME: INSUFFICIENT_A_AMOUNT'\n    assert amountB >= amountBMin, '__DEXNAME: INSUFFICIENT_B_AMOUNT'\n    assert __pairs[desired_pair, 'balance0'] == __pairs[desired_pair,\n        'reserve0'], '0: bnr'\n    assert __pairs[desired_pair, 'balance1'] == __pairs[desired_pair,\n        'reserve1'], '1: bnr'\n    return amountA, amountB\n\n\ndef __getAmountOut(amountIn: float, reserveIn: float, reserveOut: float):\n    assert amountIn > 0, '__DEXNAME: INSUFFICIENT_INPUT_AMOUNT'\n    assert reserveIn > 0 and reserveOut > 0, '__DEXNAME: INSUFFICIENT_LIQUIDITY'\n    amountInWithFee = amountIn * 997\n    numerator = amountInWithFee * reserveOut\n    denominator = reserveIn * 1000 + amountInWithFee\n    return numerator / denominator\n\n\ndef __swap(pair: int, amount0Out: float, amount1Out: float, to: str):\n    assert amount0Out > 0 or amount1Out > 0, 'UniswapV2: INSUFFICIENT_OUTPUT_AMOUNT'\n    reserve0, reserve1, ignore = __getReserves(pair)\n    assert amount0Out < reserve0 and amount1Out < reserve1, 'UniswapV2: INSUFFICIENT_LIQUIDITY'\n    token0 = __pairs[pair, 'token0']\n    token1 = __pairs[pair, 'token1']\n    assert to != token0 and to != token1, 'UniswapV2: INVALID_TO'\n    if amount0Out > 0:\n        __safeTransferFromPair(pair, token0, to, amount0Out)\n    if amount1Out > 0:\n        __safeTransferFromPair(pair, token1, to, amount1Out)\n    balance0 = __pairs[pair, 'balance0']\n    balance1 = __pairs[pair, 'balance1']\n    amount0In = balance0 - (reserve0 - amount0Out\n        ) if balance0 > reserve0 - amount0Out else 0\n    amount1In = balance1 - (reserve1 - amount1Out\n        ) if balance1 > reserve1 - amount1Out else 0\n    assert amount0In > 0 or amount1In > 0, 'UniswapV2: INSUFFICIENT_INPUT_AMOUNT'\n    balance0Adjusted = balance0 * 1000 - amount0In * 3\n    balance1Adjusted = balance1 * 1000 - amount1In * 3\n    assert balance0Adjusted * balance1Adjusted >= reserve0 * reserve1 * 1000 ** 2 or abs(\n        balance0Adjusted * balance1Adjusted - reserve0 * reserve1 * 1000 ** 2\n        ) < decimal('1e-16'), 'UniswapV2: K'\n    __internal_update(pair, balance0, balance1)\n\n\n@__export('con_dextest_004')\ndef swapExactTokensForTokens(amountIn: float, amountOutMin: float, pair:\n    int, src: str, to: str, deadline: int):\n    reserve0, reserve1, ignore = __getReserves(pair)\n    order = src == __pairs[pair, 'token0']\n    if not order:\n        reserve0, reserve1 = reserve1, reserve0\n    amount = __getAmountOut(amountIn, reserve0, reserve1)\n    assert amount >= amountOutMin, '__DEXNAMEe: INSUFFICIENT_OUTPUT_AMOUNT'\n    __safeTransferFromToPair(pair, src, ctx.caller, amountIn)\n    out0 = 0 if order else amount\n    out1 = amount if order else 0\n    __swap(pair, out0, out1, to)\n    assert __pairs[pair, 'balance0'] == __pairs[pair, 'reserve0'], '0: bnr'\n    assert __pairs[pair, 'balance1'] == __pairs[pair, 'reserve1'], '1: bnr'\n"
+            },
+            {
+                "key": "con_dextest_004.__developer__",
+                "value": "39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0"
+            },
+            {
+                "key": "con_dextest_004.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        10,
+                        14,
+                        20,
+                        10,
+                        28,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_dextest_004.feeTo",
+                "value": "39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0"
+            },
+            {
+                "key": "con_dextest_004.owner",
+                "value": "39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0"
+            },
+            {
+                "key": "con_dextest_004.pairs:1:balance0",
+                "value": {
+                    "__fixed__": "99012841965601.948572729883065833638622929394"
+                }
+            },
+            {
+                "key": "con_dextest_004.pairs:1:balance1",
+                "value": {
+                    "__fixed__": "1.01"
+                }
+            },
+            {
+                "key": "con_dextest_004.pairs:1:balances:39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0",
+                "value": {
+                    "__fixed__": "9999999.999999939999999999999874999999"
+                }
+            },
+            {
+                "key": "con_dextest_004.pairs:1:balances:DEAD",
+                "value": {
+                    "__fixed__": "1E-8"
+                }
+            },
+            {
+                "key": "con_dextest_004.pairs:1:blockTimestampLast",
+                "value": {
+                    "__time__": [
+                        2024,
+                        10,
+                        16,
+                        14,
+                        46,
+                        57,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_dextest_004.pairs:1:creationTime",
+                "value": {
+                    "__time__": [
+                        2024,
+                        10,
+                        16,
+                        14,
+                        46,
+                        48,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_dextest_004.pairs:1:kLast",
+                "value": 99999999999999
+            },
+            {
+                "key": "con_dextest_004.pairs:1:reserve0",
+                "value": {
+                    "__fixed__": "99012841965601.948572729883065833638622929394"
+                }
+            },
+            {
+                "key": "con_dextest_004.pairs:1:reserve1",
+                "value": {
+                    "__fixed__": "1.01"
+                }
+            },
+            {
+                "key": "con_dextest_004.pairs:1:token0",
+                "value": "con_testtoken"
+            },
+            {
+                "key": "con_dextest_004.pairs:1:token1",
+                "value": "currency"
+            },
+            {
+                "key": "con_dextest_004.pairs:1:totalSupply",
+                "value": {
+                    "__fixed__": "9999999.999999949999999999999874999999"
+                }
+            },
+            {
+                "key": "con_dextest_004.pairs_num",
+                "value": 1
+            },
+            {
+                "key": "con_dextest_004.toks_to_pair:con_testtoken:currency",
+                "value": 1
+            },
+            {
+                "key": "con_dextest_005.__code__",
+                "value": "MINIMUM_LIQUIDITY = decimal('1e-08')\nMAX_ROUTE = 8\n__toks_to_pair = Hash(default_value=False, contract='con_dextest_005', name\n    ='toks_to_pair')\n__pairs = Hash(default_value=0, contract='con_dextest_005', name='pairs')\n__pairs_num = Variable(contract='con_dextest_005', name='pairs_num')\n__feeTo = Variable(contract='con_dextest_005', name='feeTo')\n__owner = Variable(contract='con_dextest_005', name='owner')\ntoken_interface = [importlib.Func('transfer_from', args=('amount', 'to',\n    'main_account')), importlib.Func('transfer', args=('amount', 'to')),\n    importlib.Var('balances', Hash)]\n\n\ndef ____():\n    __pairs_num.set(0)\n    __owner.set(ctx.signer)\n    __feeTo.set(ctx.signer)\n\n\n@__export('con_dextest_005')\ndef pairFor(tokenA: str, tokenB: str):\n    if tokenB < tokenA:\n        tokenA, tokenB = tokenB, tokenA\n    return __toks_to_pair[tokenA, tokenB]\n\n\n@__export('con_dextest_005')\ndef liqTransfer(pair: int, amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    assert __pairs[pair, 'balances', ctx.caller\n        ] >= amount, 'Not enough coins to send!'\n    __pairs[pair, 'balances', ctx.caller] -= amount\n    __pairs[pair, 'balances', to] += amount\n\n\n@__export('con_dextest_005')\ndef liqApprove(pair: int, amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    __pairs[pair, 'balances', ctx.caller, to] += amount\n\n\n@__export('con_dextest_005')\ndef liqTransfer_from(pair: int, amount: float, to: str, main_account: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    assert __pairs[pair, 'balances', main_account, ctx.caller\n        ] >= amount, 'Not enough coins approved to send! You have {} and are trying to spend {}'.format(\n        __pairs[pair, 'balances', main_account, ctx.caller], amount)\n    assert __pairs[pair, 'balances', main_account\n        ] >= amount, 'Not enough coins to send!'\n    __pairs[pair, 'balances', main_account, ctx.caller] -= amount\n    __pairs[pair, 'balances', main_account] -= amount\n    __pairs[pair, 'balances', to] += amount\n\n\ndef __safeTransferFrom(token: str, src: str, to: str, value: float):\n    t = importlib.import_module(token)\n    assert importlib.enforce_interface(t, token_interface)\n    t.transfer_from(value, to, src)\n\n\ndef __safeTransferFromToPair(pair: int, token: str, src: str, value: float):\n    t = importlib.import_module(token)\n    assert importlib.enforce_interface(t, token_interface)\n    __tok_balances = ForeignHash(foreign_contract=token, foreign_name=\n        'balances', contract='con_dextest_005', name='tok_balances')\n    prev_balance = __tok_balances[ctx.this]\n    if prev_balance == None:\n        prev_balance = 0\n    if token == __pairs[pair, 'token0']:\n        t.transfer_from(value, ctx.this, src)\n        new_balance = __tok_balances[ctx.this]\n        assert new_balance >= prev_balance, 'Negative income!'\n        __pairs[pair, 'balance0'] += new_balance - prev_balance\n        return True\n    elif token == __pairs[pair, 'token1']:\n        t.transfer_from(value, ctx.this, src)\n        new_balance = __tok_balances[ctx.this]\n        assert new_balance >= prev_balance, 'Negative income!'\n        __pairs[pair, 'balance1'] += new_balance - prev_balance\n        return True\n    assert False, 'Wrong token!'\n\n\ndef __safeTransferFromPair(pair: int, token: str, to: str, value: float):\n    t = importlib.import_module(token)\n    assert importlib.enforce_interface(t, token_interface)\n    __tok_balances = ForeignHash(foreign_contract=token, foreign_name=\n        'balances', contract='con_dextest_005', name='tok_balances')\n    prev_balance = __tok_balances[ctx.this]\n    if prev_balance == None:\n        prev_balance = 0\n    if token == __pairs[pair, 'token0']:\n        assert __pairs[pair, 'balance0'] >= value, 'Not enough coins to send!'\n        t.transfer(value, to)\n        new_balance = __tok_balances[ctx.this]\n        assert new_balance >= 0, 'Negative balance!'\n        __pairs[pair, 'balance0'] += new_balance - prev_balance\n        assert __pairs[pair, 'balance0'] >= 0, 'Negative pair balance0!'\n        return True\n    elif token == __pairs[pair, 'token1']:\n        assert __pairs[pair, 'balance1'] >= value, 'Not enough coins to send!'\n        t.transfer(value, to)\n        new_balance = __tok_balances[ctx.this]\n        assert new_balance >= 0, 'Negative balance!'\n        __pairs[pair, 'balance1'] += new_balance - prev_balance\n        assert __pairs[pair, 'balance1'] >= 0, 'Negative pair balance1!'\n        return True\n    assert False, 'Wrong token!'\n    return False\n\n\ndef __quote(amountA: float, reserveA: float, reserveB: float):\n    assert amountA > 0, '__DEXNAME: INSUFFICIENT_AMOUNT'\n    assert reserveA > 0 and reserveB > 0, '__DEXNAME: INSUFFICIENT_LIQUIDITY'\n    return amountA * reserveB / reserveA\n\n\ndef __createPair(tokenA: str, tokenB: str):\n    assert tokenA != tokenB, '__DEXNAME: IDENTICAL_ADDRESSES'\n    assert __toks_to_pair[tokenA, tokenB] == False, '__DEXNAME: PAIR_EXISTS'\n    p_num = __pairs_num.get() + 1\n    __pairs_num.set(p_num)\n    __pairs[p_num, 'token0'] = tokenA\n    __pairs[p_num, 'token1'] = tokenB\n    __pairs[p_num, 'reserve0'] = 0\n    __pairs[p_num, 'reserve1'] = 0\n    __pairs[p_num, 'balance0'] = 0\n    __pairs[p_num, 'balance1'] = 0\n    __pairs[p_num, 'blockTimestampLast'] = now\n    __pairs[p_num, 'totalSupply'] = 0\n    __pairs[p_num, 'kLast'] = 0\n    __pairs[p_num, 'creationTime'] = now\n    __toks_to_pair[tokenA, tokenB] = p_num\n    return p_num\n\n\ndef __getReserves(pair: int):\n    return __pairs[pair, 'reserve0'], __pairs[pair, 'reserve1'], __pairs[\n        pair, 'blockTimestampLast']\n\n\ndef __internal_update(pair: int, balance0: float, balance1: float):\n    __pairs[pair, 'reserve0'] = balance0\n    __pairs[pair, 'reserve1'] = balance1\n    __pairs[pair, 'blockTimestampLast'] = now\n\n\ndef __internal_mintFee(pair: int, reserve0: float, reserve1: float):\n    feeOn = __feeTo.get() != False\n    kLast = __pairs[pair, 'kLast']\n    if feeOn:\n        if kLast != 0:\n            rootK = (reserve0 * reserve1) ** decimal('0.5')\n            rootKLast = kLast ** decimal('0.5')\n            if rootK > rootKLast:\n                numerator = __pairs[pair, 'totalSupply'] * (rootK - rootKLast)\n                denominator = rootK * 5 + rootKLast\n                liquidity = numerator / denominator\n                if liquidity > 0:\n                    __internal_mint(pair, __feeTo.get(), liquidity)\n    elif kLast != 0:\n        __pairs[pair, 'kLast'] = 0\n    return feeOn\n\n\ndef __internal_burn(pair: int, src: str, value: float):\n    __pairs[pair, 'totalSupply'] -= value\n    assert __pairs[pair, 'totalSupply'] >= 0, 'Negative supply!'\n    __pairs[pair, 'balances', src] -= value\n    assert __pairs[pair, 'balances', src] >= 0, 'Negative balance!'\n\n\ndef __burn(pair: int, to: str):\n    reserve0, reserve1, ignore = __getReserves(pair)\n    token0 = __pairs[pair, 'token0']\n    token1 = __pairs[pair, 'token1']\n    balance0 = __pairs[pair, 'balance0']\n    balance1 = __pairs[pair, 'balance1']\n    liquidity = __pairs[pair, 'balances', ctx.this]\n    feeOn = __internal_mintFee(pair, reserve0, reserve1)\n    totalSupply = __pairs[pair, 'totalSupply']\n    amount0 = liquidity * balance0 / totalSupply\n    amount1 = liquidity * balance1 / totalSupply\n    assert amount0 > 0 and amount1 > 0, '__DEXNAME: INSUFFICIENT_LIQUIDITY_BURNED'\n    __internal_burn(pair, ctx.this, liquidity)\n    __safeTransferFromPair(pair, token0, to, amount0)\n    __safeTransferFromPair(pair, token1, to, amount1)\n    balance0 = __pairs[pair, 'balance0']\n    balance1 = __pairs[pair, 'balance1']\n    __internal_update(pair, balance0, balance1)\n    if feeOn:\n        __pairs[pair, 'kLast'] = balance0 * balance1\n    return amount0, amount1\n\n\ndef __internal_mint(pair: int, to: str, value: float):\n    __pairs[pair, 'totalSupply'] += value\n    __pairs[pair, 'balances', to] += value\n\n\ndef __mint(pair: int, to: str):\n    reserve0, reserve1, ignore = __getReserves(pair)\n    balance0 = __pairs[pair, 'balance0']\n    balance1 = __pairs[pair, 'balance1']\n    amount0 = balance0 - reserve0\n    amount1 = balance1 - reserve1\n    feeOn = __internal_mintFee(pair, reserve0, reserve1)\n    totalSupply = __pairs[pair, 'totalSupply']\n    liquidity = 0\n    if totalSupply == 0:\n        liquidity = (amount0 * amount1) ** decimal('0.5') - MINIMUM_LIQUIDITY\n        __internal_mint(pair, 'DEAD', MINIMUM_LIQUIDITY)\n    else:\n        liquidity = min(amount0 * totalSupply / reserve0, amount1 *\n            totalSupply / reserve1)\n    assert liquidity > 0, 'UniswapV2: INSUFFICIENT_LIQUIDITY_MINTED'\n    __internal_mint(pair, to, liquidity)\n    __internal_update(pair, balance0, balance1)\n    if feeOn:\n        __pairs[pair, 'kLast'] = balance0 * balance1\n    return liquidity\n\n\ndef __internal_addLiquidity(tokenA: str, tokenB: str, amountADesired: float,\n    amountBDesired: float, amountAMin: float, amountBMin: float):\n    desired_pair = __toks_to_pair[tokenA, tokenB]\n    if desired_pair == False:\n        desired_pair = __createPair(tokenA, tokenB)\n    reserveA, reserveB, ignore = __getReserves(desired_pair)\n    if reserveA == 0 and reserveB == 0:\n        return amountADesired, amountBDesired\n    else:\n        amountBOptimal = __quote(amountADesired, reserveA, reserveB)\n        if amountBOptimal <= amountBDesired:\n            assert amountBOptimal >= amountBMin, '__DEXNAME: INSUFFICIENT_B_AMOUNT'\n            return amountADesired, amountBOptimal\n        else:\n            amountAOptimal = __quote(amountBDesired, reserveB, reserveA)\n            assert amountAOptimal <= amountADesired\n            assert amountAOptimal >= amountAMin, '__DEXNAME: INSUFFICIENT_A_AMOUNT'\n            return amountAOptimal, amountBDesired\n\n\n@__export('con_dextest_005')\ndef addLiquidity(tokenA: str, tokenB: str, amountADesired: float,\n    amountBDesired: float, amountAMin: float, amountBMin: float, to: str,\n    deadline: int):\n    if tokenB < tokenA:\n        tokenA, tokenB = tokenB, tokenA\n    amountA, amountB = __internal_addLiquidity(tokenA, tokenB,\n        amountADesired, amountBDesired, amountAMin, amountBMin)\n    pair = __toks_to_pair[tokenA, tokenB]\n    __safeTransferFromToPair(pair, tokenA, ctx.caller, amountA)\n    __safeTransferFromToPair(pair, tokenB, ctx.caller, amountB)\n    liquidity = __mint(pair, to)\n    assert __pairs[pair, 'balance0'] == __pairs[pair, 'reserve0'], '0: bnr'\n    assert __pairs[pair, 'balance1'] == __pairs[pair, 'reserve1'], '1: bnr'\n    return amountA, amountB, liquidity\n\n\n@__export('con_dextest_005')\ndef removeLiquidity(tokenA: str, tokenB: str, liquidity: float, amountAMin:\n    float, amountBMin: float, to: str, deadline: int):\n    desired_pair = __toks_to_pair[tokenA, tokenB]\n    assert desired_pair != False, \"Pair doesn't exist!\"\n    liqTransfer(desired_pair, liquidity, ctx.this)\n    amountA, amountB = __burn(desired_pair, to)\n    assert amountA >= amountAMin, '__DEXNAME: INSUFFICIENT_A_AMOUNT'\n    assert amountB >= amountBMin, '__DEXNAME: INSUFFICIENT_B_AMOUNT'\n    assert __pairs[desired_pair, 'balance0'] == __pairs[desired_pair,\n        'reserve0'], '0: bnr'\n    assert __pairs[desired_pair, 'balance1'] == __pairs[desired_pair,\n        'reserve1'], '1: bnr'\n    return amountA, amountB\n\n\ndef __getAmountOut(amountIn: float, reserveIn: float, reserveOut: float):\n    assert amountIn > 0, '__DEXNAME: INSUFFICIENT_INPUT_AMOUNT'\n    assert reserveIn > 0 and reserveOut > 0, '__DEXNAME: INSUFFICIENT_LIQUIDITY'\n    amountInWithFee = amountIn * 997\n    numerator = amountInWithFee * reserveOut\n    denominator = reserveIn * 1000 + amountInWithFee\n    return numerator / denominator\n\n\ndef __swap(pair: int, amount0Out: float, amount1Out: float, to: str):\n    assert amount0Out > 0 or amount1Out > 0, 'UniswapV2: INSUFFICIENT_OUTPUT_AMOUNT'\n    reserve0, reserve1, ignore = __getReserves(pair)\n    assert amount0Out < reserve0 and amount1Out < reserve1, 'UniswapV2: INSUFFICIENT_LIQUIDITY'\n    token0 = __pairs[pair, 'token0']\n    token1 = __pairs[pair, 'token1']\n    assert to != token0 and to != token1, 'UniswapV2: INVALID_TO'\n    if amount0Out > 0:\n        __safeTransferFromPair(pair, token0, to, amount0Out)\n    if amount1Out > 0:\n        __safeTransferFromPair(pair, token1, to, amount1Out)\n    balance0 = __pairs[pair, 'balance0']\n    balance1 = __pairs[pair, 'balance1']\n    amount0In = balance0 - (reserve0 - amount0Out\n        ) if balance0 > reserve0 - amount0Out else 0\n    amount1In = balance1 - (reserve1 - amount1Out\n        ) if balance1 > reserve1 - amount1Out else 0\n    assert amount0In > 0 or amount1In > 0, 'UniswapV2: INSUFFICIENT_INPUT_AMOUNT'\n    balance0Adjusted = balance0 * 1000 - amount0In * 3\n    balance1Adjusted = balance1 * 1000 - amount1In * 3\n    assert balance0Adjusted * balance1Adjusted >= reserve0 * reserve1 * 1000 ** 2 or abs(\n        balance0Adjusted * balance1Adjusted - reserve0 * reserve1 * 1000 ** 2\n        ) < decimal('1e-16'), 'UniswapV2: K'\n    __internal_update(pair, balance0, balance1)\n\n\n@__export('con_dextest_005')\ndef swapExactTokensForTokens(amountIn: float, amountOutMin: float, pair:\n    int, src: str, to: str, deadline: int):\n    reserve0, reserve1, ignore = __getReserves(pair)\n    order = src == __pairs[pair, 'token0']\n    if not order:\n        reserve0, reserve1 = reserve1, reserve0\n    amount = __getAmountOut(amountIn, reserve0, reserve1)\n    assert amount >= amountOutMin, '__DEXNAMEe: INSUFFICIENT_OUTPUT_AMOUNT'\n    __safeTransferFromToPair(pair, src, ctx.caller, amountIn)\n    out0 = 0 if order else amount\n    out1 = amount if order else 0\n    __swap(pair, out0, out1, to)\n    assert __pairs[pair, 'balance0'] == __pairs[pair, 'reserve0'], '0: bnr'\n    assert __pairs[pair, 'balance1'] == __pairs[pair, 'reserve1'], '1: bnr'\n"
+            },
+            {
+                "key": "con_dextest_005.__developer__",
+                "value": "39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0"
+            },
+            {
+                "key": "con_dextest_005.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        10,
+                        16,
+                        14,
+                        50,
+                        50,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_dextest_005.feeTo",
+                "value": "39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0"
+            },
+            {
+                "key": "con_dextest_005.owner",
+                "value": "39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0"
+            },
+            {
+                "key": "con_dextest_005.pairs:1:balance0",
+                "value": {
+                    "__fixed__": "1.000000061523096809293425810305"
+                }
+            },
+            {
+                "key": "con_dextest_005.pairs:1:balance1",
+                "value": {
+                    "__fixed__": "6.1714583162816276205430E-8"
+                }
+            },
+            {
+                "key": "con_dextest_005.pairs:1:balances:39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0",
+                "value": {
+                    "__fixed__": "0.000246996040793644953739169876"
+                }
+            },
+            {
+                "key": "con_dextest_005.pairs:1:balances:DEAD",
+                "value": {
+                    "__fixed__": "1E-8"
+                }
+            },
+            {
+                "key": "con_dextest_005.pairs:1:balances:con_dextest_005",
+                "value": {
+                    "__fixed__": "-0.000"
+                }
+            },
+            {
+                "key": "con_dextest_005.pairs:1:blockTimestampLast",
+                "value": {
+                    "__time__": [
+                        2024,
+                        10,
+                        16,
+                        19,
+                        58,
+                        54,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_dextest_005.pairs:1:creationTime",
+                "value": {
+                    "__time__": [
+                        2024,
+                        10,
+                        16,
+                        14,
+                        53,
+                        38,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_dextest_005.pairs:1:kLast",
+                "value": {
+                    "__fixed__": "6.116646760700919292278E-8"
+                }
+            },
+            {
+                "key": "con_dextest_005.pairs:1:reserve0",
+                "value": {
+                    "__fixed__": "1.000000061523096809293425810305"
+                }
+            },
+            {
+                "key": "con_dextest_005.pairs:1:reserve1",
+                "value": {
+                    "__fixed__": "6.1714583162816276205430E-8"
+                }
+            },
+            {
+                "key": "con_dextest_005.pairs:1:token0",
+                "value": "con_testtoken"
+            },
+            {
+                "key": "con_dextest_005.pairs:1:token1",
+                "value": "currency"
+            },
+            {
+                "key": "con_dextest_005.pairs:1:totalSupply",
+                "value": {
+                    "__fixed__": "0.000247006040793644953739169876"
+                }
+            },
+            {
+                "key": "con_dextest_005.pairs_num",
+                "value": 1
+            },
+            {
+                "key": "con_dextest_005.toks_to_pair:con_testtoken:currency",
+                "value": 1
+            },
+            {
                 "key": "con_hello.__code__",
                 "value": "__balances = Hash(default_value=0, contract='con_hello', name='balances')\n__metadata = Hash(contract='con_hello', name='metadata')\n\n\ndef ____():\n    __balances[ctx.caller] = 1000000\n    __metadata['token_name'] = 'TEST TOKEN'\n    __metadata['token_symbol'] = 'TST'\n    __metadata['token_logo_url'] = 'https://some.token.url/test-token.png'\n    __metadata['token_website'] = 'https://some.token.url'\n    __metadata['operator'] = ctx.caller\n\n\n@__export('con_hello')\ndef hello():\n    return 'hello'\n"
             },
@@ -482,6 +1202,34 @@
             {
                 "key": "con_hello1.metadata:token_website",
                 "value": "https://some.token.url"
+            },
+            {
+                "key": "con_multest.__code__",
+                "value": "__val = Variable(contract='con_multest', name='val')\n\n\ndef ____():\n    __val.set(1)\n\n\n@__export('con_multest')\ndef mul(a: float):\n    t = __val.get()\n    t *= a\n    __val.set(t)\n\n\n@__export('con_multest')\ndef ret():\n    return __val.get()\n"
+            },
+            {
+                "key": "con_multest.__developer__",
+                "value": "39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0"
+            },
+            {
+                "key": "con_multest.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        10,
+                        10,
+                        14,
+                        30,
+                        51,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_multest.val",
+                "value": {
+                    "__fixed__": "100000000000000000000000000000"
+                }
             },
             {
                 "key": "con_multi12345.__code__",
@@ -1461,6 +2209,87 @@
             },
             {
                 "key": "con_pixel_frames_info_v0_3.S:1f2605863f8620b176a459d39b31b875ef7a096fd5261b494d31ae828e42e86a:type",
+                "value": "text/plain"
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:25e969a9a039db4322bf2aa6e0eb29e913ef455ee0e503316468a9576f18fccd",
+                "value": [
+                    "thing",
+                    "type",
+                    "name",
+                    "description",
+                    "owner",
+                    "creator",
+                    "likes",
+                    "price:amount",
+                    "price:hold",
+                    "meta_items"
+                ]
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:25e969a9a039db4322bf2aa6e0eb29e913ef455ee0e503316468a9576f18fccd:created",
+                "value": {
+                    "__time__": [
+                        2024,
+                        10,
+                        15,
+                        21,
+                        43,
+                        32,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:25e969a9a039db4322bf2aa6e0eb29e913ef455ee0e503316468a9576f18fccd:creator",
+                "value": "e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931"
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:25e969a9a039db4322bf2aa6e0eb29e913ef455ee0e503316468a9576f18fccd:description",
+                "value": "123123123"
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:25e969a9a039db4322bf2aa6e0eb29e913ef455ee0e503316468a9576f18fccd:likes",
+                "value": 0
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:25e969a9a039db4322bf2aa6e0eb29e913ef455ee0e503316468a9576f18fccd:meta:num_of_frames",
+                "value": 1
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:25e969a9a039db4322bf2aa6e0eb29e913ef455ee0e503316468a9576f18fccd:meta:royalty_percent",
+                "value": 5
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:25e969a9a039db4322bf2aa6e0eb29e913ef455ee0e503316468a9576f18fccd:meta:speed",
+                "value": 500
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:25e969a9a039db4322bf2aa6e0eb29e913ef455ee0e503316468a9576f18fccd:meta_items",
+                "value": [
+                    "speed",
+                    "num_of_frames",
+                    "royalty_percent"
+                ]
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:25e969a9a039db4322bf2aa6e0eb29e913ef455ee0e503316468a9576f18fccd:name",
+                "value": "123123123123"
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:25e969a9a039db4322bf2aa6e0eb29e913ef455ee0e503316468a9576f18fccd:owner",
+                "value": "e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931"
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:25e969a9a039db4322bf2aa6e0eb29e913ef455ee0e503316468a9576f18fccd:price:amount",
+                "value": 0
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:25e969a9a039db4322bf2aa6e0eb29e913ef455ee0e503316468a9576f18fccd:thing",
+                "value": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBABBBBBBBBBBKKBBBBBBBBBBBBAAAABBKKKKKKBBBBBBBBBBBBBBBKKKKKKKKKBBBBBBBBBBBBBBKKBKKKKBBKKKBBBBBBBBBBBKKBBKKKKKKBBKKKBBBBBBBBBBKKKKKKKKKKKKKAKKBBBBBBBBBBBBKAKKKKKKKKBBKBBBBBBBBBAAAKBKKKBBBKKKBBKBBBBBBBBAAAKBKKABBBBKKBKKBBBBBBBBBBBKBKKKKAABKKKBBBBBBBBBBBBBKKKBBBKKKKAKBBBBBBBBBBBBBBKKBBBBBBKKKAAABBBBBBBBBBBKKKKKBKKKKKBBBBBBBBBBBBBBBKKKKKKKKBKBBBBBBBBBBBBBBBBBKKKAKKKBBBBBBBBBBBBBBBBBBBBAKKBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
+            },
+            {
+                "key": "con_pixel_frames_info_v0_3.S:25e969a9a039db4322bf2aa6e0eb29e913ef455ee0e503316468a9576f18fccd:type",
                 "value": "text/plain"
             },
             {
@@ -2540,6 +3369,10 @@
                 "value": "1f2605863f8620b176a459d39b31b875ef7a096fd5261b494d31ae828e42e86a"
             },
             {
+                "key": "con_pixel_frames_info_v0_3.S:names:e984af814f7f706b0df901c67ba98fcb038ddd97355fc1126a31b745f93bdc60",
+                "value": "25e969a9a039db4322bf2aa6e0eb29e913ef455ee0e503316468a9576f18fccd"
+            },
+            {
                 "key": "con_pixel_frames_info_v0_3.__code__",
                 "value": "__S = Hash(default_value='', contract='con_pixel_frames_info_v0_3', name='S')\n\n\n@__export('con_pixel_frames_info_v0_3')\ndef add_thing(thing_string: str, name: str, description: str, meta: dict,\n    creator: str):\n    __enforce_thing_standards(thing_string, name, description, meta)\n    uid = hashlib.sha256(thing_string)\n    assert not __S[uid], thing_string + ' already exists'\n    names_uid = hashlib.sha256(name.lower().replace(' ', ''))\n    assert not __S['names', names_uid\n        ], 'A form of this name already belongs to ' + __S['names', names_uid]\n    __S['names', names_uid] = uid\n    __custom_string_validations(thing_string, meta['num_of_frames'])\n    __S[uid] = ['thing', 'type', 'name', 'description', 'owner', 'creator',\n        'likes', 'price:amount', 'price:hold', 'meta_items']\n    __S[uid, 'thing'] = thing_string\n    __S[uid, 'type'] = 'text/plain'\n    __S[uid, 'name'] = name\n    __S[uid, 'description'] = description\n    __S[uid, 'owner'] = creator\n    __S[uid, 'creator'] = creator\n    __S[uid, 'created'] = now\n    __S[uid, 'likes'] = 0\n    __S[uid, 'price', 'amount'] = 0\n    __S[uid, 'meta_items'] = ['speed', 'num_of_frames', 'royalty_percent']\n    __S[uid, 'meta', 'speed'] = meta['speed']\n    __S[uid, 'meta', 'num_of_frames'] = meta['num_of_frames']\n    __S[uid, 'meta', 'royalty_percent'] = meta['royalty_percent']\n    return uid\n\n\ndef __enforce_thing_standards(thing_string: str, name: str, description:\n    str, meta: dict):\n    assert len(thing_string) > 0, 'Thing string cannot be empty.'\n    assert len(name) > 0, 'No Name provided.'\n    assert len(name) <= 25, 'Name too long (25 chars max).'\n    assert len(description) > 0, 'No description provided.'\n    assert len(description) <= 128, 'Description too long (128 chars max).'\n    __custom_meta_validations(meta)\n\n\ndef __custom_string_validations(thing_string: str, num_of_frames: int):\n    assert num_of_frames >= 1 and num_of_frames <= 8, 'num_of_frames value ' + str(\n        num_of_frames) + ' is out of range (1-4).'\n    assert len(thing_string\n        ) % num_of_frames == 0, 'num_of_frames value is invalid.'\n    assert len(thing_string\n        ) / num_of_frames == 625, 'Frames Data is Invalid, must be 625 pixels/frame.'\n    __assertPixelValues(thing_string)\n\n\ndef __assertPixelValues(thing_string):\n    for pixel in thing_string:\n        assert (ord(pixel) >= 65 and ord(pixel) <= 122) and ord(pixel\n            ) != 92, 'Frames Data contains invalid pixel {}.'.format(pixel)\n\n\ndef __custom_meta_validations(meta):\n    assert 'speed' in meta, \"Missing meta value 'speed' (int).\"\n    assert isinstance(meta['speed'], int), 'Speed value is not an integer.'\n    assert meta['speed'] >= 100 and meta['speed'\n        ] <= 2000, 'Speed value ' + str(meta['speed']\n        ) + ' is out of range (100ms-2000ms).'\n    assert 'num_of_frames' in meta, \"Missing meta value 'num_of_frames' (int).\"\n    assert isinstance(meta['num_of_frames'], int\n        ), 'num_of_frames value is not an integer.'\n    assert 'royalty_percent' in meta, \"Missing meta value 'royalty_percent' (int).\"\n    assert isinstance(meta['royalty_percent'], int\n        ), 'royalty_percent value is not an integer.'\n    assert meta['royalty_percent'] >= 0 and meta['royalty_percent'\n        ] <= 100, 'royalty_percent value ' + str(meta['royalty_percent']\n        ) + ' is out of range (0-100).'\n\n\n@__export('con_pixel_frames_info_v0_3')\ndef thing_exists(thing_string: str):\n    uid = hashlib.sha256(thing_string)\n    return __S[uid]\n\n\n@__export('con_pixel_frames_info_v0_3')\ndef get_owner(uid: str):\n    return __S[uid, 'owner']\n\n\n@__export('con_pixel_frames_info_v0_3')\ndef get_creator(uid: str):\n    return __S[uid, 'creator']\n\n\n@__export('con_pixel_frames_info_v0_3')\ndef set_price(uid: str, amount: float, hold: str):\n    assert amount >= 0, 'Cannot set a negative price'\n    __S[uid, 'price', 'amount'] = amount\n    if not hold == None:\n        __S[uid, 'price', 'hold'] = hold\n\n\n@__export('con_pixel_frames_info_v0_3')\ndef get_price_amount(uid: str):\n    return __S[uid, 'price', 'amount']\n\n\n@__export('con_pixel_frames_info_v0_3')\ndef get_royalty_amount(uid: str):\n    return __S[uid, 'meta', 'royalty_percent']\n\n\n@__export('con_pixel_frames_info_v0_3')\ndef get_price_hold(uid: str):\n    return __S[uid, 'price', 'hold']\n\n\n@__export('con_pixel_frames_info_v0_3')\ndef set_owner(uid: str, owner: str):\n    __S[uid, 'owner'] = owner\n\n\n@__export('con_pixel_frames_info_v0_3')\ndef like_thing(uid: str):\n    likes = __S[uid, 'likes']\n    __S[uid, 'likes'] = likes + 1\n\n\n@__export('con_pixel_frames_info_v0_3')\ndef set_proof(uid: str, code: str):\n    __S[uid, 'proof'] = code\n"
             },
@@ -2673,7 +3506,7 @@
             },
             {
                 "key": "con_pixel_frames_master_v0_3.balances:e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931",
-                "value": 15
+                "value": 16
             },
             {
                 "key": "con_pixel_frames_master_v0_3.balances:ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9",
@@ -3532,6 +4365,28 @@
                 "value": "RSWP"
             },
             {
+                "key": "con_stresstest.__code__",
+                "value": "__h = Hash(contract='con_stresstest', name='h')\n\n\n@__export('con_stresstest')\ndef test(i: int):\n    for x in range(0, i):\n        __h[x]\n"
+            },
+            {
+                "key": "con_stresstest.__developer__",
+                "value": "39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0"
+            },
+            {
+                "key": "con_stresstest.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        10,
+                        15,
+                        18,
+                        23,
+                        41,
+                        0
+                    ]
+                }
+            },
+            {
                 "key": "con_test123.__code__",
                 "value": "import currency\nI = importlib\n\n\n@__export('con_test123')\ndef send(addresses: list, amount: float, contract: str):\n    token = I.import_module(contract)\n    for address in addresses:\n        token.transfer_from(amount=amount, to=address, main_account=ctx.signer)\n"
             },
@@ -4168,7 +5023,79 @@
             {
                 "key": "con_testtoken.balances:39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0",
                 "value": {
-                    "__fixed__": "9999999999999999"
+                    "__fixed__": "9891802835037106.241655455540748494993535397549"
+                }
+            },
+            {
+                "key": "con_testtoken.balances:39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0:con_dextest_001",
+                "value": {
+                    "__fixed__": "9999900000000000"
+                }
+            },
+            {
+                "key": "con_testtoken.balances:39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0:con_dextest_002",
+                "value": {
+                    "__fixed__": "999990000000000000"
+                }
+            },
+            {
+                "key": "con_testtoken.balances:39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0:con_dextest_003",
+                "value": {
+                    "__fixed__": "98173328263080014.4"
+                }
+            },
+            {
+                "key": "con_testtoken.balances:39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0:con_dextest_004",
+                "value": {
+                    "__fixed__": "9900000000000000"
+                }
+            },
+            {
+                "key": "con_testtoken.balances:39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0:con_dextest_005",
+                "value": {
+                    "__fixed__": "9998999999999999999"
+                }
+            },
+            {
+                "key": "con_testtoken.balances:con_dextest_001",
+                "value": {
+                    "__fixed__": "90933891060.289169773574611257615713376376"
+                }
+            },
+            {
+                "key": "con_testtoken.balances:con_dextest_002",
+                "value": {
+                    "__fixed__": "9093389106118.941529508047649358916068018551"
+                }
+            },
+            {
+                "key": "con_testtoken.balances:con_dextest_003",
+                "value": {
+                    "__fixed__": "109.579070046566934739187634467823"
+                }
+            },
+            {
+                "key": "con_testtoken.balances:con_dextest_004",
+                "value": {
+                    "__fixed__": "99012841965601.948572729883065833638622929394"
+                }
+            },
+            {
+                "key": "con_testtoken.balances:con_dextest_005",
+                "value": {
+                    "__fixed__": "1.000000061523096809293425810305"
+                }
+            },
+            {
+                "key": "con_testtoken.balances:dff5d54d9c3cdb04d279c3c0a123d6a73a94e0725d7eac955fdf87298dbe45a6",
+                "value": {
+                    "__fixed__": "1"
+                }
+            },
+            {
+                "key": "con_testtoken.balances:test",
+                "value": {
+                    "__fixed__": "0.000002424863893506355"
                 }
             },
             {
@@ -4189,6 +5116,100 @@
             },
             {
                 "key": "con_testtoken.metadata:token_website",
+                "value": "https://some.token.url"
+            },
+            {
+                "key": "con_token0.__code__",
+                "value": "__balances = Hash(default_value=0, contract='con_token0', name='balances')\n__metadata = Hash(contract='con_token0', name='metadata')\n\n\ndef ____():\n    __balances[ctx.caller] = 1000000\n    __metadata['token_name'] = 'TEST TOKEN'\n    __metadata['token_symbol'] = 'TST'\n    __metadata['token_logo_url'] = 'https://some.token.url/test-token.png'\n    __metadata['token_website'] = 'https://some.token.url'\n    __metadata['operator'] = ctx.caller\n\n\n@__export('con_token0')\ndef change_metadata(key: str, value: Any):\n    assert ctx.caller == __metadata['operator'\n        ], 'Only operator can set metadata!'\n    __metadata[key] = value\n\n\n@__export('con_token0')\ndef transfer(amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    assert __balances[ctx.caller] >= amount, 'Not enough coins to send!'\n    __balances[ctx.caller] -= amount\n    __balances[to] += amount\n    return f'Sent {amount} to {to}'\n\n\n@__export('con_token0')\ndef approve(amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    __balances[ctx.caller, to] += amount\n    return f'Approved {amount} for {to}'\n\n\n@__export('con_token0')\ndef transfer_from(amount: float, to: str, main_account: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    assert __balances[main_account, ctx.caller\n        ] >= amount, 'Not enough coins approved to send! You have {} and are trying to spend {}'.format(\n        __balances[main_account, ctx.caller], amount)\n    assert __balances[main_account] >= amount, 'Not enough coins to send!'\n    __balances[main_account, ctx.caller] -= amount\n    __balances[main_account] -= amount\n    __balances[to] += amount\n    return f'Sent {amount} to {to} from {main_account}'\n\n\n@__export('con_token0')\ndef balance_of(address: str):\n    return __balances[address]\n"
+            },
+            {
+                "key": "con_token0.__developer__",
+                "value": "39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0"
+            },
+            {
+                "key": "con_token0.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        10,
+                        16,
+                        17,
+                        43,
+                        53,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_token0.balances:39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0",
+                "value": 1000000
+            },
+            {
+                "key": "con_token0.metadata:operator",
+                "value": "39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0"
+            },
+            {
+                "key": "con_token0.metadata:token_logo_url",
+                "value": "https://some.token.url/test-token.png"
+            },
+            {
+                "key": "con_token0.metadata:token_name",
+                "value": "TEST TOKEN"
+            },
+            {
+                "key": "con_token0.metadata:token_symbol",
+                "value": "TST"
+            },
+            {
+                "key": "con_token0.metadata:token_website",
+                "value": "https://some.token.url"
+            },
+            {
+                "key": "con_wte.__code__",
+                "value": "__balances = Hash(default_value=0, contract='con_wte', name='balances')\n__metadata = Hash(contract='con_wte', name='metadata')\n\n\ndef ____(inp: float):\n    __balances[ctx.caller] = inp\n    __metadata['token_name'] = 'TEST TOKEN'\n    __metadata['token_symbol'] = 'TST'\n    __metadata['token_logo_url'] = 'https://some.token.url/test-token.png'\n    __metadata['token_website'] = 'https://some.token.url'\n    __metadata['operator'] = ctx.caller\n\n\n@__export('con_wte')\ndef change_metadata(key: str, value: Any):\n    assert ctx.caller == __metadata['operator'\n        ], 'Only operator can set metadata!'\n    __metadata[key] = value\n\n\n@__export('con_wte')\ndef transfer(amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    assert __balances[ctx.caller] >= amount, 'Not enough coins to send!'\n    __balances[ctx.caller] -= amount\n    __balances[to] += amount\n    return f'Sent {amount} to {to}'\n\n\n@__export('con_wte')\ndef approve(amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    __balances[ctx.caller, to] += amount\n    return f'Approved {amount} for {to}'\n\n\n@__export('con_wte')\ndef transfer_from(amount: float, to: str, main_account: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    assert __balances[main_account, ctx.caller\n        ] >= amount, 'Not enough coins approved to send! You have {} and are trying to spend {}'.format(\n        __balances[main_account, ctx.caller], amount)\n    assert __balances[main_account] >= amount, 'Not enough coins to send!'\n    __balances[main_account, ctx.caller] -= amount\n    __balances[main_account] -= amount\n    __balances[to] += amount\n    return f'Sent {amount} to {to} from {main_account}'\n\n\n@__export('con_wte')\ndef balance_of(address: str):\n    return __balances[address]\n"
+            },
+            {
+                "key": "con_wte.__developer__",
+                "value": "39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0"
+            },
+            {
+                "key": "con_wte.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        10,
+                        10,
+                        14,
+                        26,
+                        32,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_wte.balances:39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0",
+                "value": {
+                    "__fixed__": "1E+22"
+                }
+            },
+            {
+                "key": "con_wte.metadata:operator",
+                "value": "39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0"
+            },
+            {
+                "key": "con_wte.metadata:token_logo_url",
+                "value": "https://some.token.url/test-token.png"
+            },
+            {
+                "key": "con_wte.metadata:token_name",
+                "value": "TEST TOKEN"
+            },
+            {
+                "key": "con_wte.metadata:token_symbol",
+                "value": "TST"
+            },
+            {
+                "key": "con_wte.metadata:token_website",
                 "value": "https://some.token.url"
             },
             {
@@ -4564,7 +5585,37 @@
             {
                 "key": "currency.balances:39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0",
                 "value": {
-                    "__fixed__": "9993.996"
+                    "__fixed__": "9588.776999926789401267822575533424"
+                }
+            },
+            {
+                "key": "currency.balances:39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0:con_dextest_001",
+                "value": {
+                    "__fixed__": "97.9"
+                }
+            },
+            {
+                "key": "currency.balances:39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0:con_dextest_002",
+                "value": {
+                    "__fixed__": "99999997.9"
+                }
+            },
+            {
+                "key": "currency.balances:39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0:con_dextest_003",
+                "value": {
+                    "__fixed__": "99999996.899000000000000019247972579438"
+                }
+            },
+            {
+                "key": "currency.balances:39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0:con_dextest_004",
+                "value": {
+                    "__fixed__": "99999999999997.99"
+                }
+            },
+            {
+                "key": "currency.balances:39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0:con_dextest_005",
+                "value": {
+                    "__fixed__": "999999999995.9899"
                 }
             },
             {
@@ -4964,7 +6015,7 @@
             {
                 "key": "currency.balances:7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e",
                 "value": {
-                    "__fixed__": "59121202.01888205352288775"
+                    "__fixed__": "59121340.65198205352288775"
                 }
             },
             {
@@ -5116,6 +6167,18 @@
             {
                 "key": "currency.balances:CE3BDF86A5FF4AC9D054EBF2DCE3ADC9D21C91E893C927A5A36CF4D92568E96E",
                 "value": 2
+            },
+            {
+                "key": "currency.balances:JAVASCRIPT_TRANSACTION_TEST",
+                "value": {
+                    "__fixed__": "0.00000252"
+                }
+            },
+            {
+                "key": "currency.balances:PYTHON_TXN_TEST",
+                "value": {
+                    "__fixed__": "0.00000756"
+                }
             },
             {
                 "key": "currency.balances:a2a8d3a3856d903a185e4d65be73cfc7827bd1026c5724af8059f324bab116c7",
@@ -5360,6 +6423,36 @@
                 }
             },
             {
+                "key": "currency.balances:con_dextest_001",
+                "value": {
+                    "__fixed__": "1.1"
+                }
+            },
+            {
+                "key": "currency.balances:con_dextest_002",
+                "value": {
+                    "__fixed__": "1.1"
+                }
+            },
+            {
+                "key": "currency.balances:con_dextest_003",
+                "value": {
+                    "__fixed__": "0.001000011496015569361148261145"
+                }
+            },
+            {
+                "key": "currency.balances:con_dextest_004",
+                "value": {
+                    "__fixed__": "1.01"
+                }
+            },
+            {
+                "key": "currency.balances:con_dextest_005",
+                "value": {
+                    "__fixed__": "6.171458316281627620543E-8"
+                }
+            },
+            {
                 "key": "currency.balances:d0362296b1cec350045e6409829cba364ebc79b9495955b84c2ab37e07ee8376",
                 "value": {
                     "__fixed__": "14.61628350261848495716"
@@ -5458,7 +6551,7 @@
             {
                 "key": "currency.balances:dff5d54d9c3cdb04d279c3c0a123d6a73a94e0725d7eac955fdf87298dbe45a6",
                 "value": {
-                    "__fixed__": "1356.83710000"
+                    "__fixed__": "1413.43700000"
                 }
             },
             {
@@ -5500,7 +6593,7 @@
             {
                 "key": "currency.balances:e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931",
                 "value": {
-                    "__fixed__": "1026033.72961196584094681140"
+                    "__fixed__": "1026020.76960188584094681140"
                 }
             },
             {
@@ -5554,7 +6647,7 @@
             {
                 "key": "currency.balances:f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce",
                 "value": {
-                    "__fixed__": "42371.7382"
+                    "__fixed__": "42375.9130"
                 }
             },
             {
@@ -5596,6 +6689,12 @@
             {
                 "key": "currency.balances:me",
                 "value": 8
+            },
+            {
+                "key": "currency.balances:nwm",
+                "value": {
+                    "__fixed__": "0.01"
+                }
             },
             {
                 "key": "currency.balances:team_lock",
@@ -5976,7 +7075,7 @@
             },
             {
                 "key": "39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0",
-                "value": 6
+                "value": 102
             },
             {
                 "key": "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e",
@@ -5992,7 +7091,7 @@
             },
             {
                 "key": "e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931",
-                "value": 51
+                "value": 69
             },
             {
                 "key": "ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9",
