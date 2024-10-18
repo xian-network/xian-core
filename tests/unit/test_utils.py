@@ -28,6 +28,16 @@ class TestPayloadStrExtraction(unittest.TestCase):
             True
         ),
         (
+            "double_slash_escape_in_payload",
+            '{"metadata":{"signature":"abc"},"payload":{"text":"This is a \\"quoted\\" string","number":123}}',
+            True
+        ),
+        (
+            "unicode_escapes_in_payload",
+            '{"metadata":{"signature":"abc"},"payload":{"text":"Unicode test: \\u2603 \\u2764"}}',
+            True
+        ),
+        (
             "no_payload_field",
             '{"id": 2, "other_field": "data"}',
             False
@@ -76,6 +86,11 @@ class TestPayloadStrExtraction(unittest.TestCase):
             "payload_with_null_value",
             '{"metadata":{"signature":"abc"},"payload":{"nullable":null}}',
             True
+        ),
+        (
+            "double-slash-escape-in-payload",
+            '{"metadata":{"signature":"abc"},"payload":{"text":"This is a \\" } quoted\\" string","number":123}}',
+            True
         )
     ])
     def test_extract_payload(self, name, tx_str, has_payload, should_match=True):
@@ -89,7 +104,6 @@ class TestPayloadStrExtraction(unittest.TestCase):
         else:
             with self.assertRaises(ValueError):
                 res = extract_payload_string(tx_str)
-                breakpoint()
                 
 
 class TestVerification(unittest.TestCase):
