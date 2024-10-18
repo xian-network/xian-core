@@ -197,8 +197,10 @@ def validate_transaction(client, nonce_storage, tx):
 
     # Get how much they are sending
     amount = tx["payload"]["kwargs"].get("amount")
-    if amount is None:
-        amount = 0
+    amount = 0 if amount is None else amount
+
+    if isinstance(amount, dict) and '__fixed__' in amount:
+        amount = float(amount['__fixed__'])
 
     # Check if they have enough stamps for the operation
     check_enough_stamps(
