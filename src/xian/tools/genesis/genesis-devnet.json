@@ -1,6 +1,6 @@
 {
     "genesis_time": "2024-02-08T00:17:23.342520258Z",
-    "chain_id": "xian-testnet-10",
+    "chain_id": "xian-testnet-11",
     "initial_height": "155",
     "consensus_params": {
         "block": {
