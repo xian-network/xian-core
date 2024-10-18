@@ -41,7 +41,7 @@ def fetch_filebased_state():
 
 
 def build_genesis_block(founder_sk: str, contract_state: dict, run_state: dict):
-    hash = get_latest_block_hash()
+    hash = get_latest_block_hash()['__bytes__']
     block_number = get_latest_block_height()
 
     genesis_block = {
