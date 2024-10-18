@@ -4,6 +4,7 @@ import nacl
 import nacl.signing
 import nacl.encoding
 from contracting.storage.encoder import encode, decode
+from contracting.stdlib.bridge.decimal import ContractingDecimal
 from xian.exceptions import TransactionException
 from xian.formatting import contract_name_is_formatted, TRANSACTION_PAYLOAD_RULES, TRANSACTION_RULES
 from loguru import logger
@@ -200,7 +201,7 @@ def validate_transaction(client, nonce_storage, tx):
     amount = 0 if amount is None else amount
 
     if isinstance(amount, dict) and '__fixed__' in amount:
-        amount = float(amount['__fixed__'])
+        amount = ContractingDecimal(amount['__fixed__'])
 
     # Check if they have enough stamps for the operation
     check_enough_stamps(
