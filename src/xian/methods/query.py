@@ -33,38 +33,32 @@ async def query(self, req) -> ResponseQuery:
     loop = asyncio.get_event_loop()
     key = path_parts[1] if len(path_parts) > 1 else ""
     result = None
-
-    if self.block_service_mode:
-        stamp_socket_path = c.STAMPESTIMATOR_SOCKET
-        connection = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        connection.connect(stamp_socket_path)
-
     try:
         # http://localhost:26657/abci_query?path="/get/currency.balances:c93dee52d7dc6cc43af44007c3b1dae5b730ccf18a9e6fb43521f8e4064561e6"
         if path_parts and path_parts[0] == "get":
-            result = await loop.run_in_executor(None, self.client.raw_driver.get, path_parts[1])
+            result = self.client.raw_driver.get(path_parts[1])
 
         # http://localhost:26657/abci_query?path="/health"
         elif path_parts[0] == "health":
             result = "OK"
         # http://localhost:26657/abci_query?path="/get_next_nonce/ddd326fddb5d1677595311f298b744a4e9f415b577ac179a6afbf38483dc0791"
         elif path_parts[0] == "get_next_nonce":
-            result = await loop.run_in_executor(None, self.nonce_storage.get_next_nonce, path_parts[1])
+            result = self.nonce_storage.get_next_nonce(path_parts[1])
 
         # http://localhost:26657/abci_query?path="/contract/con_some_contract"
         elif path_parts[0] == "contract":
-            result = await loop.run_in_executor(None, self.client.raw_driver.get_contract, path_parts[1])
+            result = self.client.raw_driver.get_contract(path_parts[1])
 
         # http://localhost:26657/abci_query?path="/contract_methods/con_some_contract"
         elif path_parts[0] == "contract_methods":
-            contract_code = await loop.run_in_executor(None, self.client.raw_driver.get_contract, path_parts[1])
+            contract_code = self.client.raw_driver.get_contract(path_parts[1])
             if contract_code is not None:
                 funcs = parser.methods_for_contract(contract_code)
                 result = {"methods": funcs}
 
         # http://localhost:26657/abci_query?path="/contract_vars/con_some_contract"
         elif path_parts[0] == "contract_vars":
-            contract_code = await loop.run_in_executor(None, self.client.raw_driver.get_contract, path_parts[1])
+            contract_code = self.client.raw_driver.get_contract(path_parts[1])
             if contract_code is not None:
                 result = parser.variables_for_contract(contract_code)
 
@@ -73,7 +67,7 @@ async def query(self, req) -> ResponseQuery:
             result = {'status': 'online'}
 
         # Blockchain Data Service
-        if self.block_service_mode:
+        elif self.block_service_mode:
             limit = 100
             offset = 0
 
@@ -101,7 +95,7 @@ async def query(self, req) -> ResponseQuery:
 
             # http://localhost:26657/abci_query?path="/keys/currency.balances"    
             if path_parts[0] == "keys":
-                list_of_keys = await loop.run_in_executor(None, self.client.raw_driver.keys, path_parts[1])
+                list_of_keys = self.client.raw_driver.keys(path_parts[1])
                 result = [key.split(":")[1] for key in list_of_keys]
                 key = path_parts[1]
 
@@ -110,7 +104,7 @@ async def query(self, req) -> ResponseQuery:
                 result = await self.bds.get_state(key, limit, offset)
 
             # http://localhost:26657/abci_query?path="/state_history/currency.balances:ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9/limit=10/offset=20"
-            if path_parts[0] == "state_history":
+            elif path_parts[0] == "state_history":
                 result = await self.bds.get_state_history(key, limit, offset)
 
             # http://localhost:26657/abci_query?path="/state_for_tx/f39b4ea880088cfae45538acb2f7fdae1e70112185a5523d1027bcf74eac3919"
@@ -165,6 +159,9 @@ async def query(self, req) -> ResponseQuery:
 
             # http://localhost:26657/abci_query?path="/calculate_stamps/<encoded_tx>"
             elif path_parts[0] == "calculate_stamps":
+                connection = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                connection.connect(c.STAMPESTIMATOR_SOCKET)
+
                 raw_tx = path_parts[1]
                 byte_data = bytes.fromhex(raw_tx)
                 message_length = struct.pack('>I', len(byte_data))
@@ -173,7 +170,6 @@ async def query(self, req) -> ResponseQuery:
                 length = struct.unpack('>I', recv_length)[0]
                 recv = connection.recv(length)
                 result = recv.decode()
-                
 
         else:
             error = f'Unknown query path: {path_parts[0]}'
@@ -201,6 +197,6 @@ async def query(self, req) -> ResponseQuery:
 
     except Exception as err:
         logger.error(err)
-        return ResponseQuery(code=c.ErrorCode, log=err)
+        return ResponseQuery(code=c.ErrorCode)
 
     return ResponseQuery(code=c.OkCode, value=v, info=type_of_data, key=encode_str(key))
