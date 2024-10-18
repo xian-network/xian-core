@@ -186,10 +186,10 @@ def main():
 
     logger.add(
         os.path.join(log_path, 'logs', '{time}.log'),
-        retention=timedelta(days=3),
         format="{time} {level} {name} {message}",
-        level="DEBUG",
+        retention="3 days",
         rotation="10 MB",
+        level="DEBUG",
     )
 
     app = asyncio.get_event_loop().run_until_complete(Xian.create())
