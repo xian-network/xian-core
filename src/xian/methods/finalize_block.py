@@ -45,7 +45,11 @@ async def finalize_block(self, req) -> ResponseFinalizeBlock:
     }
 
     for tx_bytes in req.txs:
-        tx, payload_str = decode_transaction_bytes(tx_bytes)
+        try:
+            tx, payload_str = decode_transaction_bytes(tx_bytes)
+        except Exception as e:
+            logger.error(f"Error decoding transaction: {e}")
+            continue
 
         # Attach metadata to the transaction
         tx["b_meta"] = self.current_block_meta
