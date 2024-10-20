@@ -140,12 +140,6 @@ def check_tx_formatting(tx: dict):
     check_tx_keys(tx)
     check_format(tx, TRANSACTION_RULES)
 
-    if not verify(
-            tx["payload"]["sender"], encode(tx["payload"]), tx["metadata"]["signature"]
-    ):
-        raise TransactionException('Transaction is not signed by the sender')
-
-
 def check_contract_name(contract, function, name):
     if (
             contract == "submission"
