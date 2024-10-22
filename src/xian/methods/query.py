@@ -157,7 +157,7 @@ async def query(self, req) -> ResponseQuery:
                 except:
                     result = {"stdout": "", "stderr": ""}
 
-            # http://localhost:26657/abci_query?path="/calculate_stamps/<encoded_tx>"
+            # http://localhost:26657/abci_query?path="/calculate_stamps/<encoded_payload>"
             elif path_parts[0] == "calculate_stamps":
                 connection = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
                 connection.connect(c.STAMPESTIMATOR_SOCKET)
