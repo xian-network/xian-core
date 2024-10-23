@@ -157,6 +157,21 @@ async def query(self, req) -> ResponseQuery:
                 except:
                     result = {"stdout": "", "stderr": ""}
 
+            # http://localhost:26657/abci_query?path="/simulate_tx/<encoded_payload>"
+            elif path_parts[0] == "simulate_tx":
+                connection = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                connection.connect(c.STAMPESTIMATOR_SOCKET)
+
+                raw_tx = path_parts[1]
+                byte_data = bytes.fromhex(raw_tx)
+                message_length = struct.pack('>I', len(byte_data))
+                connection.sendall(message_length + byte_data)
+                recv_length = connection.recv(4)
+                length = struct.unpack('>I', recv_length)[0]
+                recv = connection.recv(length)
+                result = recv.decode()
+
+            # TODO: Deprecated - Remove after wallet and tools are reworked to use 'simulate_tx'
             # http://localhost:26657/abci_query?path="/calculate_stamps/<encoded_payload>"
             elif path_parts[0] == "calculate_stamps":
                 connection = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
