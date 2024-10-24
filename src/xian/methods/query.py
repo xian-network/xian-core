@@ -160,7 +160,7 @@ async def query(self, req) -> ResponseQuery:
             # http://localhost:26657/abci_query?path="/simulate_tx/<encoded_payload>"
             elif path_parts[0] == "simulate_tx":
                 connection = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-                connection.connect(c.STAMPESTIMATOR_SOCKET)
+                connection.connect(c.SIMULATOR_SOCKET)
 
                 raw_tx = path_parts[1]
                 byte_data = bytes.fromhex(raw_tx)
@@ -175,7 +175,7 @@ async def query(self, req) -> ResponseQuery:
             # http://localhost:26657/abci_query?path="/calculate_stamps/<encoded_payload>"
             elif path_parts[0] == "calculate_stamps":
                 connection = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-                connection.connect(c.STAMPESTIMATOR_SOCKET)
+                connection.connect(c.SIMULATOR_SOCKET)
 
                 raw_tx = path_parts[1]
                 byte_data = bytes.fromhex(raw_tx)

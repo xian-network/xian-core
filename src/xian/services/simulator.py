@@ -13,19 +13,19 @@ import json
 import struct
 
 
-class StampCalculator:
+class Simulator:
     def __init__(self):
         self.constants = Constants()
 
     def setup_socket(self):
         # If the socket file exists, remove it
-        STAMPESTIMATOR_SOCKET = pathlib.Path(self.constants.STAMPESTIMATOR_SOCKET)
-        if STAMPESTIMATOR_SOCKET.exists():
-            STAMPESTIMATOR_SOCKET.unlink()
+        simulator_socket = pathlib.Path(self.constants.SIMULATOR_SOCKET)
+        if simulator_socket.exists():
+            simulator_socket.unlink()
 
         # Create a socket
         self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        self.socket.bind(self.constants.STAMPESTIMATOR_SOCKET)
+        self.socket.bind(self.constants.SIMULATOR_SOCKET)
         self.socket.listen(1)
 
     def listen(self):
@@ -136,6 +136,6 @@ class StampCalculator:
 
 
 if __name__ == '__main__':
-    sc = StampCalculator()
+    sc = Simulator()
     sc.setup_socket()
     sc.listen()
