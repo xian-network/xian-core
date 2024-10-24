@@ -130,7 +130,6 @@ class Simulator:
             payload=payload,
             environment=environment,
             stamp_cost=stamp_cost,
-            driver=driver,
             executor=executor
         )
 
