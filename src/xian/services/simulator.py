@@ -87,7 +87,7 @@ class Simulator:
         # Generate a random number with `length//2` bytes and convert to hex
         return secrets.token_hex(nbytes=length // 2)
 
-    def execute_tx(self, payload, stamp_cost, environment: dict = {}, driver=None, executor=None):
+    def execute_tx(self, payload, stamp_cost, environment: dict = {}, executor=None):
 
         balance = 9999999
         output = executor.execute(
