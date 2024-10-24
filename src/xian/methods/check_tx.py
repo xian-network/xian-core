@@ -14,10 +14,10 @@ import json
 
 async def check_tx(self, raw_tx) -> ResponseCheckTx:
     try:
-        tx = decode_transaction_bytes(raw_tx)
+        tx, payload_str = decode_transaction_bytes(raw_tx)
         validate_transaction(self.client,self.nonce_storage,tx)
         sender, signature, payload = unpack_transaction(tx)
-        if not verify(sender, payload, signature):
+        if not verify(sender, payload_str, signature):
             return ResponseCheckTx(code=c.ErrorCode, log="Bad signature")
         payload_json = json.loads(payload)
         if payload_json["chain_id"] != self.chain_id:

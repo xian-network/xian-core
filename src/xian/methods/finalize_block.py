@@ -45,12 +45,10 @@ async def finalize_block(self, req) -> ResponseFinalizeBlock:
     }
 
     for tx_bytes in req.txs:
-        tx = decode_transaction_bytes(tx_bytes)
-        sender, signature, payload = unpack_transaction(tx)
-
-        if not verify(sender, payload, signature):
-            # Not really needed, because check_tx should catch this first, but just in case
-            # Skip this transaction
+        try:
+            tx, payload_str = decode_transaction_bytes(tx_bytes)
+        except Exception as e:
+            logger.error(f"Error decoding transaction: {e}")
             continue
 
         # Attach metadata to the transaction
