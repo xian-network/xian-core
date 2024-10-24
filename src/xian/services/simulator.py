@@ -13,19 +13,19 @@ import json
 import struct
 
 
-class StampCalculator:
+class Simulator:
     def __init__(self):
         self.constants = Constants()
 
     def setup_socket(self):
         # If the socket file exists, remove it
-        STAMPESTIMATOR_SOCKET = pathlib.Path(self.constants.STAMPESTIMATOR_SOCKET)
-        if STAMPESTIMATOR_SOCKET.exists():
-            STAMPESTIMATOR_SOCKET.unlink()
+        simulator_socket = pathlib.Path(self.constants.SIMULATOR_SOCKET)
+        if simulator_socket.exists():
+            simulator_socket.unlink()
 
         # Create a socket
         self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        self.socket.bind(self.constants.STAMPESTIMATOR_SOCKET)
+        self.socket.bind(self.constants.SIMULATOR_SOCKET)
         self.socket.listen(1)
 
     def listen(self):
@@ -42,7 +42,7 @@ class StampCalculator:
                         if not raw_msglen:
                             break
                         msglen = struct.unpack('>I', raw_msglen)[0]
-                        
+
                         # Read the message data
                         data = connection.recv(msglen)
                         if not data:
@@ -51,11 +51,11 @@ class StampCalculator:
                             break
 
                         print(f"Received: {data.decode()}")
-                        
-                        tx = data.decode()
-                        tx = json.loads(tx)
+
+                        payload = data.decode()
+                        payload = json.loads(payload)
                         try:
-                            response = self.execute(tx)
+                            response = self.execute(payload)
                             response = json.dumps(response)
                             response = response.encode()
                             message_length = struct.pack('>I', len(response))
@@ -87,16 +87,16 @@ class StampCalculator:
         # Generate a random number with `length//2` bytes and convert to hex
         return secrets.token_hex(nbytes=length // 2)
 
-    def execute_tx(self, transaction, stamp_cost, environment: dict = {}, driver = None, executor = None):
-        
+    def execute_tx(self, payload, stamp_cost, environment: dict = {}, executor=None):
+
         balance = 9999999
         output = executor.execute(
-            sender=transaction['payload']['sender'],
-            contract_name=transaction['payload']['contract'],
-            function_name=transaction['payload']['function'],
+            sender=payload['sender'],
+            contract_name=payload['contract'],
+            function_name=payload['function'],
             stamps=balance * stamp_cost,
             stamp_cost=stamp_cost,
-            kwargs=convert_dict(transaction['payload']['kwargs']),
+            kwargs=convert_dict(payload['kwargs']),
             environment=environment,
             auto_commit=False,
             metering=True
@@ -107,7 +107,7 @@ class StampCalculator:
         writes = [{'key': k, 'value': v} for k, v in output['writes'].items()]
 
         tx_output = {
-            'transaction': transaction,
+            'payload': payload,
             'status': output['status_code'],
             'state': writes,
             'stamps_used': output['stamps_used'],
@@ -118,7 +118,7 @@ class StampCalculator:
 
         return tx_output
 
-    def execute(self, transaction):
+    def execute(self, payload):
         driver = Driver(storage_home=self.constants.STORAGE_HOME)
         executor = Executor(metering=False, bypass_balance_amount=True, bypass_cache=True, driver=driver)
         environment = self.generate_environment()
@@ -127,14 +127,14 @@ class StampCalculator:
         except:
             stamp_cost = 20
         return self.execute_tx(
-            transaction=transaction,
+            payload=payload,
             environment=environment,
             stamp_cost=stamp_cost,
-            driver= driver,
             executor=executor
         )
 
+
 if __name__ == '__main__':
-    sc = StampCalculator()
+    sc = Simulator()
     sc.setup_socket()
     sc.listen()
