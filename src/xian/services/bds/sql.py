@@ -114,12 +114,12 @@ def enforce_table_limits():
             EXECUTE format('SELECT * FROM %I.%I LIMIT %s', schema_name, rec.table_name, limit_value);
         END LOOP;
     END $$;
-"""
+    """
 
 
 def select_db_size():
     return """
-    SELECT pg_size_pretty(pg_database_size(%(n)s))
+    SELECT pg_size_pretty(pg_database_size(%(n)s));
     """
 
 
@@ -192,7 +192,7 @@ def select_contracts():
         contracts
     ORDER BY 
         created ASC
-    LIMIT $1 OFFSET $2
+    LIMIT $1 OFFSET $2;
     """
 
 
@@ -232,7 +232,7 @@ def select_state_history():
         key = $1
     ORDER BY 
         created DESC
-    LIMIT $2 OFFSET $3
+    LIMIT $2 OFFSET $3;
     """
 
 
