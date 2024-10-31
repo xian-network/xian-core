@@ -15,10 +15,6 @@ from xian.utils.block import (
     get_nanotime_from_block_time,
     convert_cometbft_time_to_datetime
 )
-from xian.utils.tx import (
-    verify,
-    unpack_transaction
-)
 from xian.utils.encoding import (
     decode_transaction_bytes,
     convert_binary_to_hex,
