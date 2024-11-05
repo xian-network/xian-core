@@ -9,28 +9,29 @@ from contracting.stdlib.bridge.time import Datetime, Timedelta
 from xian.services.bds.database import DB, result_to_json
 from xian_py.wallet import key_is_valid
 from timeit import default_timer as timer
+from decimal import Decimal
 
 
 # Custom JSON encoder for our own objects
 class CustomEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, ContractingDecimal):
-            v = float(str(obj))
-            return int(v) if v.is_integer() else v
+            return str(obj)
+        if isinstance(obj, Decimal):
+            return str(obj)
         if isinstance(obj, Datetime):
-            # Convert to ISO 8601 format string with microseconds
             return obj._datetime.isoformat(timespec='microseconds')
         if isinstance(obj, Timedelta):
-            # Convert to total seconds with microseconds
             return obj._timedelta.total_seconds()
         return super().default(obj)
 
+    # To recursively process and handle custom types within nested structures
     def encode(self, obj):
         def process(o):
             if isinstance(o, dict):
                 if len(o) == 1:
                     if '__fixed__' in o:
-                        return float(o['__fixed__'])
+                        return str(o['__fixed__'])
                     elif '__time__' in o:
                         # Convert __time__ list to ISO 8601 string
                         time_list = o['__time__']
@@ -45,6 +46,10 @@ class CustomEncoder(json.JSONEncoder):
                     return {k: process(v) for k, v in o.items()}
             elif isinstance(o, list):
                 return [process(v) for v in o]
+            elif isinstance(o, ContractingDecimal):
+                return str(o)
+            elif isinstance(o, Decimal):
+                return str(o)
             elif isinstance(o, Datetime):
                 return o._datetime.isoformat(timespec='microseconds')
             elif isinstance(o, Timedelta):
@@ -198,7 +203,7 @@ class BDS:
                 tx['tx_result']['hash'],
                 type,
                 key,
-                json.dumps(value, cls=CustomEncoder),
+                Decimal(value),
                 block_time
             ])
 
