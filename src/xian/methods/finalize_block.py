@@ -104,11 +104,11 @@ async def finalize_block(self, req) -> ResponseFinalizeBlock:
         if self.block_service_mode:
             cometbft_hash = hash_bytes(tx_bytes).upper()
             result["tx_result"]["hash"] = cometbft_hash
-            asyncio.create_task(self.bds.insert_full_data(tx | result, block_datetime))
+            asyncio.create_task(self.bds.add_to_batch(tx | result, block_datetime))
 
     # Save data to BDS - Process batch
     if self.block_service_mode:
-        asyncio.create_task(self.bds.db.commit_batch_to_disk())
+        asyncio.create_task(self.bds.commit_batch())
 
     if self.static_rewards:
         try:
