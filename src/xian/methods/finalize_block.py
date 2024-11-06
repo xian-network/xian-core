@@ -15,10 +15,6 @@ from xian.utils.block import (
     get_nanotime_from_block_time,
     convert_cometbft_time_to_datetime
 )
-from xian.utils.tx import (
-    verify,
-    unpack_transaction
-)
 from xian.utils.encoding import (
     decode_transaction_bytes,
     convert_binary_to_hex,
@@ -108,11 +104,11 @@ async def finalize_block(self, req) -> ResponseFinalizeBlock:
         if self.block_service_mode:
             cometbft_hash = hash_bytes(tx_bytes).upper()
             result["tx_result"]["hash"] = cometbft_hash
-            asyncio.create_task(self.bds.insert_full_data(tx | result, block_datetime))
+            asyncio.create_task(self.bds.add_to_batch(tx | result, block_datetime))
 
     # Save data to BDS - Process batch
     if self.block_service_mode:
-        asyncio.create_task(self.bds.db.commit_batch_to_disk())
+        asyncio.create_task(self.bds.commit_batch())
 
     if self.static_rewards:
         try:
