@@ -219,6 +219,12 @@ def select_state():
     """
 
 
+def select_state_by_key():
+    return """
+    SELECT value FROM state WHERE key = $1;
+    """
+
+
 def select_state_history():
     return """
     SELECT 

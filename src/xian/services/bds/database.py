@@ -94,6 +94,10 @@ class DB:
                 logger.exception(f'Error while executing SQL: {e}')
                 raise e
 
+    async def fetch_one(self, query: str, params: list):
+        async with self.pool.acquire() as connection:
+            return await connection.fetchrow(query, *params)
+
     async def has_entries(self, table_name: str) -> bool:
         try:
             result = await self.fetch(f"SELECT COUNT(*) as count FROM {table_name}")
