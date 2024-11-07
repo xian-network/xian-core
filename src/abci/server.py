@@ -4,7 +4,6 @@ TCP Server that communicates with Tendermint
 import asyncio
 import signal
 import platform
-import io
 import os
 
 from .utils import *
@@ -169,45 +168,37 @@ class ABCIServer:
         await self.server.serve_forever()
 
     async def _handler(
-            self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
+        self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
     ) -> None:
+
         data = BytesIO()
+        last_pos = 0
+
         while True:
-            # Read data from the reader
+            if last_pos == data.tell():
+                data = BytesIO()
+                last_pos = 0
+            
             bits = await reader.read(MaxReadInBytes)
             if len(bits) == 0:
                 logger.error(" ... tendermint closed connection")
-                break  # Exit the loop if the connection is closed
+                # break to the _stop if the connection stops
+                break
 
-            # Append new data to the buffer
-            data.seek(0, io.SEEK_END)
             data.write(bits)
-            data.seek(0)  # Reset position to start of buffer
+            data.seek(last_pos)
 
-            # Attempt to parse and process messages
-            while True:
-                start_pos = data.tell()
-                messages = list(read_messages(data, Request))
-                if not messages:
-                    # No complete messages available, reset position and wait
-                    data.seek(start_pos)
-                    break  # Exit the parsing loop to read more data
+            # Tendermint prefixes each serialized protobuf message
+            # with varint encoded length. We use the 'data' buffer to
+            # keep track of where we are in the byte stream and progress
+            # based on the length encoding
+            for message in read_messages(data, Request):
+                req_type = message.WhichOneof("value")
+                response = await self.protocol.process(req_type, message)
+                writer.write(response)
+                last_pos = data.tell()
 
-                for message in messages:
-                    req_type = message.WhichOneof("value")
-                    response = await self.protocol.process(req_type, message)
-                    writer.write(response)
-                    await writer.drain()
-                    # Update start position after processing
-                    start_pos = data.tell()
-
-            # Remove processed data from the buffer
-            remaining_data = data.read()
-            data = BytesIO()
-            data.write(remaining_data)
-            data.seek(0)  # Reset position to start of buffer
-
-        # Shut down if the connection is closed
+        # Any connection fails and we shut the whole thing down
         await _stop()
 
 
