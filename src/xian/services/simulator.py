@@ -34,34 +34,26 @@ class Simulator:
             connection, client_address = self.socket.accept()
             print("Client connected")
             try:
+                # Accept a connection
                 while True:
                     try:
                         # Read message length (4 bytes)
                         raw_msglen = connection.recv(4)
                         if not raw_msglen:
                             break
-                        if len(raw_msglen) < 4:
-                            # Handle incomplete length prefix
-                            raise ValueError("Incomplete length prefix received")
                         msglen = struct.unpack('>I', raw_msglen)[0]
 
                         # Read the message data
-                        data = b''
-                        while len(data) < msglen:
-                            packet = connection.recv(msglen - len(data))
-                            if not packet:
-                                # No more data from client, client closed connection
-                                print("Client disconnected")
-                                break
-                            data += packet
-
+                        data = connection.recv(msglen)
                         if not data:
+                            # No more data from client, client closed connection
                             print("Client disconnected")
                             break
 
-                        # Parse the JSON payload directly from bytes
-                        payload = json.loads(data)
+                        print(f"Received: {data.decode()}")
 
+                        payload = data.decode()
+                        payload = json.loads(payload)
                         try:
                             response = self.execute(payload)
                             response = json.dumps(response)
@@ -75,6 +67,7 @@ class Simulator:
                         print("Client disconnected")
                         break
             finally:
+                # Clean up the connection
                 print("Client disconnected")
                 connection.close()
 

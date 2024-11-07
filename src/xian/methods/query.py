@@ -167,24 +167,9 @@ async def query(self, req) -> ResponseQuery:
                 message_length = struct.pack('>I', len(byte_data))
                 connection.sendall(message_length + byte_data)
                 recv_length = connection.recv(4)
-
-                if len(recv_length) < 4:
-                    # Handle error or incomplete length prefix
-                    raise ValueError("Incomplete length prefix received")
-                else:
-                    length = struct.unpack('>I', recv_length)[0]
-                    recv = b''
-                    while len(recv) < length:
-                        packet = connection.recv(length - len(recv))
-                        if not packet:
-                            # Connection closed or error
-                            raise ConnectionError("Connection closed before receiving all data")
-                        recv += packet
-                    if len(recv) == length:
-                        result = recv.decode('utf-8')
-                    else:
-                        # Handle incomplete data error
-                        raise ValueError("Did not receive all expected data")
+                length = struct.unpack('>I', recv_length)[0]
+                recv = connection.recv(length)
+                result = recv.decode()
 
             # TODO: Deprecated - Remove after wallet and tools are reworked to use 'simulate_tx'
             # http://localhost:26657/abci_query?path="/calculate_stamps/<encoded_payload>"
@@ -197,24 +182,9 @@ async def query(self, req) -> ResponseQuery:
                 message_length = struct.pack('>I', len(byte_data))
                 connection.sendall(message_length + byte_data)
                 recv_length = connection.recv(4)
-
-                if len(recv_length) < 4:
-                    # Handle error or incomplete length prefix
-                    raise ValueError("Incomplete length prefix received")
-                else:
-                    length = struct.unpack('>I', recv_length)[0]
-                    recv = b''
-                    while len(recv) < length:
-                        packet = connection.recv(length - len(recv))
-                        if not packet:
-                            # Connection closed or error
-                            raise ConnectionError("Connection closed before receiving all data")
-                        recv += packet
-                    if len(recv) == length:
-                        result = recv.decode('utf-8')
-                    else:
-                        # Handle incomplete data error
-                        raise ValueError("Did not receive all expected data")
+                length = struct.unpack('>I', recv_length)[0]
+                recv = connection.recv(length)
+                result = recv.decode()
 
         else:
             error = f'Unknown query path: {path_parts[0]}'
