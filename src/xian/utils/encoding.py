@@ -1,11 +1,12 @@
 import json
 import binascii
 import hashlib
+import decimal
+
 from typing import Tuple
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 from contracting.stdlib.bridge.time import Datetime
 from loguru import logger
-import decimal
 
 
 def encode_str(value):

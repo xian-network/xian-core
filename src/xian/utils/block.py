@@ -2,7 +2,6 @@ import binascii
 import marshal
 import json
 
-from contracting.stdlib.bridge.decimal import ContractingDecimal
 from xian.constants import Constants as c
 from contracting.storage.encoder import convert_dict
 from loguru import logger
