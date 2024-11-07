@@ -13,19 +13,19 @@ import json
 import struct
 
 
-class Simulator:
+class StampCalculator:
     def __init__(self):
         self.constants = Constants()
 
     def setup_socket(self):
         # If the socket file exists, remove it
-        simulator_socket = pathlib.Path(self.constants.SIMULATOR_SOCKET)
-        if simulator_socket.exists():
-            simulator_socket.unlink()
+        STAMPESTIMATOR_SOCKET = pathlib.Path(self.constants.STAMPESTIMATOR_SOCKET)
+        if STAMPESTIMATOR_SOCKET.exists():
+            STAMPESTIMATOR_SOCKET.unlink()
 
         # Create a socket
         self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        self.socket.bind(self.constants.SIMULATOR_SOCKET)
+        self.socket.bind(self.constants.STAMPESTIMATOR_SOCKET)
         self.socket.listen(1)
 
     def listen(self):
@@ -34,36 +34,28 @@ class Simulator:
             connection, client_address = self.socket.accept()
             print("Client connected")
             try:
+                # Accept a connection
                 while True:
                     try:
                         # Read message length (4 bytes)
                         raw_msglen = connection.recv(4)
                         if not raw_msglen:
                             break
-                        if len(raw_msglen) < 4:
-                            # Handle incomplete length prefix
-                            raise ValueError("Incomplete length prefix received")
                         msglen = struct.unpack('>I', raw_msglen)[0]
-
+                        
                         # Read the message data
-                        data = b''
-                        while len(data) < msglen:
-                            packet = connection.recv(msglen - len(data))
-                            if not packet:
-                                # No more data from client, client closed connection
-                                print("Client disconnected")
-                                break
-                            data += packet
-
+                        data = connection.recv(msglen)
                         if not data:
+                            # No more data from client, client closed connection
                             print("Client disconnected")
                             break
 
-                        # Parse the JSON payload directly from bytes
-                        payload = json.loads(data)
-
+                        print(f"Received: {data.decode()}")
+                        
+                        tx = data.decode()
+                        tx = json.loads(tx)
                         try:
-                            response = self.execute(payload)
+                            response = self.execute(tx)
                             response = json.dumps(response)
                             response = response.encode()
                             message_length = struct.pack('>I', len(response))
@@ -75,6 +67,7 @@ class Simulator:
                         print("Client disconnected")
                         break
             finally:
+                # Clean up the connection
                 print("Client disconnected")
                 connection.close()
 
@@ -94,16 +87,16 @@ class Simulator:
         # Generate a random number with `length//2` bytes and convert to hex
         return secrets.token_hex(nbytes=length // 2)
 
-    def execute_tx(self, payload, stamp_cost, environment: dict = {}, executor=None):
-
+    def execute_tx(self, transaction, stamp_cost, environment: dict = {}, driver = None, executor = None):
+        
         balance = 9999999
         output = executor.execute(
-            sender=payload['sender'],
-            contract_name=payload['contract'],
-            function_name=payload['function'],
+            sender=transaction['payload']['sender'],
+            contract_name=transaction['payload']['contract'],
+            function_name=transaction['payload']['function'],
             stamps=balance * stamp_cost,
             stamp_cost=stamp_cost,
-            kwargs=convert_dict(payload['kwargs']),
+            kwargs=convert_dict(transaction['payload']['kwargs']),
             environment=environment,
             auto_commit=False,
             metering=True
@@ -114,7 +107,7 @@ class Simulator:
         writes = [{'key': k, 'value': v} for k, v in output['writes'].items()]
 
         tx_output = {
-            'payload': payload,
+            'transaction': transaction,
             'status': output['status_code'],
             'state': writes,
             'stamps_used': output['stamps_used'],
@@ -125,7 +118,7 @@ class Simulator:
 
         return tx_output
 
-    def execute(self, payload):
+    def execute(self, transaction):
         driver = Driver(storage_home=self.constants.STORAGE_HOME)
         executor = Executor(metering=False, bypass_balance_amount=True, bypass_cache=True, driver=driver)
         environment = self.generate_environment()
@@ -134,14 +127,14 @@ class Simulator:
         except:
             stamp_cost = 20
         return self.execute_tx(
-            payload=payload,
+            transaction=transaction,
             environment=environment,
             stamp_cost=stamp_cost,
+            driver= driver,
             executor=executor
         )
 
-
 if __name__ == '__main__':
-    sc = Simulator()
+    sc = StampCalculator()
     sc.setup_socket()
     sc.listen()
