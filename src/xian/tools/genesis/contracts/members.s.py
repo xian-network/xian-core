@@ -13,6 +13,9 @@ pending_registrations = Hash(default_value=False)
 pending_leave = Hash(default_value=False)
 holdings = Hash(default_value=0)
 
+PASS_THRESHOLD = 0.8
+PROPOSAL_EXPIRY_DAYS = 7
+
 @construct
 def seed(genesis_nodes: list, genesis_registration_fee: int):
     nodes.set(genesis_nodes)
@@ -29,20 +32,27 @@ def propose_vote(type_of_vote: str, arg: Any):
     
     assert type_of_vote in types.get(), "Invalid type"
     proposal_id = total_votes.get() + 1
-    votes[proposal_id] = {"yes": 1, "no": 0, "type": type_of_vote, "arg": arg, "voters": [ctx.caller], "finalized": False}
+    votes[proposal_id] = {
+        "yes": 1,
+        "no": 0,
+        "type": type_of_vote,
+        "arg": arg,
+        "voters": [ctx.caller],
+        "finalized": False,
+        "expiry": now + datetime.timedelta(days=PROPOSAL_EXPIRY_DAYS)
+    }
     total_votes.set(proposal_id)
+    
+    decide_finalize(proposal_id)
 
-    if len(votes[proposal_id]["voters"]) >= len(nodes.get()) // 2: # Single node network edge case
-        if not votes[proposal_id]["finalized"]:
-            finalize_vote(proposal_id)
-
-    return proposal_id
+    return votes[proposal_id]
 
 @export
 def vote(proposal_id: int, vote: str):
     assert ctx.caller in nodes.get(), "Only nodes can vote"
     assert votes[proposal_id], "Invalid proposal"
     assert votes[proposal_id]["finalized"] == False, "Proposal already finalized"
+    assert now < votes[proposal_id]["expiry"], "Proposal expired"
     assert vote in ["yes", "no"], "Invalid vote"
     assert ctx.caller not in votes[proposal_id]["voters"], "Already voted"
 
@@ -52,39 +62,48 @@ def vote(proposal_id: int, vote: str):
     cur_vote["voters"].append(ctx.caller)
     votes[proposal_id] = cur_vote
 
-    if len(votes[proposal_id]["voters"]) >= len(nodes.get()) // 2:
-        if not votes[proposal_id]["finalized"]:
-            finalize_vote(proposal_id)
+    # Check if > PASS_THRESHOLD * of nodes have voted "yes"
+    decide_finalize(proposal_id)
 
     return cur_vote
 
+def decide_finalize(proposal_id: int):
+    cur_vote = votes[proposal_id]
+    ayes_needed = (len(nodes.get()) * PASS_THRESHOLD)
+    ayes = cur_vote["yes"]
+
+    if ayes >= ayes_needed:
+        finalize_vote(proposal_id)
+
+def get_yes_vote_pct(proposal_id: int):
+    cur_vote = votes[proposal_id]
+    return cur_vote["yes"] / (cur_vote["yes"] + cur_vote["no"])
 
 def finalize_vote(proposal_id: int):
     cur_vote = votes[proposal_id]
 
-    # Check if majority yes
-    if cur_vote["yes"] > cur_vote["no"]:
-        if cur_vote["type"] == "add_member":
-            nodes.set(nodes.get() + [cur_vote["arg"]])
-        elif cur_vote["type"] == "remove_member":
-            nodes.set([node for node in nodes.get() if node != cur_vote["arg"]])
-            force_leave(cur_vote["arg"])
-        elif cur_vote["type"] == "reward_change":
-            rewards.set_value(new_value=cur_vote["arg"])
-        elif cur_vote["type"] == "dao_payout":
-            dao.transfer_from_dao(args=cur_vote["arg"])
-        elif cur_vote["type"] == "stamp_cost_change":
-            stamp_cost.set_value(new_value=cur_vote["arg"])
-        elif cur_vote["type"] == "change_registration_fee":
-            registration_fee.set(cur_vote["arg"])
-        elif cur_vote["type"] == "change_types":
-            types.set(cur_vote["arg"])
+    if cur_vote["type"] == "add_member":
+        nodes.set(nodes.get() + [cur_vote["arg"]])
+    elif cur_vote["type"] == "remove_member":
+        nodes.set([node for node in nodes.get() if node != cur_vote["arg"]])
+        force_leave(cur_vote["arg"])
+    elif cur_vote["type"] == "reward_change":
+        rewards.set_value(new_value=cur_vote["arg"])
+    elif cur_vote["type"] == "dao_payout":
+        dao.transfer_from_dao(args=cur_vote["arg"])
+    elif cur_vote["type"] == "stamp_cost_change":
+        stamp_cost.set_value(new_value=cur_vote["arg"])
+    elif cur_vote["type"] == "change_registration_fee":
+        registration_fee.set(cur_vote["arg"])
+    elif cur_vote["type"] == "change_types":
+        types.set(cur_vote["arg"])
     
     cur_vote["finalized"] = True
-
     votes[proposal_id] = cur_vote
     return cur_vote
 
+
+@export
 def balance_dao_stream():
     dao.balance_dao_stream()
 
@@ -99,6 +118,7 @@ def announce_leave():
     
 @export
 def leave():
+    assert pending_leave[ctx.caller], "Not pending leave"
     assert pending_leave[ctx.caller] < now, "Leave announcement period not over"
     if ctx.caller in nodes.get():
         nodes.set([node for node in nodes.get() if node != ctx.caller])
