@@ -121,7 +121,8 @@ class TxProcessor:
             rewards = {
                 'masternode_reward': {},
                 'foundation_reward': {foundation_owner: ContractingDecimal(str(calculated_rewards[1] / stamp_rate))},
-                'developer_reward': {}
+                'developer_reward': {},
+                'burned': {"BURNED": ContractingDecimal(str(calculated_rewards[3]["BURNED"] / stamp_rate))}
             }
 
             for masternode in self.client.get_var(contract='masternodes', variable='nodes'):
@@ -131,6 +132,7 @@ class TxProcessor:
                 if developer == 'sys' or developer is None:
                     developer = self.client.get_var(contract='foundation', variable='owner')
                 rewards['developer_reward'][developer] = ContractingDecimal(str(reward / stamp_rate))
+
 
             state_change_key = "currency.balances"
 
@@ -158,6 +160,17 @@ class TxProcessor:
 
             # Update developer rewards in output writes
             for address, reward in rewards['developer_reward'].items():
+                write_key = f"{state_change_key}:{address}"
+                write_key_balance = self.client.get_var(contract='currency', variable='balances', arguments=[address])
+                if write_key_balance is None:
+                    write_key_balance = 0
+                if write_key in output['writes']:
+                    output['writes'][write_key] += ContractingDecimal(str(reward))
+                else:
+                    output['writes'][write_key] = write_key_balance + ContractingDecimal(str(reward))
+
+            # Update burned rewards in output writes
+            for address, reward in rewards['burned'].items():
                 write_key = f"{state_change_key}:{address}"
                 write_key_balance = self.client.get_var(contract='currency', variable='balances', arguments=[address])
                 if write_key_balance is None:
