@@ -77,7 +77,7 @@ class MyTestCase(unittest.TestCase):
         submission_contract_path = os.path.abspath(
             os.path.join(
                 script_dir,
-                "../../contracting/src/contracting/contracts/submission.s.py",
+                "../../xian-contracting/src/contracting/contracts/submission.s.py",
             )
         )
         currency_contract_path = os.path.abspath(
