@@ -90,19 +90,26 @@ def write_message(message: Message) -> bytes:
     return buffer.getvalue()
 
 
-def read_messages(reader: BytesIO, message: Message) -> Message:
+def read_messages(reader: BytesIO, message_class):
     """
-    Return an interator over the messages found in the byte stream
+    Return an iterator over the messages found in the byte stream.
     """
     while True:
+        start_pos = reader.tell()
         try:
             length = decode_varint(reader)
         except EOFError:
-            return
+            # Not enough data to read the length, reset and wait for more data
+            reader.seek(start_pos)
+            break  # Exit the loop to wait for more data
+
         data = reader.read(length)
         if len(data) < length:
-            print(f"Expected {length} bytes, but got only {len(data)}. End of stream or data corruption.")
-            return
-        m = message()
-        m.ParseFromString(data)
-        yield m
+            # Not enough data to read the full message, reset and wait
+            reader.seek(start_pos)
+            break  # Exit the loop to wait for more data
+
+        # Parse the message
+        msg = message_class()
+        msg.ParseFromString(data)
+        yield msg

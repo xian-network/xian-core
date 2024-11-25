@@ -194,10 +194,9 @@ async def query(self, req) -> ResponseQuery:
 
                 raw_tx = path_parts[1]
                 byte_data = bytes.fromhex(raw_tx)
-                # extract payload from the raw_tx
                 decoded_dict = json.loads(byte_data.decode('utf-8'))
                 payload = decoded_dict.get('payload', {})
-                payload_byte_data = bytes.fromhex(payload)
+                payload_byte_data = bytes.fromhex(json.dumps(payload).encode('utf-8').hex())
                 message_length = struct.pack('>I', len(payload_byte_data))
                 connection.sendall(message_length + payload_byte_data)
                 recv_length = connection.recv(4)
