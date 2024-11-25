@@ -83,6 +83,7 @@ def finalize_vote(proposal_id: int):
     cur_vote = votes[proposal_id]
 
     if cur_vote["type"] == "add_member":
+        assert pending_registrations[cur_vote["arg"]], "Member must have pending registration"
         nodes.set(nodes.get() + [cur_vote["arg"]])
     elif cur_vote["type"] == "remove_member":
         nodes.set([node for node in nodes.get() if node != cur_vote["arg"]])
