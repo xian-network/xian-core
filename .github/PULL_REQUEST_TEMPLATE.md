@@ -6,9 +6,11 @@ Please add a brief description of the feature / change / bug-fix you want to mer
 
 Please delete options that are not relevant.
 
+- [ ] Enhancement (simplifying, beautifying, better performance, etc.)
 - [ ] Bug fix (non-breaking change which fixes an issue)
 - [ ] New feature (non-breaking change which adds functionality)
-- [ ] Breaking change (fix or feature that would require a resync of blockchain state)
+- [ ] Breaking change (change that requires code adjustments in other places)
+- [ ] Fork needed (fix or feature that requires a resync of blockchain state)
 
 ## Checklist
 
