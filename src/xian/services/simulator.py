@@ -8,7 +8,6 @@ from loguru import logger
 from contracting.execution.executor import Executor
 from contracting.storage.encoder import safe_repr, convert_dict
 from contracting.storage.driver import Driver
-from contracting.stdlib.bridge.time import Datetime
 from datetime import datetime
 from xian.utils.tx import format_dictionary
 from xian.utils.encoding import stringify_decimals
@@ -65,6 +64,7 @@ class Simulator:
 
                         # Parse the JSON payload directly from bytes
                         payload = json.loads(data)
+                        logger.debug(f"Received payload: {payload}")
 
                         try:
                             response = self.execute(payload)
@@ -83,17 +83,17 @@ class Simulator:
                 connection.close()
 
     def generate_environment(self, num=1):
-        return {
-            'block_hash': self.generate_random_hex_string(),
+        random_hex_string = secrets.token_hex(nbytes=64 // 2)
+
+        env_json = {
+            'block_hash': random_hex_string,
             'block_num': num,
-            '__input_hash': self.generate_random_hex_string(),
+            '__input_hash': random_hex_string,
             'now': datetime.now(),
-            'AUXILIARY_SALT': self.generate_random_hex_string()
+            'AUXILIARY_SALT': random_hex_string
         }
 
-    def generate_random_hex_string(self, length=64):
-        # Generate a random number with `length//2` bytes and convert to hex
-        return secrets.token_hex(nbytes=length // 2)
+        return env_json
 
     def execute_tx(self, payload, stamp_cost, environment: dict = {}, executor=None):
 
@@ -123,6 +123,7 @@ class Simulator:
         }
 
         tx_output = stringify_decimals(format_dictionary(tx_output))
+        logger.debug(f'Result: {tx_output}')
 
         return tx_output
 
