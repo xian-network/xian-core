@@ -82,7 +82,7 @@ class Simulator:
                 logger.debug(f"Client disconnected")
                 connection.close()
 
-    def generate_environment(self, input_hash='0' * 64, bhash='0' * 64, num=1):
+    def generate_environment(self, num=1):
         return {
             'block_hash': self.generate_random_hex_string(),
             'block_num': num,
