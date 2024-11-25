@@ -83,14 +83,11 @@ class Simulator:
                 connection.close()
 
     def generate_environment(self, input_hash='0' * 64, bhash='0' * 64, num=1):
-        now = Datetime._from_datetime(
-            datetime.now()
-        )
         return {
             'block_hash': self.generate_random_hex_string(),
             'block_num': num,
             '__input_hash': self.generate_random_hex_string(),
-            'now': now,
+            'now': datetime.now(),
             'AUXILIARY_SALT': self.generate_random_hex_string()
         }
 
