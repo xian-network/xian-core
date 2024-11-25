@@ -1,250 +1,147 @@
-import base64
-import json
-import ast
-import re
-import asyncio
+from xian.constants import Constants
+from contracting.execution.executor import Executor
+from contracting.storage.encoder import safe_repr, convert_dict
+from contracting.storage.driver import Driver
+from contracting.stdlib.bridge.time import Datetime
+from datetime import datetime
+from xian.utils.tx import format_dictionary
+from xian.utils.encoding import stringify_decimals
+import secrets
 import socket
+import pathlib
+import json
 import struct
 
-from cometbft.abci.v1beta1.types_pb2 import ResponseQuery
-from xian.utils.encoding import encode_str
-from xian.constants import Constants as c
 
-from contracting.stdlib.bridge.decimal import ContractingDecimal
-from contracting.compilation import parser
-from contracting.compilation.linter import Linter
-from contracting.storage.encoder import Encoder
-from loguru import logger
-from pyflakes.api import check
-from pyflakes.reporter import Reporter
-from urllib.parse import unquote
-from io import StringIO
+class Simulator:
+    def __init__(self):
+        self.constants = Constants()
 
+    def setup_socket(self):
+        # If the socket file exists, remove it
+        simulator_socket = pathlib.Path(self.constants.SIMULATOR_SOCKET)
+        if simulator_socket.exists():
+            simulator_socket.unlink()
 
-async def query(self, req) -> ResponseQuery:
-    """
-    Query the application state
-    Request Ex. http://localhost:26657/abci_query?path="path"
-    (Yes you need to quote the path)
-    """
+        # Create a socket
+        self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.socket.bind(self.constants.SIMULATOR_SOCKET)
+        self.socket.listen(1)
 
-    logger.debug(req.path)
-    path_parts = [part for part in req.path.split("/") if part]
-    loop = asyncio.get_event_loop()
-    key = path_parts[1] if len(path_parts) > 1 else ""
-    result = None
-    try:
-        # http://localhost:26657/abci_query?path="/get/currency.balances:c93dee52d7dc6cc43af44007c3b1dae5b730ccf18a9e6fb43521f8e4064561e6"
-        if path_parts and path_parts[0] == "get":
-            result = self.client.raw_driver.get(path_parts[1])
-
-        # http://localhost:26657/abci_query?path="/health"
-        elif path_parts[0] == "health":
-            result = "OK"
-        # http://localhost:26657/abci_query?path="/get_next_nonce/ddd326fddb5d1677595311f298b744a4e9f415b577ac179a6afbf38483dc0791"
-        elif path_parts[0] == "get_next_nonce":
-            result = self.nonce_storage.get_next_nonce(path_parts[1])
-
-        # http://localhost:26657/abci_query?path="/contract/con_some_contract"
-        elif path_parts[0] == "contract":
-            result = self.client.raw_driver.get_contract(path_parts[1])
-
-        # http://localhost:26657/abci_query?path="/contract_methods/con_some_contract"
-        elif path_parts[0] == "contract_methods":
-            contract_code = self.client.raw_driver.get_contract(path_parts[1])
-            if contract_code is not None:
-                funcs = parser.methods_for_contract(contract_code)
-                result = {"methods": funcs}
-
-        # http://localhost:26657/abci_query?path="/contract_vars/con_some_contract"
-        elif path_parts[0] == "contract_vars":
-            contract_code = self.client.raw_driver.get_contract(path_parts[1])
-            if contract_code is not None:
-                result = parser.variables_for_contract(contract_code)
-
-        # http://localhost:26657/abci_query?path="/ping"
-        elif path_parts[0] == "ping":
-            result = {'status': 'online'}
-
-        # Blockchain Data Service
-        elif self.block_service_mode:
-            limit = 100
-            offset = 0
-
-            params = dict()
-            for path in path_parts:
-                if '=' in path:
-                    param_list = path.split('=')
-                    params[param_list[0]] = param_list[1]
-
-            if 'limit' in params:
-                try:
-                    limit = int(params['limit'])
-                    if limit < 0 or limit > 1000:  # Example range check
-                        limit = 100
-                except (ValueError, TypeError):
-                    limit = 100
-
-            if 'offset' in params:
-                try:
-                    offset = int(params['offset'])
-                    if offset < 0:
-                        offset = 0
-                except (ValueError, TypeError):
-                    offset = 0
-
-            # http://localhost:26657/abci_query?path="/keys/currency.balances"    
-            if path_parts[0] == "keys":
-                list_of_keys = self.client.raw_driver.keys(path_parts[1])
-                result = [key.split(":")[1] for key in list_of_keys]
-                key = path_parts[1]
-
-            # http://localhost:26657/abci_query?path="/state/currency.balances"
-            elif path_parts[0] == "state":
-                result = await self.bds.get_state(key, limit, offset)
-
-            # http://localhost:26657/abci_query?path="/state_history/currency.balances:ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9/limit=10/offset=20"
-            elif path_parts[0] == "state_history":
-                result = await self.bds.get_state_history(key, limit, offset)
-
-            # http://localhost:26657/abci_query?path="/state_for_tx/f39b4ea880088cfae45538acb2f7fdae1e70112185a5523d1027bcf74eac3919"
-            elif path_parts[0] == "state_for_tx":
-                result = await self.bds.get_state_for_tx(key)
-
-            # Block Height: http://localhost:26657/abci_query?path="/state_for_block/662"
-            # Block Hash: http://localhost:26657/abci_query?path="/state_for_block/34F1A1C923D23C5C0531490E714FC56F501EDADF05B6BF68C2ED3923234E0CC4"
-            elif path_parts[0] == "state_for_block":
-                result = await self.bds.get_state_for_block(key)
-
-            # http://localhost:26657/abci_query?path="/contracts/limit=10/offset=20"
-            elif path_parts[0] == "contracts":
-                result = await self.bds.get_contracts(limit, offset)
-
-            # http://localhost:26657/abci_query?path="/lint/<code>"
-            elif path_parts[0] == "lint":
-                try:
-                    code = base64.b64decode(path_parts[1]).decode("utf-8")
-                    code = unquote(code)
-
-                    # Pyflakes linting
-                    stdout = StringIO()
-                    stderr = StringIO()
-                    reporter = Reporter(stdout, stderr)
-                    await loop.run_in_executor(None, check, code, "<string>", reporter)
-                    stdout_output = stdout.getvalue()
-                    stderr_output = stderr.getvalue()
-
-                    # Contracting linting
+    def listen(self):
+        print('Listening...')
+        while True:
+            connection, client_address = self.socket.accept()
+            print("Client connected")
+            try:
+                while True:
                     try:
-                        linter = Linter()
-                        tree = await loop.run_in_executor(None, ast.parse, code)
-                        violations = await loop.run_in_executor(None, linter.check, tree)
-                        formatted_new_linter_output = ""
-                        # Transform new linter output to match pyflakes format
-                        if violations:
-                            for violation in violations:
-                                line = int(re.search(r"Line (\d+):", violation).group(1))
-                                message = re.search(r"Line \d+: (.+)", violation).group(1)
-                                formatted_violation_output = f"<string>:{line}:0: {message}\n"
-                                formatted_new_linter_output += formatted_violation_output
-                    except:
-                        formatted_new_linter_output = ""
+                        # Read message length (4 bytes)
+                        raw_msglen = connection.recv(4)
+                        if not raw_msglen:
+                            break
+                        if len(raw_msglen) < 4:
+                            # Handle incomplete length prefix
+                            raise ValueError("Incomplete length prefix received")
+                        msglen = struct.unpack('>I', raw_msglen)[0]
 
-                    # Combine stderr output
-                    combined_stderr_output = f"{stderr_output}{formatted_new_linter_output}"
+                        # Read the message data
+                        data = b''
+                        while len(data) < msglen:
+                            packet = connection.recv(msglen - len(data))
+                            if not packet:
+                                # No more data from client, client closed connection
+                                print("Client disconnected")
+                                break
+                            data += packet
 
-                    result = {"stdout": stdout_output, "stderr": combined_stderr_output}
-                except:
-                    result = {"stdout": "", "stderr": ""}
+                        if not data:
+                            print("Client disconnected")
+                            break
 
-            # http://localhost:26657/abci_query?path="/simulate_tx/<encoded_payload>"
-            elif path_parts[0] == "simulate_tx":
-                connection = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-                connection.connect(c.SIMULATOR_SOCKET)
+                        # Parse the JSON payload directly from bytes
+                        payload = json.loads(data)
 
-                raw_tx = path_parts[1]
-                byte_data = bytes.fromhex(raw_tx)
-                message_length = struct.pack('>I', len(byte_data))
-                connection.sendall(message_length + byte_data)
-                recv_length = connection.recv(4)
+                        try:
+                            response = self.execute(payload)
+                            response = json.dumps(response)
+                            response = response.encode()
+                            message_length = struct.pack('>I', len(response))
+                            connection.sendall(message_length + response)
+                        except BrokenPipeError:
+                            print("Cannot send data, broken pipe.")
+                            break
+                    except ConnectionResetError:
+                        print("Client disconnected")
+                        break
+            finally:
+                print("Client disconnected")
+                connection.close()
 
-                if len(recv_length) < 4:
-                    # Handle error or incomplete length prefix
-                    raise ValueError("Incomplete length prefix received")
-                else:
-                    length = struct.unpack('>I', recv_length)[0]
-                    recv = b''
-                    while len(recv) < length:
-                        packet = connection.recv(length - len(recv))
-                        if not packet:
-                            # Connection closed or error
-                            raise ConnectionError("Connection closed before receiving all data")
-                        recv += packet
-                    if len(recv) == length:
-                        result = recv.decode('utf-8')
-                    else:
-                        # Handle incomplete data error
-                        raise ValueError("Did not receive all expected data")
+    def generate_environment(self, input_hash='0' * 64, bhash='0' * 64, num=1):
+        now = Datetime._from_datetime(
+            datetime.now()
+        )
+        return {
+            'block_hash': self.generate_random_hex_string(),
+            'block_num': num,
+            '__input_hash': self.generate_random_hex_string(),
+            'now': now,
+            'AUXILIARY_SALT': self.generate_random_hex_string()
+        }
 
-            # TODO: Deprecated - Remove after wallet and tools are reworked to use 'simulate_tx'
-            # http://localhost:26657/abci_query?path="/calculate_stamps/<encoded_payload>"
-            elif path_parts[0] == "calculate_stamps":
-                connection = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-                connection.connect(c.SIMULATOR_SOCKET)
+    def generate_random_hex_string(self, length=64):
+        # Generate a random number with `length//2` bytes and convert to hex
+        return secrets.token_hex(nbytes=length // 2)
 
-                raw_tx = path_parts[1]
-                byte_data = bytes.fromhex(raw_tx)
-                decoded_dict = json.loads(byte_data.decode('utf-8'))
-                payload = decoded_dict.get('payload', {})
-                payload_byte_data = bytes.fromhex(json.dumps(payload).encode('utf-8').hex())
-                message_length = struct.pack('>I', len(payload_byte_data))
-                connection.sendall(message_length + payload_byte_data)
-                recv_length = connection.recv(4)
+    def execute_tx(self, payload, stamp_cost, environment: dict = {}, executor=None):
 
-                if len(recv_length) < 4:
-                    # Handle error or incomplete length prefix
-                    raise ValueError("Incomplete length prefix received")
-                else:
-                    length = struct.unpack('>I', recv_length)[0]
-                    recv = b''
-                    while len(recv) < length:
-                        packet = connection.recv(length - len(recv))
-                        if not packet:
-                            # Connection closed or error
-                            raise ConnectionError("Connection closed before receiving all data")
-                        recv += packet
-                    if len(recv) == length:
-                        result = recv.decode('utf-8')
-                    else:
-                        # Handle incomplete data error
-                        raise ValueError("Did not receive all expected data")
+        balance = 9999999
+        output = executor.execute(
+            sender=payload['sender'],
+            contract_name=payload['contract'],
+            function_name=payload['function'],
+            stamps=balance * stamp_cost,
+            stamp_cost=stamp_cost,
+            kwargs=convert_dict(payload['kwargs']),
+            environment=environment,
+            auto_commit=False,
+            metering=True
+        )
 
-        else:
-            error = f'Unknown query path: {path_parts[0]}'
-            logger.error(error)
-            return ResponseQuery(code=c.ErrorCode, value=b"\x00", info=None, log=error)
+        executor.driver.flush_cache()
 
-        if result is None:
-            v = None
-            type_of_data = None
-        elif isinstance(result, str):
-            v = encode_str(result)
-            type_of_data = "str"
-        elif isinstance(result, int):
-            v = encode_str(str(result))
-            type_of_data = "int"
-        elif isinstance(result, float) or isinstance(result, ContractingDecimal):
-            v = encode_str(str(result))
-            type_of_data = "decimal"
-        elif isinstance(result, dict) or isinstance(result, list):
-            v = encode_str(json.dumps(result, cls=Encoder))
-            type_of_data = "str"
-        else:
-            v = encode_str(str(result))
-            type_of_data = "str"
+        writes = [{'key': k, 'value': v} for k, v in output['writes'].items()]
 
-    except Exception as err:
-        logger.error(err)
-        return ResponseQuery(code=c.ErrorCode)
+        tx_output = {
+            'payload': payload,
+            'status': output['status_code'],
+            'state': writes,
+            'stamps_used': output['stamps_used'],
+            'result': safe_repr(output['result'])
+        }
 
-    return ResponseQuery(code=c.OkCode, value=v, info=type_of_data, key=encode_str(key))
+        tx_output = stringify_decimals(format_dictionary(tx_output))
+
+        return tx_output
+
+    def execute(self, payload):
+        driver = Driver(storage_home=self.constants.STORAGE_HOME)
+        executor = Executor(metering=False, bypass_balance_amount=True, bypass_cache=True, driver=driver)
+        environment = self.generate_environment()
+        try:
+            stamp_cost = int(executor.driver.get_var(contract='stamp_cost', variable='S', arguments=['value']))
+        except:
+            stamp_cost = 20
+        return self.execute_tx(
+            payload=payload,
+            environment=environment,
+            stamp_cost=stamp_cost,
+            executor=executor
+        )
+
+
+if __name__ == '__main__':
+    sc = Simulator()
+    sc.setup_socket()
+    sc.listen()
