@@ -1,4 +1,9 @@
-from xian.constants import Constants
+import secrets
+import socket
+import pathlib
+import json
+import struct
+
 from contracting.execution.executor import Executor
 from contracting.storage.encoder import safe_repr, convert_dict
 from contracting.storage.driver import Driver
@@ -6,26 +11,19 @@ from contracting.stdlib.bridge.time import Datetime
 from datetime import datetime
 from xian.utils.tx import format_dictionary
 from xian.utils.encoding import stringify_decimals
-import secrets
-import socket
-import pathlib
-import json
-import struct
+from xian.constants import Constants as c
 
 
 class Simulator:
-    def __init__(self):
-        self.constants = Constants()
-
     def setup_socket(self):
         # If the socket file exists, remove it
-        simulator_socket = pathlib.Path(self.constants.SIMULATOR_SOCKET)
+        simulator_socket = pathlib.Path(c.SIMULATOR_SOCKET)
         if simulator_socket.exists():
             simulator_socket.unlink()
 
         # Create a socket
         self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        self.socket.bind(self.constants.SIMULATOR_SOCKET)
+        self.socket.bind(c.SIMULATOR_SOCKET)
         self.socket.listen(1)
 
     def listen(self):
@@ -126,7 +124,7 @@ class Simulator:
         return tx_output
 
     def execute(self, payload):
-        driver = Driver(storage_home=self.constants.STORAGE_HOME)
+        driver = Driver(storage_home=c.STORAGE_HOME)
         executor = Executor(metering=False, bypass_balance_amount=True, bypass_cache=True, driver=driver)
         environment = self.generate_environment()
         try:
