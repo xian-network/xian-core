@@ -4,6 +4,7 @@ import pathlib
 import json
 import struct
 
+from loguru import logger
 from contracting.execution.executor import Executor
 from contracting.storage.encoder import safe_repr, convert_dict
 from contracting.storage.driver import Driver
@@ -15,9 +16,11 @@ from xian.constants import Constants as c
 
 
 class Simulator:
-    def setup_socket(self):
-        # If the socket file exists, remove it
+    def __init__(self):
         simulator_socket = pathlib.Path(c.SIMULATOR_SOCKET)
+        logger.debug(f"Using socket file: {simulator_socket}")
+
+        # If the socket file exists, remove it
         if simulator_socket.exists():
             simulator_socket.unlink()
 
@@ -27,10 +30,12 @@ class Simulator:
         self.socket.listen(1)
 
     def listen(self):
-        print('Listening...')
+        logger.debug("Listening...")
+
         while True:
             connection, client_address = self.socket.accept()
-            print("Client connected")
+            logger.debug("Client connected")
+
             try:
                 while True:
                     try:
@@ -45,16 +50,17 @@ class Simulator:
 
                         # Read the message data
                         data = b''
+
                         while len(data) < msglen:
                             packet = connection.recv(msglen - len(data))
                             if not packet:
                                 # No more data from client, client closed connection
-                                print("Client disconnected")
+                                logger.debug(f"Client disconnected")
                                 break
                             data += packet
 
                         if not data:
-                            print("Client disconnected")
+                            logger.debug(f"Client disconnected")
                             break
 
                         # Parse the JSON payload directly from bytes
@@ -67,13 +73,13 @@ class Simulator:
                             message_length = struct.pack('>I', len(response))
                             connection.sendall(message_length + response)
                         except BrokenPipeError:
-                            print("Cannot send data, broken pipe.")
+                            logger.error(f"Cannot send data, broken pipe.")
                             break
                     except ConnectionResetError:
-                        print("Client disconnected")
+                        logger.debug(f"Client disconnected")
                         break
             finally:
-                print("Client disconnected")
+                logger.debug(f"Client disconnected")
                 connection.close()
 
     def generate_environment(self, input_hash='0' * 64, bhash='0' * 64, num=1):
@@ -140,6 +146,4 @@ class Simulator:
 
 
 if __name__ == '__main__':
-    sc = Simulator()
-    sc.setup_socket()
-    sc.listen()
+    Simulator().listen()
