@@ -378,6 +378,62 @@ class MyTestCase(unittest.TestCase):
         )
         return [vote, vote2, vote3, vote4, vote5]
 
+    def vote_in_and_unregister(self):
+        block_meta = create_block_meta(datetime.now())
+        vote = self.tx_processor.process_tx(
+            tx={
+                "payload": {
+                    "sender": node_1,
+                    "contract": "masternodes",
+                    "function": "propose_vote",
+                    "kwargs": {"type_of_vote": "add_member", "arg": "new_node"},
+                    "stamps_supplied": 1000,
+                },
+                "metadata": {"signature": "abc"},
+                "b_meta": block_meta,
+            }
+        )
+        self.unregister()
+        vote2 = self.tx_processor.process_tx(
+            tx={
+                "payload": {
+                    "sender": node_2,
+                    "contract": "masternodes",
+                    "function": "vote",
+                    "kwargs": {"proposal_id": 1, "vote": "yes"},
+                    "stamps_supplied": 1000,
+                },
+                "metadata": {"signature": "abc"},
+                "b_meta": block_meta,
+            }
+        )
+        vote3 = self.tx_processor.process_tx(
+            tx={
+                "payload": {
+                    "sender": node_3,
+                    "contract": "masternodes",
+                    "function": "vote",
+                    "kwargs": {"proposal_id": 1, "vote": "yes"},
+                    "stamps_supplied": 1000,
+                },
+                "metadata": {"signature": "abc"},
+                "b_meta": block_meta,
+            }
+        )
+        vote4 = self.tx_processor.process_tx(
+            tx={
+                "payload": {
+                    "sender": node_4,
+                    "contract": "masternodes",
+                    "function": "vote",
+                    "kwargs": {"proposal_id": 1, "vote": "yes"},
+                    "stamps_supplied": 1000,
+                },
+                "metadata": {"signature": "abc"},
+                "b_meta": block_meta,
+            }
+        )
+
     def vote_stamp_cost(self):
         block_meta = create_block_meta(datetime.now())
         vote = self.tx_processor.process_tx(
@@ -720,6 +776,26 @@ class MyTestCase(unittest.TestCase):
             self.masternodes.pending_registrations["new_node"], False
         )
         self.assertEqual(self.currency.balances["new_node"], 1000000)
+
+    def test_register_propose_unregister_and_validate(self):
+        self.register()
+        self.assertEqual(
+            self.masternodes.pending_registrations["new_node"], True
+        )
+        self.assertEqual(self.currency.balances["new_node"], 900000)
+
+        self.vote_in_and_unregister()
+
+        self.assertEqual(
+            self.masternodes.pending_registrations["new_node"], False
+        )
+        self.assertEqual(self.currency.balances["new_node"], 1000000)
+
+        nodes = self.masternodes.nodes.get()
+        self.assertNotIn(
+            "new_node", nodes,
+            "The node should not be in the list of validators after unregistering."
+        )
 
     def test_vote_in_node(self):
         self.register()
