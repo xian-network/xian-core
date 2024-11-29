@@ -433,6 +433,7 @@ class MyTestCase(unittest.TestCase):
                 "b_meta": block_meta,
             }
         )
+        return [vote, vote2, vote3, vote4]
 
     def vote_stamp_cost(self):
         block_meta = create_block_meta(datetime.now())
@@ -784,7 +785,9 @@ class MyTestCase(unittest.TestCase):
         )
         self.assertEqual(self.currency.balances["new_node"], 900000)
 
-        self.vote_in_and_unregister()
+        res = self.vote_in_and_unregister()
+        
+        assert res[3].get('tx_result').get('result') == "AssertionError('Member must have pending registration')"
 
         self.assertEqual(
             self.masternodes.pending_registrations["new_node"], False
