@@ -54,7 +54,7 @@ node_5 = "db21a73137672f075f9a8ee142a1aa4839a5deb28ef03a10f3e7e16c87db8f24"
 from datetime import datetime, timedelta
 import time
 
-def create_block_meta(dt: datetime):
+def create_block_meta(dt: datetime = datetime.now()):
     # Get the current time in nanoseconds
     nanos = int(time.mktime(dt.timetuple()) * 1e9 + dt.microsecond * 1e3)
     # Mock b_meta dictionary with current nanoseconds
