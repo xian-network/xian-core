@@ -25,14 +25,25 @@ def create_block_meta(dt: datetime = datetime.now()):
 class TestProcessor(unittest.TestCase):
     def setUp(self):
         # Called before every test, bootstraps the environment.
-        self.c = ContractingClient(storage_home=TestConstants.STORAGE_HOME)
-        self.tx_processor = TxProcessor(client=self.c)
-        # Hard load the submission contract
+        self.c = ContractingClient()
         self.d = self.c.raw_driver
         self.c.flush()
+        self.tx_processor = TxProcessor(client=self.c)
+        # Hard load the submission contract
+        self.script_dir = os.path.dirname(os.path.abspath(__file__))
+        
+        submission_contract_path = os.path.abspath(
+            os.path.join(
+                self.script_dir,
+                "../../xian-contracting/src/contracting/contracts/submission.s.py",
+            )
+        )
+        
+        with open(submission_contract_path) as f:
+            code = f.read()
+        self.d.set_contract(name="submission", code=code)
 
         # Get the directory where the script is located
-        self.script_dir = os.path.dirname(os.path.abspath(__file__))
 
         token_path = os.path.abspath(
             os.path.join(
@@ -66,6 +77,10 @@ class TestProcessor(unittest.TestCase):
         # Setup - approve first
         self.d.set(
             key="currency.balances:sys:bob",
+            value=100000,
+        )
+        self.d.set(
+            key="currency.balances:sys",
             value=100000,
         )
         # Now transfer
@@ -103,7 +118,16 @@ class TestProcessor(unittest.TestCase):
             key="currency.balances:proxy",
             value=100000,
         )
+        self.d.set(
+            key="currency.balances:sys",
+            value=100000,
+        )
+        self.d.set(
+            key="currency.balances:bob",
+            value=100000,
+        )
         res = self.tx_processor.process_tx(
+            enabled_fees=True,
             tx={
                 "payload": {
                     "contract": "proxy",
@@ -119,7 +143,6 @@ class TestProcessor(unittest.TestCase):
                 "b_meta": create_block_meta(),
             }
         )
-
         expected_events = [
             {
                 "caller": "proxy",
@@ -164,22 +187,6 @@ class TestProcessor(unittest.TestCase):
         ]
         self.assertEqual(res["tx_result"]["events"], expected_events)
         
-        
-    def test_override_driver(self):
-        
-        driver_override_contract_path = os.path.abspath(
-            os.path.join(
-                self.script_dir,
-                "./contracts/access_driver.py",
-            )
-        )
-        with open(driver_override_contract_path) as f:
-            code = f.read()
-            self.c.submit(code, name="driver_override")
-
-        driver_override_contract = self.c.get_contract("driver_override")
-        driver_override_contract.set_value(key="test", value="test")
-        # breakpoint()
         
 
 
