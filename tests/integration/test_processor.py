@@ -4,8 +4,9 @@ from contracting.client import ContractingClient
 from contracting.storage.driver import Driver
 from contracting.execution.executor import Executor
 from xian.processor import TxProcessor
-from fixtures.test_constants import TestConstants
+from fixtures.mock_constants import MockConstants
 from datetime import datetime
+from utils import setup_fixtures, teardown_fixtures
 import time
 import os
 
@@ -24,24 +25,25 @@ def create_block_meta(dt: datetime = datetime.now()):
 
 class TestProcessor(unittest.TestCase):
     def setUp(self):
+        setup_fixtures()
         # Called before every test, bootstraps the environment.
-        self.c = ContractingClient()
+        self.c = ContractingClient(storage_home=MockConstants.STORAGE_HOME)
         self.d = self.c.raw_driver
-        self.c.flush()
+        # self.c.flush()
         self.tx_processor = TxProcessor(client=self.c)
         # Hard load the submission contract
         self.script_dir = os.path.dirname(os.path.abspath(__file__))
         
-        submission_contract_path = os.path.abspath(
-            os.path.join(
-                self.script_dir,
-                "../../xian-contracting/src/contracting/contracts/submission.s.py",
-            )
-        )
+        # submission_contract_path = os.path.abspath(
+        #     os.path.join(
+        #         self.script_dir,
+        #         "../../xian-contracting/src/contracting/contracts/submission.s.py",
+        #     )
+        # )
         
-        with open(submission_contract_path) as f:
-            code = f.read()
-        self.d.set_contract(name="submission", code=code)
+        # with open(submission_contract_path) as f:
+        #     code = f.read()
+        # self.d.set_contract(name="submission", code=code)
 
         # Get the directory where the script is located
 
@@ -70,8 +72,9 @@ class TestProcessor(unittest.TestCase):
         self.proxy = self.c.get_contract("proxy")
 
     def tearDown(self):
+        teardown_fixtures()
         # Called after every test, ensures each test starts with a clean slate and is isolated from others
-        self.c.flush()
+        # self.c.flush()
 
     def test_transfer_returns_event(self):
         # Setup - approve first

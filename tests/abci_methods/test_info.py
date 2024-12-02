@@ -7,7 +7,7 @@ import asyncio
 from xian.xian_abci import Xian
 from abci.server import ProtocolHandler
 from abci.utils import read_messages
-from fixtures.test_constants import TestConstants
+from fixtures.mock_constants import MockConstants
 
 from cometbft.abci.v1beta3.types_pb2 import (
     Request,
@@ -20,7 +20,7 @@ from cometbft.abci.v1beta2.types_pb2 import (
 
 from cometbft.abci.v1beta1.types_pb2 import ResponseInfo, RequestCommit
 
-
+from utils import setup_fixtures, teardown_fixtures
 
 # Disable any kind of logging
 logging.disable(logging.CRITICAL)
@@ -36,10 +36,14 @@ async def deserialize(raw: bytes) -> Response:
 class TestInfo(unittest.IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self):
-        self.app = await Xian.create(constants=TestConstants)
+        setup_fixtures()
+        self.app = await Xian.create(constants=MockConstants)
         self.app.current_block_meta = {"height": 0, "nanos": 0}
         self.handler = ProtocolHandler(self.app)
         self.app.merkle_root_hash = b''
+        
+    async def asyncTearDown(self):
+        teardown_fixtures()
 
     async def process_request(self, request_type, req):
         raw = await self.handler.process(request_type, req)

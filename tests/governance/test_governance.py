@@ -11,7 +11,8 @@ import os
 import sys
 from loguru import logger
 from contracting.stdlib.bridge.time import Datetime
-from fixtures.test_constants import TestConstants
+from fixtures.mock_constants import MockConstants
+from utils import setup_fixtures, teardown_fixtures
 
 # Get the directory where the script is located
 script_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
@@ -69,7 +70,8 @@ def create_block_meta(dt: datetime = datetime.now()):
 class MyTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.c = ContractingClient(storage_home=TestConstants.STORAGE_HOME)
+        setup_fixtures()
+        self.c = ContractingClient(storage_home=MockConstants.STORAGE_HOME)
         self.tx_processor = TxProcessor(client=self.c)
         # Hard load the submission contract
         self.d = self.c.raw_driver
@@ -204,6 +206,7 @@ class MyTestCase(unittest.TestCase):
         self.masternodes = self.c.get_contract("masternodes")
 
     def tearDown(self):
+        teardown_fixtures()
         self.d.flush_full()
 
     def register(self):
