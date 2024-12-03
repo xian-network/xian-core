@@ -1,8 +1,5 @@
 import unittest
-from contracting.stdlib.bridge.time import Datetime
 from contracting.client import ContractingClient
-from contracting.storage.driver import Driver
-from contracting.execution.executor import Executor
 from xian.processor import TxProcessor
 from fixtures.mock_constants import MockConstants
 from datetime import datetime
@@ -27,7 +24,7 @@ class TestProcessor(unittest.TestCase):
     def setUp(self):
         setup_fixtures()
         # Called before every test, bootstraps the environment.
-        self.c = ContractingClient(storage_home=MockConstants.STORAGE_HOME)
+        self.c = ContractingClient()
         self.d = self.c.raw_driver
         # self.c.flush()
         self.tx_processor = TxProcessor(client=self.c)
@@ -53,7 +50,7 @@ class TestProcessor(unittest.TestCase):
                 "./contracts/token_contract.py",
             )
         )
-        with open(token_path) as f:
+        with open("./contracts/token_contract.py") as f:
             code = f.read()
             self.c.submit(code, name="currency")
 
@@ -65,7 +62,7 @@ class TestProcessor(unittest.TestCase):
                 "./contracts/proxy.py",
             )
         )
-        with open(proxy_path) as f:
+        with open("./contracts/proxy.py") as f:
             code = f.read()
             self.c.submit(code, name="proxy")
 
@@ -188,6 +185,7 @@ class TestProcessor(unittest.TestCase):
                 "signer": "bob",
             },
         ]
+
         self.assertEqual(res["tx_result"]["events"], expected_events)
         
         

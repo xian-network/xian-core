@@ -123,6 +123,7 @@ class BDS:
             await self.db.execute(sql.create_addresses())
             await self.db.execute(sql.create_readonly_role())
             await self.db.execute(sql.create_state())
+            await self.db.execute(sql.create_events())
             await self.db.execute(sql.enforce_table_limits())
         except Exception as e:
             logger.exception(e)
@@ -135,6 +136,7 @@ class BDS:
         await self._insert_rewards(tx, block_time)
         await self._insert_addresses(tx, block_time)
         await self._insert_contracts(tx, block_time)
+        await self._insert_events(tx, block_time)
 
     async def commit_batch(self):
         if len(self.db.batch) == 0: return
@@ -240,6 +242,19 @@ class BDS:
                         ])
                     except Exception as e:
                         logger.exception(e)
+                        
+    # async def _insert_events(self, tx: dict, block_time: datetime):
+    #     for event in tx['tx_result']['events']:
+    #         try:
+    #             self.db.add_query_to_batch(sql.insert_events(), [
+    #                 tx['payload']['contract'],
+    #                 event['event'],
+    #                 event['data_indexed'],
+    #                 event['attributes'][0]['value'],
+    #                 block_time
+    #             ])
+    #         except Exception as e:
+    #             logger.exception(e)
 
     async def _insert_contracts(self, tx: dict, block_time: datetime):
         # Only save contracts if tx was successful
