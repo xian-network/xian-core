@@ -243,18 +243,21 @@ class BDS:
                     except Exception as e:
                         logger.exception(e)
                         
-    # async def _insert_events(self, tx: dict, block_time: datetime):
-    #     for event in tx['tx_result']['events']:
-    #         try:
-    #             self.db.add_query_to_batch(sql.insert_events(), [
-    #                 tx['payload']['contract'],
-    #                 event['event'],
-    #                 event['data_indexed'],
-    #                 event['attributes'][0]['value'],
-    #                 block_time
-    #             ])
-    #         except Exception as e:
-    #             logger.exception(e)
+    async def _insert_events(self, tx: dict, block_time: datetime):
+        for event in tx['tx_result']['events']:
+            try:
+                self.db.add_query_to_batch(sql.insert_events(), [
+                    tx['payload']['contract'],  # Contract name
+                    event['event'],             # Event name
+                    event['signer'],    # Signer of the event
+                    event['caller'],    # Caller of the event
+                    json.dumps(event['data_indexed']),  # Serialize indexed data
+                    json.dumps(event['data']),          # Serialize non-indexed data
+                    tx['tx_result']['hash'],                
+                    block_time                  # Created timestamp
+                ])
+            except Exception as e:
+                logger.exception(e)
 
     async def _insert_contracts(self, tx: dict, block_time: datetime):
         # Only save contracts if tx was successful
