@@ -28,6 +28,30 @@ def create_state_changes():
         created TIMESTAMP NOT NULL
     )
     """
+    
+    
+def create_events():
+    return """
+    CREATE TABLE events (
+        id SERIAL PRIMARY KEY, -- Unique identifier for each event
+        contract VARCHAR(255) NOT NULL, -- Contract name
+        event VARCHAR(255) NOT NULL, -- Event name
+        signer VARCHAR(255) NOT NULL, -- Signer of the event
+        caller VARCHAR(255) NOT NULL, -- Caller of the event
+        data_indexed JSONB NOT NULL, -- Indexed data stored as JSON
+        data JSONB NOT NULL, -- Non-indexed data stored as JSON
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- Timestamp of event creation
+    );
+
+    -- Add a GIN index on the data_indexed column
+    CREATE INDEX idx_data_indexed ON events USING GIN (data_indexed);
+
+    -- Add indexes on contract, signer, and caller columns
+    CREATE INDEX idx_contract ON events (contract);
+    CREATE INDEX idx_signer ON events (signer);
+    CREATE INDEX idx_caller ON events (caller);
+"""
+
 
 
 def create_state():
@@ -131,6 +155,15 @@ def insert_transaction():
     VALUES (
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
     ON CONFLICT (hash) DO NOTHING;
+    """
+    
+def insert_events():
+    return """
+    INSERT INTO events(
+        contract, event, signer, caller, data_indexed, data, created_at)
+    VALUES (
+        $1, $2, $3, $4, $5, $6, $7)
+    ON CONFLICT (id) DO NOTHING;
     """
 
 def insert_or_update_state():
