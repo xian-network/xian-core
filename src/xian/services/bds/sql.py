@@ -28,7 +28,22 @@ def create_state_changes():
         created TIMESTAMP NOT NULL
     )
     """
-    
+
+# event = [
+#     {
+#         "caller": "e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931",
+#         "contract": "con_event_token",
+#         "data": {
+#             "amount": 10
+#         },
+#         "data_indexed": {
+#             "from": "e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931",
+#             "to": "burn"
+#         },
+#         "event": "Transfer",
+#         "signer": "e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931"
+#     }
+# ]
     
 def create_events():
     return """
@@ -40,7 +55,8 @@ def create_events():
         caller VARCHAR(255) NOT NULL, -- Caller of the event
         data_indexed JSONB NOT NULL, -- Indexed data stored as JSON
         data JSONB NOT NULL, -- Non-indexed data stored as JSON
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- Timestamp of event creation
+        tx_hash TEXT REFERENCES transactions(hash),
+        created TIMESTAMP NOT NULL
     );
 
     -- Add a GIN index on the data_indexed column
@@ -160,9 +176,9 @@ def insert_transaction():
 def insert_events():
     return """
     INSERT INTO events(
-        contract, event, signer, caller, data_indexed, data, created_at)
+        contract, event, signer, caller, data_indexed, data, tx_hash, created)
     VALUES (
-        $1, $2, $3, $4, $5, $6, $7)
+        $1, $2, $3, $4, $5, $6, $7, $8)
     ON CONFLICT (id) DO NOTHING;
     """
 
