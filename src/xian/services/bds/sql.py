@@ -66,6 +66,15 @@ def create_events():
     CREATE INDEX idx_contract ON events (contract);
     CREATE INDEX idx_signer ON events (signer);
     CREATE INDEX idx_caller ON events (caller);
+    
+   CREATE OR REPLACE FUNCTION public.filter_events_by_data_indexed(key TEXT, value TEXT)
+   RETURNS SETOF events AS $$
+   BEGIN
+     RETURN QUERY
+     SELECT * FROM events
+     WHERE data_indexed ->> key = value;
+   END;
+   $$ LANGUAGE plpgsql STABLE;
 """
 
 
