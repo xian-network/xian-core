@@ -1,7 +1,7 @@
 from pathlib import Path
 from xian.constants import Constants
 
-class TestConstants(Constants):
+class MockConstants(Constants):
     COMETBFT_HOME = Path.home() / Path('/tmp/cometbft/')
     COMETBFT_CONFIG = COMETBFT_HOME / Path("config/config.toml")
     COMETBFT_GENESIS = COMETBFT_HOME / Path("config/genesis.json")

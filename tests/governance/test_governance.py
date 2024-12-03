@@ -11,7 +11,8 @@ import os
 import sys
 from loguru import logger
 from contracting.stdlib.bridge.time import Datetime
-from fixtures.test_constants import TestConstants
+from fixtures.mock_constants import MockConstants
+from utils import setup_fixtures, teardown_fixtures
 
 # Get the directory where the script is located
 script_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
@@ -54,7 +55,7 @@ node_5 = "db21a73137672f075f9a8ee142a1aa4839a5deb28ef03a10f3e7e16c87db8f24"
 from datetime import datetime, timedelta
 import time
 
-def create_block_meta(dt: datetime):
+def create_block_meta(dt: datetime = datetime.now()):
     # Get the current time in nanoseconds
     nanos = int(time.mktime(dt.timetuple()) * 1e9 + dt.microsecond * 1e3)
     # Mock b_meta dictionary with current nanoseconds
@@ -69,7 +70,8 @@ def create_block_meta(dt: datetime):
 class MyTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.c = ContractingClient(storage_home=TestConstants.STORAGE_HOME)
+        setup_fixtures()
+        self.c = ContractingClient(storage_home=MockConstants.STORAGE_HOME)
         self.tx_processor = TxProcessor(client=self.c)
         # Hard load the submission contract
         self.d = self.c.raw_driver
@@ -204,6 +206,7 @@ class MyTestCase(unittest.TestCase):
         self.masternodes = self.c.get_contract("masternodes")
 
     def tearDown(self):
+        teardown_fixtures()
         self.d.flush_full()
 
     def register(self):
@@ -433,6 +436,7 @@ class MyTestCase(unittest.TestCase):
                 "b_meta": block_meta,
             }
         )
+        return [vote, vote2, vote3, vote4]
 
     def vote_stamp_cost(self):
         block_meta = create_block_meta(datetime.now())
@@ -784,7 +788,9 @@ class MyTestCase(unittest.TestCase):
         )
         self.assertEqual(self.currency.balances["new_node"], 900000)
 
-        self.vote_in_and_unregister()
+        res = self.vote_in_and_unregister()
+        
+        assert res[3].get('tx_result').get('result') == "AssertionError('Member must have pending registration')"
 
         self.assertEqual(
             self.masternodes.pending_registrations["new_node"], False
