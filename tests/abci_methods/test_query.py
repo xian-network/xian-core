@@ -7,7 +7,7 @@ from xian.constants import Constants
 from xian.xian_abci import Xian
 from abci.server import ProtocolHandler
 from abci.utils import read_messages
-from fixtures.test_constants import TestConstants
+from fixtures.mock_constants import MockConstants
 
 from cometbft.abci.v1beta3.types_pb2 import (
     Request,
@@ -18,6 +18,7 @@ from cometbft.abci.v1beta1.types_pb2 import (
     ResponseQuery,
 )
 import json
+from utils import setup_fixtures, teardown_fixtures
 
 
 # Disable any kind of logging
@@ -35,9 +36,11 @@ async def deserialize(raw: bytes) -> Response:
 class TestInfo(unittest.IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self):
-        self.app = await Xian.create(constants=TestConstants)
+        setup_fixtures()
+        self.app = await Xian.create(constants=MockConstants)
         self.app.current_block_meta = {"height": 0, "nanos": 0, "chain_id": "test_chain"}
         self.app.client.raw_driver.set_contract("currency", '''balances = Hash(default_value=0)
+                                                
 
     
 @construct
@@ -93,6 +96,9 @@ def transfer_from(amount: float, to: str, main_account: str):
         
         self.app.client.raw_driver.set("currency.balances:c93dee52d7dc6cc43af44007c3b1dae5b730ccf18a9e6fb43521f8e4064561e6", 123.45)
         self.handler = ProtocolHandler(self.app)
+
+    async def asyncTearDown(self):
+        teardown_fixtures()
 
     async def process_request(self, request_type, req):
         raw = await self.handler.process(request_type, req)

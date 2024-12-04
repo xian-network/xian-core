@@ -1,5 +1,6 @@
 from pathlib import Path
 import shutil
+import os
     
 def setup_cometbft_tmp():
     # Copy the contents of the fixture folder to the temporary directory.
@@ -19,3 +20,25 @@ def teardown_cometbft_tmp():
     cometbft_tmp_ = Path('/tmp/cometbft/')
     if cometbft_tmp_.exists() and cometbft_tmp_.is_dir():
         shutil.rmtree(cometbft_tmp_)
+
+def setup_fixtures():
+    # Set the working directory to the directory containing this file
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    # Ensure the fixtures directory exists
+    fixtures_dir = Path("./fixtures/.cometbft-fixture")
+    if not fixtures_dir.exists():
+        raise FileNotFoundError(f"Fixture directory {fixtures_dir} does not exist.")
+    
+    # Ensure the temporary directory is set up
+    cometbft_tmp_dir = Path("/tmp/cometbft/")
+    if cometbft_tmp_dir.exists():
+        shutil.rmtree(cometbft_tmp_dir)
+    shutil.copytree(fixtures_dir, cometbft_tmp_dir)
+    
+    
+    # Cleanup after tests
+
+def teardown_fixtures():
+    cometbft_tmp_dir = Path("/tmp/cometbft/")
+    if cometbft_tmp_dir.exists():
+        shutil.rmtree(cometbft_tmp_dir)
