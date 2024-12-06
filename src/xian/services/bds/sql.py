@@ -47,7 +47,8 @@ def create_state_changes():
     
 def create_events():
     return """
-    CREATE TABLE events (
+-- Create the events table if it doesn't exist
+    CREATE TABLE IF NOT EXISTS events (
         id SERIAL PRIMARY KEY, -- Unique identifier for each event
         contract VARCHAR(255) NOT NULL, -- Contract name
         event VARCHAR(255) NOT NULL, -- Event name
@@ -60,21 +61,22 @@ def create_events():
     );
 
     -- Add a GIN index on the data_indexed column
-    CREATE INDEX idx_data_indexed ON events USING GIN (data_indexed);
+    CREATE INDEX IF NOT EXISTS idx_data_indexed ON events USING GIN (data_indexed);
 
     -- Add indexes on contract, signer, and caller columns
-    CREATE INDEX idx_contract ON events (contract);
-    CREATE INDEX idx_signer ON events (signer);
-    CREATE INDEX idx_caller ON events (caller);
-    
-   CREATE OR REPLACE FUNCTION public.filter_events_by_data_indexed(key TEXT, value TEXT)
-   RETURNS SETOF events AS $$
-   BEGIN
-     RETURN QUERY
-     SELECT * FROM events
-     WHERE data_indexed ->> key = value;
-   END;
-   $$ LANGUAGE plpgsql STABLE;
+    CREATE INDEX IF NOT EXISTS idx_contract ON events (contract);
+    CREATE INDEX IF NOT EXISTS idx_signer ON events (signer);
+    CREATE INDEX IF NOT EXISTS idx_caller ON events (caller);
+
+    -- Create or replace the function to filter events by data_indexed
+    CREATE OR REPLACE FUNCTION public.filter_events_by_data_indexed(key TEXT, value TEXT)
+    RETURNS SETOF events AS $$
+    BEGIN
+    RETURN QUERY
+    SELECT * FROM events
+    WHERE data_indexed ->> key = value;
+    END;
+    $$ LANGUAGE plpgsql STABLE;
 """
 
 
