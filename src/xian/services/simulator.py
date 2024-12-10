@@ -89,7 +89,7 @@ class Simulator:
             'block_hash': random_hex_string,
             'block_num': num,
             '__input_hash': random_hex_string,
-            'now': datetime.now(),
+            'now': str(datetime.now()),
             'AUXILIARY_SALT': random_hex_string
         }
 
