@@ -42,8 +42,10 @@
     ],
     "app_hash": "",
     "abci_genesis": {
-        "hash": "33356366623665656434366566386537303264353632363561316433326161363036386363386432646136346631623632336637386336343131623037386533",
-        "number": 1760,
+        "hash": {
+            "__bytes__": "30363033343135356530336637316561356235653932363736316562383437373333653963623166373630613661396133353733613961383834646266386165"
+        },
+        "number": 680,
         "origin": {
             "signature": "",
             "sender": ""
@@ -700,6 +702,72 @@
                 "value": "https://some.token.url"
             },
             {
+                "key": "con_dao.ProposalCount",
+                "value": 0
+            },
+            {
+                "key": "con_dao.__code__",
+                "value": "__Proposals = Hash(default_value=None, contract='con_dao', name='Proposals')\n__Ballots = Hash(default_value=False, contract='con_dao', name='Ballots')\n__BallotCount = Hash(default_value=0, contract='con_dao', name='BallotCount')\n__ProposalCount = Variable(contract='con_dao', name='ProposalCount')\n__ProcessedBallots = Hash(default_value=0, contract='con_dao', name=\n    'ProcessedBallots')\n__VerifiedBallots = Hash(default_value=0, contract='con_dao', name=\n    'VerifiedBallots')\n__LPWeight = Hash(default_value=0, contract='con_dao', name='LPWeight')\n__metadata = Hash(default_value=None, contract='con_dao', name='metadata')\nI = importlib\n\n\ndef ____():\n    __metadata['operator'] = ctx.caller\n    __metadata['fee_currency'] = 'con_rswp_lst001'\n    __metadata['fee_amount'] = 27272\n    __metadata['token_contract'] = 'con_rswp_lst001'\n    __metadata['v_token_contracts'] = ['con_staking_rswp_rswp_interop_v2']\n    __metadata['lp_v_token_contracts'] = ['con_liq_mining_rswp_rswp']\n    __metadata['dex_contract'] = 'con_rocketswap_official_v1_1'\n    __metadata['min_description_length'] = 10\n    __metadata['min_title_length'] = 10\n    __ProposalCount.set(0)\n\n\n@__export('con_dao')\ndef create_proposal(title: str, description: str, date_decision: datetime.\n    datetime, choices: list):\n    assert len(title) > __metadata['min_title_length'\n        ], 'Title must be more than 10 characters long.'\n    assert len(description) > __metadata['min_description_length'\n        ], 'Description length must be more than 100 characters long.'\n    assert date_decision > now, 'the decision date must take place in the future.'\n    assert len(choices) > 1, 'you must specify at least 2 choices.'\n    for choice in choices:\n        assert len(choice) > 0, 'choice cannot be an empty string.'\n    I.import_module(__metadata['fee_currency']).transfer_from(amount=\n        __metadata['fee_amount'], to=__metadata['operator'], main_account=\n        ctx.signer)\n    proposal_idx = __ProposalCount.get() + 1\n    __ProposalCount.set(proposal_idx)\n    __Proposals[proposal_idx] = {'title': title, 'description': description,\n        'date_decision': date_decision, 'choices': choices, 'state': 'open'}\n    token_contract_name = __metadata['token_contract']\n    if __LPWeight[proposal_idx, token_contract_name] is 0:\n        __set_lp_token_value(proposal_idx, token_contract_name)\n    return proposal_idx\n\n\n@__export('con_dao')\ndef count_ballots(proposal_idx: int, batch_size: int=100):\n    \"\"\"checks\"\"\"\n    assert now > __Proposals[proposal_idx]['date_decision'\n        ], 'It is not possible to count the ballots for this proposal yet'\n    assert __Proposals[proposal_idx]['state'\n        ] is not 'concluded', 'The ballots for this proposal have already been counted'\n    assert __Ballots[proposal_idx, 'counted'\n        ] is not True, 'this ballot has been counted.'\n    \"\"\"check if this proposal has a stored lp token weight, if no, calculate how much the LP weight is worth\"\"\"\n    start_idx = __ProcessedBallots[proposal_idx] + 1\n    current_ballot_idx = 0\n    \"\"\"count the ballots\"\"\"\n    for i in range(0, batch_size):\n        current_ballot_idx = start_idx + i\n        voter_vk = __Ballots[proposal_idx, 'forwards_index',\n            current_ballot_idx, 'user_vk']\n        __ProcessedBallots[proposal_idx, current_ballot_idx, 'choice'\n            ] = __Ballots[proposal_idx, 'forwards_index',\n            current_ballot_idx, 'choice']\n        __ProcessedBallots[proposal_idx, current_ballot_idx, 'user_vk'\n            ] = voter_vk\n        __ProcessedBallots[proposal_idx, current_ballot_idx, 'weight'\n            ] = get_vk_weight(voter_vk, proposal_idx)\n        if current_ballot_idx == __BallotCount[proposal_idx]:\n            __Ballots[proposal_idx, 'counted'] = True\n            __ProcessedBallots[proposal_idx] = current_ballot_idx\n            return\n    __ProcessedBallots[proposal_idx] = current_ballot_idx\n\n\n@__export('con_dao')\ndef verify_ballots(proposal_idx: int, batch_size: int=100):\n    \"\"\"checks\"\"\"\n    assert __Ballots[proposal_idx, 'counted'\n        ] is True, 'ballots must be counted before verifying them'\n    assert __Ballots[proposal_idx, 'verified'\n        ] is not True, 'the ballots for this proposal have already been verified'\n    assert __Proposals[proposal_idx]['state'\n        ] is not 'concluded', 'this proposal has been concluded'\n    start_idx = __VerifiedBallots[proposal_idx] + 1\n    current_ballot_idx = 0\n    for i in range(0, batch_size):\n        current_ballot_idx = start_idx + i\n        voter_vk = __ProcessedBallots[proposal_idx, current_ballot_idx,\n            'user_vk']\n        choice = __ProcessedBallots[proposal_idx, current_ballot_idx, 'choice']\n        processed_weight = __ProcessedBallots[proposal_idx,\n            current_ballot_idx, 'weight']\n        current_weight = get_vk_weight(voter_vk, proposal_idx)\n        if current_weight >= processed_weight - processed_weight * decimal(\n            '0.05'):\n            __VerifiedBallots[proposal_idx, choice] += current_weight\n        if current_ballot_idx == __BallotCount[proposal_idx]:\n            choices_len = len(__Proposals[proposal_idx]['choices'])\n            __Ballots[proposal_idx, 'verified'] = True\n            __Proposals[proposal_idx]['state'] = 'concluded'\n            __Proposals[proposal_idx]['results'] = {}\n            for c in range(0, choices_len):\n                __Proposals[proposal_idx]['results'][str(c)\n                    ] = __VerifiedBallots[proposal_idx, c]\n            __Proposals[proposal_idx] = __Proposals[proposal_idx]\n            __VerifiedBallots[proposal_idx] = current_ballot_idx\n            return\n    __VerifiedBallots[proposal_idx] = current_ballot_idx\n\n\n@__export('con_dao')\ndef cast_ballot(proposal_idx: int, choice_idx: int):\n    voter = ctx.signer\n    ballot_idx = __BallotCount[proposal_idx] + 1\n    \"\"\"checks\"\"\"\n    assert __Proposals[proposal_idx] is not False\n    assert choice_idx >= 0 and choice_idx < len(__Proposals[proposal_idx][\n        'choices']), 'you must select a valid choice.'\n    assert now < __Proposals[proposal_idx]['date_decision'\n        ], 'It is too late to cast a ballot for this proposal.'\n    assert __Ballots[proposal_idx, 'backwards_index', voter\n        ] is False, 'you have already cast a ballot !'\n    \"\"\"record ballot\"\"\"\n    __Ballots[proposal_idx, 'forwards_index', ballot_idx, 'choice'\n        ] = choice_idx\n    __Ballots[proposal_idx, 'forwards_index', ballot_idx, 'user_vk'] = voter\n    __Ballots[proposal_idx, 'backwards_index', voter] = ballot_idx\n    __BallotCount[proposal_idx] = ballot_idx\n\n\n@__export('con_dao')\ndef get_vk_weight(vk: str, proposal_idx: int):\n    \"\"\"\n    Get the rswp value of any tokens, vtokens and LP tokens for rswp pairs (staked or not). \n    \"\"\"\n    token_contract_name = __metadata['token_contract']\n    user_token_total = 0\n    user_token_total += get_token_value(vk, token_contract_name)\n    user_token_total += get_staked_token_value(vk)\n    user_token_total += get_rocketfuel_value(vk, token_contract_name)\n    user_token_total += get_lp_value(vk, proposal_idx, token_contract_name)\n    user_token_total += get_staked_lp_value(vk, proposal_idx,\n        token_contract_name)\n    return user_token_total\n\n\n@__export('con_dao')\ndef get_token_value(vk: str, token_contract_name: str):\n    return ForeignHash(foreign_contract=token_contract_name, foreign_name=\n        'balances')[vk]\n\n\n@__export('con_dao')\ndef get_staked_token_value(vk: str):\n    \"\"\"iterate through v token contracts and get user balance.\"\"\"\n    vk_balance = 0\n    for contract in __metadata['v_token_contracts']:\n        vk_balance += ForeignHash(foreign_contract=contract, foreign_name=\n            'balances')[vk]\n    return vk_balance\n\n\n@__export('con_dao')\ndef get_rocketfuel_value(vk: str, token_contract_name: str):\n    \"\"\"\n    get value of RSWP staked in rocket fuel\n    \"\"\"\n    dex_contract_name = __metadata['dex_contract']\n    __dex_staked_amount = ForeignHash(foreign_contract=dex_contract_name,\n        foreign_name='staked_amount', contract='con_dao', name=\n        'dex_staked_amount')\n    return __dex_staked_amount[vk, token_contract_name] or 0\n\n\n@__export('con_dao')\ndef get_lp_value(vk: str, proposal_idx: int, token_contract_name: str):\n    \"\"\"\n    get lp value from the dex contract\n    \"\"\"\n    dex_contract_name = __metadata['dex_contract']\n    __dex_lp_points = ForeignHash(foreign_contract=dex_contract_name,\n        foreign_name='lp_points', contract='con_dao', name='dex_lp_points')\n    user_lp = __dex_lp_points[token_contract_name, vk] or 0\n    return user_lp * __LPWeight[proposal_idx, token_contract_name]\n\n\n@__export('con_dao')\ndef get_staked_lp_value(vk: str, proposal_idx: int, token_contract_name: str):\n    lp_count = 0\n    staking_contract_names = __metadata['lp_v_token_contracts']\n    lp_token_value = __LPWeight[proposal_idx, token_contract_name]\n    for contract in staking_contract_names:\n        __balances = ForeignHash(foreign_contract=contract, foreign_name=\n            'balances', contract='con_dao', name='balances')\n        vk_balance = __balances[vk] or 0\n        lp_count += vk_balance\n    return lp_count * __LPWeight[proposal_idx, token_contract_name]\n\n\ndef __set_lp_token_value(proposal_idx: int, token_contract_name: str):\n    \"\"\"\n    import the dex contract, get the reserves value for the TAU-RSWP pair, take the RSWP value of the LP and multiply it by 2\n    \"\"\"\n    dex_contract_name = __metadata['dex_contract']\n    __dex_reserves = ForeignHash(foreign_contract=dex_contract_name,\n        foreign_name='reserves', contract='con_dao', name='dex_reserves')\n    __dex_lp_points = ForeignHash(foreign_contract=dex_contract_name,\n        foreign_name='lp_points', contract='con_dao', name='dex_lp_points')\n    reserves = __dex_reserves[token_contract_name]\n    total_lp = __dex_lp_points[token_contract_name]\n    token_per_lp = reserves[1] / total_lp\n    __LPWeight[proposal_idx, token_contract_name] = token_per_lp * 2\n\n\ndef __assert_operator():\n    assert ctx.caller == __metadata['operator'\n        ], 'You are not the listed operator for this contract.'\n\n\n@__export('con_dao')\ndef change_meta(key: str, value: Any):\n    assert ctx.caller == __metadata['operator'\n        ], 'Only operator can set metadata!'\n    __metadata[key] = value\n"
+            },
+            {
+                "key": "con_dao.__developer__",
+                "value": "0813b6d7d7507c5f735821c32d06cd8f53e6d29807acb7bc92ab0dfe0417386e"
+            },
+            {
+                "key": "con_dao.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        12,
+                        10,
+                        21,
+                        48,
+                        10,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_dao.metadata:dex_contract",
+                "value": "con_rocketswap_official_v1_1"
+            },
+            {
+                "key": "con_dao.metadata:fee_amount",
+                "value": 27272
+            },
+            {
+                "key": "con_dao.metadata:fee_currency",
+                "value": "con_rswp_lst001"
+            },
+            {
+                "key": "con_dao.metadata:lp_v_token_contracts",
+                "value": [
+                    "con_liq_mining_rswp_rswp"
+                ]
+            },
+            {
+                "key": "con_dao.metadata:min_description_length",
+                "value": 10
+            },
+            {
+                "key": "con_dao.metadata:min_title_length",
+                "value": 10
+            },
+            {
+                "key": "con_dao.metadata:operator",
+                "value": "0813b6d7d7507c5f735821c32d06cd8f53e6d29807acb7bc92ab0dfe0417386e"
+            },
+            {
+                "key": "con_dao.metadata:token_contract",
+                "value": "con_rswp_lst001"
+            },
+            {
+                "key": "con_dao.metadata:v_token_contracts",
+                "value": [
+                    "con_staking_rswp_rswp_interop_v2"
+                ]
+            },
+            {
                 "key": "con_daq.__code__",
                 "value": "__balances = Hash(default_value=0, contract='con_daq', name='balances')\n__metadata = Hash(contract='con_daq', name='metadata')\n\n\ndef ____():\n    __balances[ctx.caller] = 1000000\n    __metadata['token_name'] = 'TEST TOKEN'\n    __metadata['token_symbol'] = 'TST'\n    __metadata['token_logo_url'] = 'https://some.token.url/test-token.png'\n    __metadata['token_website'] = 'https://some.token.url'\n    __metadata['operator'] = ctx.caller\n\n\n@__export('con_daq')\ndef change_metadata(key: str, value: Any):\n    assert ctx.caller == __metadata['operator'\n        ], 'Only operator can set metadata!'\n    __metadata[key] = value\n\n\n@__export('con_daq')\ndef transfer(amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    assert __balances[ctx.caller] >= amount, 'Not enough coins to send!'\n    __balances[ctx.caller] -= amount\n    __balances[to] += amount\n    return f'Sent {amount} to {to}'\n\n\n@__export('con_daq')\ndef approve(amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    __balances[ctx.caller, to] += amount\n    return f'Approved {amount} for {to}'\n\n\n@__export('con_daq')\ndef transfer_from(amount: float, to: str, main_account: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    assert __balances[main_account, ctx.caller\n        ] >= amount, 'Not enough coins approved to send! You have {} and are trying to spend {}'.format(\n        __balances[main_account, ctx.caller], amount)\n    assert __balances[main_account] >= amount, 'Not enough coins to send!'\n    __balances[main_account, ctx.caller] -= amount\n    __balances[main_account] -= amount\n    __balances[to] += amount\n    return f'Sent {amount} to {to} from {main_account}'\n"
             },
@@ -798,13 +866,13 @@
             {
                 "key": "con_dex_pairs.balances:con_testtoken",
                 "value": {
-                    "__fixed__": "1912.706413362678037713460833785799"
+                    "__fixed__": "1739.61316713223260000230453431316"
                 }
             },
             {
                 "key": "con_dex_pairs.balances:currency",
                 "value": {
-                    "__fixed__": "2.002000000230291939558750930651"
+                    "__fixed__": "2.102000000230291939558750930651"
                 }
             },
             {
@@ -818,13 +886,13 @@
             {
                 "key": "con_dex_pairs.pairs:1:balance0",
                 "value": {
-                    "__fixed__": "1912.706413359515728438421546979719"
+                    "__fixed__": "1739.61316712907029072726524750708"
                 }
             },
             {
                 "key": "con_dex_pairs.pairs:1:balance1",
                 "value": {
-                    "__fixed__": "1.002000000230291939558750930651"
+                    "__fixed__": "1.102000000230291939558750930651"
                 }
             },
             {
@@ -856,11 +924,11 @@
                 "value": {
                     "__time__": [
                         2024,
-                        11,
+                        12,
                         10,
-                        16,
-                        51,
-                        23,
+                        22,
+                        34,
+                        1,
                         0
                     ]
                 }
@@ -888,13 +956,13 @@
             {
                 "key": "con_dex_pairs.pairs:1:reserve0",
                 "value": {
-                    "__fixed__": "1912.706413359515728438421546979719"
+                    "__fixed__": "1739.61316712907029072726524750708"
                 }
             },
             {
                 "key": "con_dex_pairs.pairs:1:reserve1",
                 "value": {
-                    "__fixed__": "1.002000000230291939558750930651"
+                    "__fixed__": "1.102000000230291939558750930651"
                 }
             },
             {
@@ -1876,6 +1944,524 @@
                 }
             },
             {
+                "key": "con_dice2.__code__",
+                "value": "import currency\n__owner = Variable(contract='con_dice2', name='owner')\n__cost = Variable(contract='con_dice2', name='cost')\n__reward = Variable(contract='con_dice2', name='reward')\n__bet_counter = Variable(contract='con_dice2', name='bet_counter')\n__bets = Hash(default_value=None, contract='con_dice2', name='bets')\n__commission_rate = Variable(contract='con_dice2', name='commission_rate')\n\n\ndef ____():\n    __owner.set(ctx.caller)\n    __cost.set(decimal('1.0'))\n    __reward.set(decimal('2.0'))\n    __bet_counter.set(0)\n    __commission_rate.set(decimal('0.05'))\n\n\n@__export('con_dice2')\ndef transfer_if_greater(num1: int, num2: int, recipient: str):\n    assert isinstance(num1, int) and isinstance(num2, int\n        ), 'Both num1 and num2 must be integers.'\n    assert isinstance(recipient, str\n        ), 'Recipient must be a valid wallet address.'\n    currency.transfer_from(amount=__cost.get(), to=ctx.this, main_account=\n        ctx.caller)\n    if num2 > num1:\n        assert currency.balance_of(ctx.this) >= __reward.get(\n            ), 'Contract has insufficient balance to pay the reward.'\n        currency.transfer(amount=__reward.get(), to=recipient)\n        return f'Player wins! Transferred {__reward.get()} to {recipient}.'\n    else:\n        return (\n            f'Player loses! {__cost.get()} tokens were added to the contract.')\n\n\n@__export('con_dice2')\ndef place_bet(name: str, address: str, amount: float) ->str:\n    assert amount > 0, 'Bet amount must be greater than zero.'\n    assert ctx.caller == __owner.get(\n        ), 'Only the owner can access this function.'\n    currency.transfer_from(amount=amount, to=ctx.this, main_account=address)\n    bet_id = __get_next_bet_id()\n    __bets[bet_id] = {'name': name, 'address': address, 'amount': amount}\n    return f'Bet placed with ID {bet_id}.'\n\n\ndef __get_next_bet_id():\n    current_id = __bet_counter.get()\n    next_id = current_id + 1\n    __bet_counter.set(next_id)\n    return next_id\n\n\n@__export('con_dice2')\ndef get_bets():\n    bet_list = []\n    current_id = __bet_counter.get()\n    for bet_id in range(1, current_id + 1):\n        bet = __bets[bet_id]\n        if bet is not None:\n            bet_list.append({'bet_id': bet_id, 'name': bet['name'],\n                'address': bet['address'], 'amount': bet['amount']})\n    return bet_list\n\n\n@__export('con_dice2')\ndef accept_bet(bet_id: int, opponent_address: str, num1: int, num2: int):\n    assert ctx.caller == __owner.get(\n        ), 'Only the owner can access this function.'\n    bet = __bets[bet_id]\n    assert bet is not None, 'Bet ID does not exist.'\n    assert 'opponent_address' not in bet, 'Bet has already been accepted and resolved.'\n    assert opponent_address != bet['address'\n        ], 'Opponent cannot be the same as the bettor.'\n    amount = bet['amount']\n    currency.transfer_from(amount=amount, to=ctx.this, main_account=\n        opponent_address)\n    bet['opponent_address'] = opponent_address\n    bettor_address = bet['address']\n    total_amount = amount * 2\n    commission = total_amount * __commission_rate.get()\n    payout = total_amount - commission\n    if num2 > num1:\n        winner = opponent_address\n    else:\n        winner = bettor_address\n    currency.transfer(amount=payout, to=winner)\n    __bets[bet_id] = None\n    return (\n        f'Bet accepted and resolved. Winner is {winner}. Total amount {payout} transferred after {commission} commission.'\n        )\n\n\n@__export('con_dice2')\ndef remove_bet(bet_id: int):\n    assert ctx.caller == __owner.get(), 'Only the owner can remove bets.'\n    bet = __bets[bet_id]\n    assert bet is not None, 'Bet ID does not exist.'\n    bettor_address = bet['address']\n    amount = bet['amount']\n    currency.transfer(amount=amount, to=bettor_address)\n    if 'opponent_address' in bet:\n        opponent_address = bet['opponent_address']\n        currency.transfer(amount=amount, to=opponent_address)\n    __bets[bet_id] = None\n    return f'Bet ID {bet_id} has been removed and funds refunded.'\n\n\n@__export('con_dice2')\ndef change_commission_rate(new_rate: float):\n    assert ctx.caller == __owner.get(\n        ), 'Only the owner can access this function.'\n    assert 0 <= new_rate <= 1, 'Commission rate must be between 0 and 1.'\n    __commission_rate.set(new_rate)\n    return f'Commission rate updated to {new_rate * 100}%.'\n\n\n@__export('con_dice2')\ndef balance():\n    assert ctx.caller == __owner.get(\n        ), 'Only the owner can access this function.'\n    return currency.balance_of(ctx.this)\n\n\n@__export('con_dice2')\ndef withdraw(amount: float):\n    assert ctx.caller == __owner.get(\n        ), 'Only the owner can access this function.'\n    assert amount > 0, 'Amount must be greater than zero.'\n    contract_balance = currency.balance_of(ctx.this)\n    assert amount <= contract_balance, 'Insufficient contract balance.'\n    currency.transfer(amount=amount, to=__owner.get())\n    return f\"Successfully withdrew {amount} to the owner's wallet.\"\n\n\n@__export('con_dice2')\ndef change_cost(new_cost: float):\n    assert ctx.caller == __owner.get(\n        ), 'Only the owner can access this function.'\n    assert new_cost > 0, 'Cost must be greater than zero.'\n    __cost.set(new_cost)\n    return f'Cost updated to {new_cost}.'\n\n\n@__export('con_dice2')\ndef change_reward(new_reward: float):\n    assert ctx.caller == __owner.get(\n        ), 'Only the owner can access this function.'\n    assert new_reward > 0, 'Reward must be greater than zero.'\n    __reward.set(new_reward)\n    return f'Reward updated to {new_reward}.'\n"
+            },
+            {
+                "key": "con_dice2.__developer__",
+                "value": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b"
+            },
+            {
+                "key": "con_dice2.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        12,
+                        5,
+                        19,
+                        57,
+                        2,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_dice2.bet_counter",
+                "value": 19
+            },
+            {
+                "key": "con_dice2.bets:10",
+                "value": {
+                    "name": "@revolutionx",
+                    "address": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b",
+                    "amount": {
+                        "__fixed__": "2"
+                    }
+                }
+            },
+            {
+                "key": "con_dice2.bets:11",
+                "value": {
+                    "name": "@revolutionx",
+                    "address": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b",
+                    "amount": {
+                        "__fixed__": "2"
+                    }
+                }
+            },
+            {
+                "key": "con_dice2.bets:12",
+                "value": {
+                    "name": "@revolutionx",
+                    "address": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b",
+                    "amount": {
+                        "__fixed__": "1"
+                    }
+                }
+            },
+            {
+                "key": "con_dice2.bets:13",
+                "value": {
+                    "name": "@revolutionx",
+                    "address": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b",
+                    "amount": {
+                        "__fixed__": "1"
+                    }
+                }
+            },
+            {
+                "key": "con_dice2.bets:14",
+                "value": {
+                    "name": "@revolutionx",
+                    "address": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b",
+                    "amount": {
+                        "__fixed__": "1"
+                    }
+                }
+            },
+            {
+                "key": "con_dice2.bets:15",
+                "value": {
+                    "name": "@revolutionx",
+                    "address": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b",
+                    "amount": {
+                        "__fixed__": "11"
+                    }
+                }
+            },
+            {
+                "key": "con_dice2.bets:16",
+                "value": {
+                    "name": "@revolutionx",
+                    "address": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b",
+                    "amount": {
+                        "__fixed__": "1"
+                    }
+                }
+            },
+            {
+                "key": "con_dice2.bets:17",
+                "value": {
+                    "name": "@revolutionx",
+                    "address": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b",
+                    "amount": {
+                        "__fixed__": "1"
+                    }
+                }
+            },
+            {
+                "key": "con_dice2.bets:18",
+                "value": {
+                    "name": "@revolutionx",
+                    "address": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b",
+                    "amount": {
+                        "__fixed__": "1"
+                    }
+                }
+            },
+            {
+                "key": "con_dice2.bets:19",
+                "value": {
+                    "name": "@revolutionx",
+                    "address": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b",
+                    "amount": {
+                        "__fixed__": "1"
+                    }
+                }
+            },
+            {
+                "key": "con_dice2.bets:2",
+                "value": {
+                    "name": "revo",
+                    "address": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b",
+                    "amount": 1
+                }
+            },
+            {
+                "key": "con_dice2.bets:3",
+                "value": {
+                    "name": "revo",
+                    "address": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b",
+                    "amount": {
+                        "__fixed__": "2"
+                    }
+                }
+            },
+            {
+                "key": "con_dice2.bets:4",
+                "value": {
+                    "name": "@revolutionx",
+                    "address": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b",
+                    "amount": {
+                        "__fixed__": "5"
+                    }
+                }
+            },
+            {
+                "key": "con_dice2.bets:5",
+                "value": {
+                    "name": "@revolutionx",
+                    "address": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b",
+                    "amount": {
+                        "__fixed__": "3"
+                    }
+                }
+            },
+            {
+                "key": "con_dice2.bets:6",
+                "value": {
+                    "name": "@revolutionx",
+                    "address": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b",
+                    "amount": {
+                        "__fixed__": "2"
+                    }
+                }
+            },
+            {
+                "key": "con_dice2.bets:7",
+                "value": {
+                    "name": "@revolutionx",
+                    "address": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b",
+                    "amount": {
+                        "__fixed__": "1"
+                    }
+                }
+            },
+            {
+                "key": "con_dice2.bets:8",
+                "value": {
+                    "name": "@revolutionx",
+                    "address": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b",
+                    "amount": {
+                        "__fixed__": "1"
+                    }
+                }
+            },
+            {
+                "key": "con_dice2.bets:9",
+                "value": {
+                    "name": "@revolutionx",
+                    "address": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b",
+                    "amount": {
+                        "__fixed__": "2"
+                    }
+                }
+            },
+            {
+                "key": "con_dice2.commission_rate",
+                "value": {
+                    "__fixed__": "0.05"
+                }
+            },
+            {
+                "key": "con_dice2.cost",
+                "value": {
+                    "__fixed__": "1"
+                }
+            },
+            {
+                "key": "con_dice2.owner",
+                "value": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b"
+            },
+            {
+                "key": "con_dice2.reward",
+                "value": {
+                    "__fixed__": "2"
+                }
+            },
+            {
+                "key": "con_dice3.__code__",
+                "value": "import currency\n__owner = Variable(contract='con_dice3', name='owner')\n__cost = Variable(contract='con_dice3', name='cost')\n__reward = Variable(contract='con_dice3', name='reward')\n__bet_counter = Variable(contract='con_dice3', name='bet_counter')\n__bets = Hash(default_value=None, contract='con_dice3', name='bets')\n__commission_rate = Variable(contract='con_dice3', name='commission_rate')\n\n\ndef ____():\n    __owner.set(ctx.caller)\n    __cost.set(decimal('1.0'))\n    __reward.set(decimal('2.0'))\n    __bet_counter.set(0)\n    __commission_rate.set(decimal('0.05'))\n\n\n@__export('con_dice3')\ndef transfer_if_greater(num1: int, num2: int, recipient: str):\n    assert isinstance(num1, int) and isinstance(num2, int\n        ), 'Both num1 and num2 must be integers.'\n    assert isinstance(recipient, str\n        ), 'Recipient must be a valid wallet address.'\n    currency.transfer_from(amount=__cost.get(), to=ctx.this, main_account=\n        ctx.caller)\n    if num2 > num1:\n        assert currency.balance_of(ctx.this) >= __reward.get(\n            ), 'Contract has insufficient balance to pay the reward.'\n        currency.transfer(amount=__reward.get(), to=recipient)\n        return f'Player wins! Transferred {__reward.get()} to {recipient}.'\n    else:\n        return (\n            f'Player loses! {__cost.get()} tokens were added to the contract.')\n\n\n@__export('con_dice3')\ndef place_bet(name: str, address: str, amount: float) ->str:\n    assert amount > 0, 'Bet amount must be greater than zero.'\n    assert ctx.caller == __owner.get(\n        ), 'Only the owner can access this function.'\n    currency.transfer_from(amount=amount, to=ctx.this, main_account=address)\n    bet_id = __get_next_bet_id()\n    __bets[bet_id] = {'name': name, 'address': address, 'amount': amount}\n    return f'Bet placed with ID {bet_id}.'\n\n\ndef __get_next_bet_id():\n    current_id = __bet_counter.get()\n    next_id = current_id + 1\n    __bet_counter.set(next_id)\n    return next_id\n\n\n@__export('con_dice3')\ndef get_bets():\n    bet_list = []\n    current_id = __bet_counter.get()\n    for bet_id in range(1, current_id + 1):\n        bet = __bets[bet_id]\n        if bet is not None:\n            bet_list.append({'bet_id': bet_id, 'name': bet['name'],\n                'amount': bet['amount']})\n    return bet_list\n\n\n@__export('con_dice3')\ndef accept_bet(bet_id: int, opponent_address: str, num1: int, num2: int):\n    assert ctx.caller == __owner.get(\n        ), 'Only the owner can access this function.'\n    bet = __bets[bet_id]\n    assert bet is not None, 'Bet ID does not exist.'\n    assert 'opponent_address' not in bet, 'Bet has already been accepted and resolved.'\n    assert opponent_address != bet['address'\n        ], 'Opponent cannot be the same as the bettor.'\n    amount = bet['amount']\n    currency.transfer_from(amount=amount, to=ctx.this, main_account=\n        opponent_address)\n    bet['opponent_address'] = opponent_address\n    bettor_address = bet['address']\n    total_amount = amount * 2\n    commission = total_amount * __commission_rate.get()\n    payout = total_amount - commission\n    if num2 > num1:\n        winner = opponent_address\n    else:\n        winner = bettor_address\n    currency.transfer(amount=payout, to=winner)\n    __bets[bet_id] = None\n    return (\n        f'Bet accepted and resolved. Winner is {winner}. Total amount {payout} transferred after {commission} commission.'\n        )\n\n\n@__export('con_dice3')\ndef remove_bet(bet_id: int):\n    assert ctx.caller == __owner.get(), 'Only the owner can remove bets.'\n    bet = __bets[bet_id]\n    assert bet is not None, 'Bet ID does not exist.'\n    bettor_address = bet['address']\n    amount = bet['amount']\n    currency.transfer(amount=amount, to=bettor_address)\n    if 'opponent_address' in bet:\n        opponent_address = bet['opponent_address']\n        currency.transfer(amount=amount, to=opponent_address)\n    __bets[bet_id] = None\n    return f'Bet ID {bet_id} has been removed and funds refunded.'\n\n\n@__export('con_dice3')\ndef change_commission_rate(new_rate: float):\n    assert ctx.caller == __owner.get(\n        ), 'Only the owner can access this function.'\n    assert 0 <= new_rate <= 1, 'Commission rate must be between 0 and 1.'\n    __commission_rate.set(new_rate)\n    return f'Commission rate updated to {new_rate * 100}%.'\n\n\n@__export('con_dice3')\ndef balance():\n    assert ctx.caller == __owner.get(\n        ), 'Only the owner can access this function.'\n    return currency.balance_of(ctx.this)\n\n\n@__export('con_dice3')\ndef withdraw(amount: float):\n    assert ctx.caller == __owner.get(\n        ), 'Only the owner can access this function.'\n    assert amount > 0, 'Amount must be greater than zero.'\n    contract_balance = currency.balance_of(ctx.this)\n    assert amount <= contract_balance, 'Insufficient contract balance.'\n    currency.transfer(amount=amount, to=__owner.get())\n    return f\"Successfully withdrew {amount} to the owner's wallet.\"\n\n\n@__export('con_dice3')\ndef change_cost(new_cost: float):\n    assert ctx.caller == __owner.get(\n        ), 'Only the owner can access this function.'\n    assert new_cost > 0, 'Cost must be greater than zero.'\n    __cost.set(new_cost)\n    return f'Cost updated to {new_cost}.'\n\n\n@__export('con_dice3')\ndef change_reward(new_reward: float):\n    assert ctx.caller == __owner.get(\n        ), 'Only the owner can access this function.'\n    assert new_reward > 0, 'Reward must be greater than zero.'\n    __reward.set(new_reward)\n    return f'Reward updated to {new_reward}.'\n"
+            },
+            {
+                "key": "con_dice3.__developer__",
+                "value": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b"
+            },
+            {
+                "key": "con_dice3.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        12,
+                        6,
+                        1,
+                        37,
+                        50,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_dice3.bet_counter",
+                "value": 10
+            },
+            {
+                "key": "con_dice3.bets:10",
+                "value": {
+                    "name": "Maicol",
+                    "address": "f0222f00943416a8cacb2160e4af75faff36660b87e99279a045af1f4182dd1f",
+                    "amount": {
+                        "__fixed__": "1"
+                    }
+                }
+            },
+            {
+                "key": "con_dice3.bets:8",
+                "value": {
+                    "name": "@revolutionx",
+                    "address": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b",
+                    "amount": {
+                        "__fixed__": "1"
+                    }
+                }
+            },
+            {
+                "key": "con_dice3.bets:9",
+                "value": {
+                    "name": "@revolutionx",
+                    "address": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b",
+                    "amount": {
+                        "__fixed__": "1"
+                    }
+                }
+            },
+            {
+                "key": "con_dice3.commission_rate",
+                "value": {
+                    "__fixed__": "0.05"
+                }
+            },
+            {
+                "key": "con_dice3.cost",
+                "value": {
+                    "__fixed__": "1"
+                }
+            },
+            {
+                "key": "con_dice3.owner",
+                "value": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b"
+            },
+            {
+                "key": "con_dice3.reward",
+                "value": {
+                    "__fixed__": "2"
+                }
+            },
+            {
+                "key": "con_dice4.__code__",
+                "value": "import currency\n__owner = Variable(contract='con_dice4', name='owner')\n__cost = Variable(contract='con_dice4', name='cost')\n__reward = Variable(contract='con_dice4', name='reward')\n__bet_counter = Variable(contract='con_dice4', name='bet_counter')\n__bets = Hash(default_value=None, contract='con_dice4', name='bets')\n__commission_rate = Variable(contract='con_dice4', name='commission_rate')\n\n\ndef ____():\n    __owner.set(ctx.caller)\n    __cost.set(decimal('1.0'))\n    __reward.set(decimal('2.0'))\n    __bet_counter.set(0)\n    __commission_rate.set(decimal('0.05'))\n\n\n@__export('con_dice4')\ndef transfer_if_greater(num1: int, num2: int, recipient: str):\n    assert isinstance(num1, int) and isinstance(num2, int\n        ), 'Both num1 and num2 must be integers.'\n    assert isinstance(recipient, str\n        ), 'Recipient must be a valid wallet address.'\n    currency.transfer_from(amount=__cost.get(), to=ctx.this, main_account=\n        ctx.caller)\n    if num2 > num1:\n        assert currency.balance_of(ctx.this) >= __reward.get(\n            ), 'Contract has insufficient balance to pay the reward.'\n        currency.transfer(amount=__reward.get(), to=recipient)\n        return f'Player wins! Transferred {__reward.get()} to {recipient}.'\n    else:\n        return (\n            f'Player loses! {__cost.get()} tokens were added to the contract.')\n\n\n@__export('con_dice4')\ndef place_bet(name: str, address: str, amount: float) ->str:\n    assert amount > 0, 'Bet amount must be greater than zero.'\n    assert ctx.caller == __owner.get(\n        ), 'Only the owner can access this function.'\n    currency.transfer_from(amount=amount, to=ctx.this, main_account=address)\n    bet_id = __get_next_bet_id()\n    __bets[bet_id] = {'name': name, 'address': address, 'amount': amount}\n    return f'Bet placed with ID {bet_id}.'\n\n\ndef __get_next_bet_id():\n    current_id = __bet_counter.get()\n    next_id = current_id + 1\n    __bet_counter.set(next_id)\n    return next_id\n\n\n@__export('con_dice4')\ndef get_bets():\n    bet_list = []\n    current_id = __bet_counter.get()\n    for bet_id in range(1, current_id + 1):\n        bet = __bets[bet_id]\n        if bet is not None:\n            bet_list.append({'bet_id': bet_id, 'name': bet['name'],\n                'amount': bet['amount']})\n    return bet_list\n\n\n@__export('con_dice4')\ndef accept_bet(bet_id: int, opponent_address: str, num1: int, num2: int):\n    assert ctx.caller == __owner.get(\n        ), 'Only the owner can access this function.'\n    bet = __bets[bet_id]\n    assert bet is not None, 'Bet ID does not exist.'\n    assert 'opponent_address' not in bet, 'Bet has already been accepted and resolved.'\n    assert opponent_address != bet['address'\n        ], 'Opponent cannot be the same as the bettor.'\n    amount = bet['amount']\n    currency.transfer_from(amount=amount, to=ctx.this, main_account=\n        opponent_address)\n    bet['name'] = opponent_address\n    bettor_address = bet['name']\n    total_amount = amount * 2\n    commission = total_amount * __commission_rate.get()\n    payout = total_amount - commission\n    if num2 > num1:\n        winner = opponent_address\n    else:\n        winner = bettor_address\n    currency.transfer(amount=payout, to=winner)\n    __bets[bet_id] = None\n    return (\n        f'Bet accepted and resolved. Winner is {winner}. Total amount {payout} transferred after {commission} commission.'\n        )\n\n\n@__export('con_dice4')\ndef remove_bet(bet_id: int):\n    assert ctx.caller == __owner.get(), 'Only the owner can remove bets.'\n    bet = __bets[bet_id]\n    assert bet is not None, 'Bet ID does not exist.'\n    bettor_address = bet['address']\n    amount = bet['amount']\n    currency.transfer(amount=amount, to=bettor_address)\n    if 'opponent_address' in bet:\n        opponent_address = bet['opponent_address']\n        currency.transfer(amount=amount, to=opponent_address)\n    __bets[bet_id] = None\n    return f'Bet ID {bet_id} has been removed and funds refunded.'\n\n\n@__export('con_dice4')\ndef get_bet(bet_id: int):\n    \"\"\"\n    Retrieve details of a specific bet by its ID.\n    \"\"\"\n    bet = __bets[bet_id]\n    assert bet is not None, 'Bet ID does not exist.'\n    return {'bet_id': bet_id, 'name': bet['name'], 'address': bet['address'\n        ], 'amount': bet['amount']}\n\n\n@__export('con_dice4')\ndef change_commission_rate(new_rate: float):\n    assert ctx.caller == __owner.get(\n        ), 'Only the owner can access this function.'\n    assert 0 <= new_rate <= 1, 'Commission rate must be between 0 and 1.'\n    __commission_rate.set(new_rate)\n    return f'Commission rate updated to {new_rate * 100}%.'\n\n\n@__export('con_dice4')\ndef balance():\n    assert ctx.caller == __owner.get(\n        ), 'Only the owner can access this function.'\n    return currency.balance_of(ctx.this)\n\n\n@__export('con_dice4')\ndef withdraw(amount: float):\n    assert ctx.caller == __owner.get(\n        ), 'Only the owner can access this function.'\n    assert amount > 0, 'Amount must be greater than zero.'\n    contract_balance = currency.balance_of(ctx.this)\n    assert amount <= contract_balance, 'Insufficient contract balance.'\n    currency.transfer(amount=amount, to=__owner.get())\n    return f\"Successfully withdrew {amount} to the owner's wallet.\"\n\n\n@__export('con_dice4')\ndef change_cost(new_cost: float):\n    assert ctx.caller == __owner.get(\n        ), 'Only the owner can access this function.'\n    assert new_cost > 0, 'Cost must be greater than zero.'\n    __cost.set(new_cost)\n    return f'Cost updated to {new_cost}.'\n\n\n@__export('con_dice4')\ndef change_reward(new_reward: float):\n    assert ctx.caller == __owner.get(\n        ), 'Only the owner can access this function.'\n    assert new_reward > 0, 'Reward must be greater than zero.'\n    __reward.set(new_reward)\n    return f'Reward updated to {new_reward}.'\n"
+            },
+            {
+                "key": "con_dice4.__developer__",
+                "value": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b"
+            },
+            {
+                "key": "con_dice4.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        12,
+                        6,
+                        3,
+                        6,
+                        10,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_dice4.bet_counter",
+                "value": 2
+            },
+            {
+                "key": "con_dice4.bets:2",
+                "value": {
+                    "name": "@revolutionx",
+                    "address": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b",
+                    "amount": {
+                        "__fixed__": "1"
+                    }
+                }
+            },
+            {
+                "key": "con_dice4.commission_rate",
+                "value": {
+                    "__fixed__": "0.05"
+                }
+            },
+            {
+                "key": "con_dice4.cost",
+                "value": {
+                    "__fixed__": "1"
+                }
+            },
+            {
+                "key": "con_dice4.owner",
+                "value": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b"
+            },
+            {
+                "key": "con_dice4.reward",
+                "value": {
+                    "__fixed__": "2"
+                }
+            },
+            {
+                "key": "con_dice5.__code__",
+                "value": "import currency\n__owner = Variable(contract='con_dice5', name='owner')\n__cost = Variable(contract='con_dice5', name='cost')\n__reward = Variable(contract='con_dice5', name='reward')\n__bet_counter = Variable(contract='con_dice5', name='bet_counter')\n__bets = Hash(default_value=None, contract='con_dice5', name='bets')\n__commission_rate = Variable(contract='con_dice5', name='commission_rate')\n\n\ndef ____():\n    __owner.set(ctx.caller)\n    __cost.set(decimal('1.0'))\n    __reward.set(decimal('2.0'))\n    __bet_counter.set(0)\n    __commission_rate.set(decimal('0.05'))\n\n\n@__export('con_dice5')\ndef transfer_if_greater(num1: int, num2: int, recipient: str):\n    assert isinstance(num1, int) and isinstance(num2, int\n        ), 'Both num1 and num2 must be integers.'\n    assert isinstance(recipient, str\n        ), 'Recipient must be a valid wallet address.'\n    currency.transfer_from(amount=__cost.get(), to=ctx.this, main_account=\n        ctx.caller)\n    if num2 > num1:\n        assert currency.balance_of(ctx.this) >= __reward.get(\n            ), 'Contract has insufficient balance to pay the reward.'\n        currency.transfer(amount=__reward.get(), to=recipient)\n        return f'Player wins! Transferred {__reward.get()} to {recipient}.'\n    else:\n        return (\n            f'Player loses! {__cost.get()} tokens were added to the contract.')\n\n\n@__export('con_dice5')\ndef place_bet(name: str, address: str, amount: float) ->str:\n    assert amount > 0, 'Bet amount must be greater than zero.'\n    assert ctx.caller == __owner.get(\n        ), 'Only the owner can access this function.'\n    currency.transfer_from(amount=amount, to=ctx.this, main_account=address)\n    bet_id = __get_next_bet_id()\n    __bets[bet_id] = {'name': name, 'address': address, 'amount': amount}\n    return f'Bet placed with ID {bet_id}.'\n\n\ndef __get_next_bet_id():\n    current_id = __bet_counter.get()\n    next_id = current_id + 1\n    __bet_counter.set(next_id)\n    return next_id\n\n\n@__export('con_dice5')\ndef get_bets():\n    bet_list = []\n    current_id = __bet_counter.get()\n    for bet_id in range(1, current_id + 1):\n        bet = __bets[bet_id]\n        if bet is not None:\n            bet_list.append({'bet_id': bet_id, 'name': bet['name'],\n                'amount': bet['amount']})\n    return bet_list\n\n\n@__export('con_dice5')\ndef accept_bet(bet_id: int, opponent_name: str, num1: int, num2: int):\n    \"\"\"\n    Accepts a bet and resolves it by determining the winner.\n    The winner's name is returned instead of their address.\n    \"\"\"\n    assert ctx.caller == __owner.get(\n        ), 'Only the owner can access this function.'\n    bet = __bets[bet_id]\n    assert bet is not None, 'Bet ID does not exist.'\n    assert 'opponent_name' not in bet, 'Bet has already been accepted and resolved.'\n    assert opponent_name != bet['name'\n        ], 'Opponent cannot be the same as the bettor.'\n    amount = bet['amount']\n    currency.transfer_from(amount=amount, to=ctx.this, main_account=ctx.caller)\n    bettor_name = bet['name']\n    total_amount = amount * 2\n    commission = total_amount * __commission_rate.get()\n    payout = total_amount - commission\n    if num2 > num1:\n        winner = opponent_name\n    else:\n        winner = bettor_name\n    currency.transfer(amount=payout, to=ctx.caller if winner ==\n        opponent_name else bet['address'])\n    __bets[bet_id] = None\n    return (\n        f'Bet accepted and resolved. Winner is {winner}. Total amount {payout} transferred after {commission} commission.'\n        )\n\n\n@__export('con_dice5')\ndef remove_bet(bet_id: int):\n    assert ctx.caller == __owner.get(), 'Only the owner can remove bets.'\n    bet = __bets[bet_id]\n    assert bet is not None, 'Bet ID does not exist.'\n    bettor_address = bet['address']\n    amount = bet['amount']\n    currency.transfer(amount=amount, to=bettor_address)\n    if 'opponent_address' in bet:\n        opponent_address = bet['opponent_address']\n        currency.transfer(amount=amount, to=opponent_address)\n    __bets[bet_id] = None\n    return f'Bet ID {bet_id} has been removed and funds refunded.'\n\n\n@__export('con_dice5')\ndef get_bet(bet_id: int):\n    \"\"\"\n    Retrieve details of a specific bet by its ID.\n    \"\"\"\n    bet = __bets[bet_id]\n    assert bet is not None, 'Bet ID does not exist.'\n    return {'bet_id': bet_id, 'name': bet['name'], 'address': bet['address'\n        ], 'amount': bet['amount']}\n\n\n@__export('con_dice5')\ndef change_commission_rate(new_rate: float):\n    assert ctx.caller == __owner.get(\n        ), 'Only the owner can access this function.'\n    assert 0 <= new_rate <= 1, 'Commission rate must be between 0 and 1.'\n    __commission_rate.set(new_rate)\n    return f'Commission rate updated to {new_rate * 100}%.'\n\n\n@__export('con_dice5')\ndef balance():\n    assert ctx.caller == __owner.get(\n        ), 'Only the owner can access this function.'\n    return currency.balance_of(ctx.this)\n\n\n@__export('con_dice5')\ndef withdraw(amount: float):\n    assert ctx.caller == __owner.get(\n        ), 'Only the owner can access this function.'\n    assert amount > 0, 'Amount must be greater than zero.'\n    contract_balance = currency.balance_of(ctx.this)\n    assert amount <= contract_balance, 'Insufficient contract balance.'\n    currency.transfer(amount=amount, to=__owner.get())\n    return f\"Successfully withdrew {amount} to the owner's wallet.\"\n\n\n@__export('con_dice5')\ndef change_cost(new_cost: float):\n    assert ctx.caller == __owner.get(\n        ), 'Only the owner can access this function.'\n    assert new_cost > 0, 'Cost must be greater than zero.'\n    __cost.set(new_cost)\n    return f'Cost updated to {new_cost}.'\n\n\n@__export('con_dice5')\ndef change_reward(new_reward: float):\n    assert ctx.caller == __owner.get(\n        ), 'Only the owner can access this function.'\n    assert new_reward > 0, 'Reward must be greater than zero.'\n    __reward.set(new_reward)\n    return f'Reward updated to {new_reward}.'\n"
+            },
+            {
+                "key": "con_dice5.__developer__",
+                "value": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b"
+            },
+            {
+                "key": "con_dice5.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        12,
+                        6,
+                        3,
+                        42,
+                        30,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_dice5.bet_counter",
+                "value": 5
+            },
+            {
+                "key": "con_dice5.bets:1",
+                "value": {
+                    "name": "@revolutionx",
+                    "address": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b",
+                    "amount": {
+                        "__fixed__": "1"
+                    }
+                }
+            },
+            {
+                "key": "con_dice5.bets:2",
+                "value": {
+                    "name": "@revolutionx",
+                    "address": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b",
+                    "amount": {
+                        "__fixed__": "1"
+                    }
+                }
+            },
+            {
+                "key": "con_dice5.bets:3",
+                "value": {
+                    "name": "@revolutionx",
+                    "address": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b",
+                    "amount": {
+                        "__fixed__": "1"
+                    }
+                }
+            },
+            {
+                "key": "con_dice5.bets:4",
+                "value": {
+                    "name": "@revolutionx",
+                    "address": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b",
+                    "amount": {
+                        "__fixed__": "1"
+                    }
+                }
+            },
+            {
+                "key": "con_dice5.bets:5",
+                "value": {
+                    "name": "@revolutionx",
+                    "address": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b",
+                    "amount": {
+                        "__fixed__": "1"
+                    }
+                }
+            },
+            {
+                "key": "con_dice5.commission_rate",
+                "value": {
+                    "__fixed__": "0.05"
+                }
+            },
+            {
+                "key": "con_dice5.cost",
+                "value": {
+                    "__fixed__": "1"
+                }
+            },
+            {
+                "key": "con_dice5.owner",
+                "value": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b"
+            },
+            {
+                "key": "con_dice5.reward",
+                "value": {
+                    "__fixed__": "2"
+                }
+            },
+            {
+                "key": "con_dice6.__code__",
+                "value": "import currency\n__owner = Variable(contract='con_dice6', name='owner')\n__cost = Variable(contract='con_dice6', name='cost')\n__reward = Variable(contract='con_dice6', name='reward')\n__bet_counter = Variable(contract='con_dice6', name='bet_counter')\n__bets = Hash(default_value=None, contract='con_dice6', name='bets')\n__commission_rate = Variable(contract='con_dice6', name='commission_rate')\n\n\ndef ____():\n    __owner.set(ctx.caller)\n    __cost.set(decimal('1.0'))\n    __reward.set(decimal('2.0'))\n    __bet_counter.set(0)\n    __commission_rate.set(decimal('0.05'))\n\n\n@__export('con_dice6')\ndef transfer_if_greater(num1: int, num2: int, recipient: str):\n    assert isinstance(num1, int) and isinstance(num2, int\n        ), 'Both num1 and num2 must be integers.'\n    assert isinstance(recipient, str\n        ), 'Recipient must be a valid wallet address.'\n    currency.transfer_from(amount=__cost.get(), to=ctx.this, main_account=\n        ctx.caller)\n    if num2 > num1:\n        assert currency.balance_of(ctx.this) >= __reward.get(\n            ), 'Contract has insufficient balance to pay the reward.'\n        currency.transfer(amount=__reward.get(), to=recipient)\n        return f'Player wins! Transferred {__reward.get()} to {recipient}.'\n    else:\n        return (\n            f'Player loses! {__cost.get()} tokens were added to the contract.')\n\n\n@__export('con_dice6')\ndef place_bet(name: str, address: str, amount: float) ->str:\n    assert amount > 0, 'Bet amount must be greater than zero.'\n    assert ctx.caller == __owner.get(\n        ), 'Only the owner can access this function.'\n    currency.transfer_from(amount=amount, to=ctx.this, main_account=address)\n    bet_id = __get_next_bet_id()\n    __bets[bet_id] = {'name': name, 'address': address, 'amount': amount}\n    return f'Bet placed with ID {bet_id}.'\n\n\ndef __get_next_bet_id():\n    current_id = __bet_counter.get()\n    next_id = current_id + 1\n    __bet_counter.set(next_id)\n    return next_id\n\n\n@__export('con_dice6')\ndef get_bets():\n    bet_list = []\n    current_id = __bet_counter.get()\n    for bet_id in range(1, current_id + 1):\n        bet = __bets[bet_id]\n        if bet is not None:\n            bet_list.append({'bet_id': bet_id, 'name': bet['name'],\n                'amount': bet['amount']})\n    return bet_list\n\n\n@__export('con_dice6')\ndef accept_bet(bet_id: int, opponent_address: str, num1: int, num2: int):\n    \"\"\"\n    Accepts a bet and resolves it by determining the winner.\n    Returns the name of the bettor if they win, otherwise returns 'opponent_wins'.\n    \"\"\"\n    assert ctx.caller == __owner.get(\n        ), 'Only the owner can access this function.'\n    bet = __bets[bet_id]\n    assert bet is not None, 'Bet ID does not exist.'\n    assert 'resolved' not in bet, 'Bet has already been accepted and resolved.'\n    assert opponent_address != bet['address'\n        ], 'Opponent cannot be the same as the bettor.'\n    bettor_name = bet['name']\n    bettor_address = bet['address']\n    amount = bet['amount']\n    currency.transfer_from(amount=amount, to=ctx.this, main_account=\n        opponent_address)\n    total_amount = amount * 2\n    commission = total_amount * __commission_rate.get()\n    payout = total_amount - commission\n    if num2 > num1:\n        winner_address = opponent_address\n        currency.transfer(amount=payout, to=winner_address)\n        __bets[bet_id] = None\n        return 'opponent_wins'\n    else:\n        winner_address = bettor_address\n        currency.transfer(amount=payout, to=winner_address)\n        __bets[bet_id] = None\n        return bettor_name\n\n\n@__export('con_dice6')\ndef remove_bet(bet_id: int):\n    assert ctx.caller == __owner.get(), 'Only the owner can remove bets.'\n    bet = __bets[bet_id]\n    assert bet is not None, 'Bet ID does not exist.'\n    bettor_address = bet['address']\n    amount = bet['amount']\n    currency.transfer(amount=amount, to=bettor_address)\n    if 'opponent_address' in bet:\n        opponent_address = bet['opponent_address']\n        currency.transfer(amount=amount, to=opponent_address)\n    __bets[bet_id] = None\n    return f'Bet ID {bet_id} has been removed and funds refunded.'\n\n\n@__export('con_dice6')\ndef get_bet(bet_id: int):\n    \"\"\"\n    Retrieve details of a specific bet by its ID.\n    \"\"\"\n    bet = __bets[bet_id]\n    assert bet is not None, 'Bet ID does not exist.'\n    return {'bet_id': bet_id, 'name': bet['name'], 'address': bet['address'\n        ], 'amount': bet['amount']}\n\n\n@__export('con_dice6')\ndef change_commission_rate(new_rate: float):\n    assert ctx.caller == __owner.get(\n        ), 'Only the owner can access this function.'\n    assert 0 <= new_rate <= 1, 'Commission rate must be between 0 and 1.'\n    __commission_rate.set(new_rate)\n    return f'Commission rate updated to {new_rate * 100}%.'\n\n\n@__export('con_dice6')\ndef balance():\n    assert ctx.caller == __owner.get(\n        ), 'Only the owner can access this function.'\n    return currency.balance_of(ctx.this)\n\n\n@__export('con_dice6')\ndef withdraw(amount: float):\n    assert ctx.caller == __owner.get(\n        ), 'Only the owner can access this function.'\n    assert amount > 0, 'Amount must be greater than zero.'\n    contract_balance = currency.balance_of(ctx.this)\n    assert amount <= contract_balance, 'Insufficient contract balance.'\n    currency.transfer(amount=amount, to=__owner.get())\n    return f\"Successfully withdrew {amount} to the owner's wallet.\"\n\n\n@__export('con_dice6')\ndef change_cost(new_cost: float):\n    assert ctx.caller == __owner.get(\n        ), 'Only the owner can access this function.'\n    assert new_cost > 0, 'Cost must be greater than zero.'\n    __cost.set(new_cost)\n    return f'Cost updated to {new_cost}.'\n\n\n@__export('con_dice6')\ndef change_reward(new_reward: float):\n    assert ctx.caller == __owner.get(\n        ), 'Only the owner can access this function.'\n    assert new_reward > 0, 'Reward must be greater than zero.'\n    __reward.set(new_reward)\n    return f'Reward updated to {new_reward}.'\n"
+            },
+            {
+                "key": "con_dice6.__developer__",
+                "value": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b"
+            },
+            {
+                "key": "con_dice6.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        12,
+                        6,
+                        3,
+                        50,
+                        28,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_dice6.bet_counter",
+                "value": 4
+            },
+            {
+                "key": "con_dice6.bets:3",
+                "value": {
+                    "name": "Maicol",
+                    "address": "f0222f00943416a8cacb2160e4af75faff36660b87e99279a045af1f4182dd1f",
+                    "amount": {
+                        "__fixed__": "5"
+                    }
+                }
+            },
+            {
+                "key": "con_dice6.commission_rate",
+                "value": {
+                    "__fixed__": "0.05"
+                }
+            },
+            {
+                "key": "con_dice6.cost",
+                "value": {
+                    "__fixed__": "1"
+                }
+            },
+            {
+                "key": "con_dice6.owner",
+                "value": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b"
+            },
+            {
+                "key": "con_dice6.reward",
+                "value": {
+                    "__fixed__": "2"
+                }
+            },
+            {
                 "key": "con_getthis.__code__",
                 "value": "@__export('con_getthis')\ndef exported():\n    return 0\n\n\n@__export('con_getthis')\ndef getthis():\n    exported()\n    return ctx.this\n"
             },
@@ -2056,6 +2642,308 @@
                         0
                     ]
                 }
+            },
+            {
+                "key": "con_messaging.__code__",
+                "value": "__messages = Hash(default_value='', contract='con_messaging', name='messages')\n\n\n@__export('con_messaging')\ndef save_msg(msg: str, recipient: str):\n    if __messages[recipient, 'id'] == '':\n        __messages[recipient, 'id'] = 0\n    msg_id = __messages[recipient, 'id']\n    __messages[recipient, msg_id, 'message'] = msg\n    __messages[recipient, msg_id, 'sender'] = ctx.signer\n    return f'{recipient}:{msg_id}'\n"
+            },
+            {
+                "key": "con_messaging.__developer__",
+                "value": "0813b6d7d7507c5f735821c32d06cd8f53e6d29807acb7bc92ab0dfe0417386e"
+            },
+            {
+                "key": "con_messaging.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        12,
+                        6,
+                        23,
+                        30,
+                        18,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_msg.__code__",
+                "value": "__counter = Variable(contract='con_msg', name='counter')\n__messages = Hash(contract='con_msg', name='messages')\n\n\ndef ____():\n    __counter.set(0)\n\n\n@__export('con_msg')\ndef save_msg(msg: str, recipient: str):\n    __counter.set(__counter.get() + 1)\n    __messages[__counter.get()] = {'sender': ctx.signer, 'message': msg,\n        'receiver': recipient, 'timestamp': now}\n"
+            },
+            {
+                "key": "con_msg.__developer__",
+                "value": "0813b6d7d7507c5f735821c32d06cd8f53e6d29807acb7bc92ab0dfe0417386e"
+            },
+            {
+                "key": "con_msg.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        12,
+                        8,
+                        0,
+                        47,
+                        18,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_msg.counter",
+                "value": 12
+            },
+            {
+                "key": "con_msg.messages:1",
+                "value": {
+                    "sender": "0813b6d7d7507c5f735821c32d06cd8f53e6d29807acb7bc92ab0dfe0417386e",
+                    "message": "this is a message",
+                    "receiver": "dave",
+                    "timestamp": {
+                        "__time__": [
+                            2024,
+                            12,
+                            8,
+                            0,
+                            47,
+                            32,
+                            0
+                        ]
+                    }
+                }
+            },
+            {
+                "key": "con_msg.messages:10",
+                "value": {
+                    "sender": "ca9aeee192854dc55a6d3e211bf858cc3ecd41e8b86a55c07740ece29f349597",
+                    "message": "75d00f94becacba7078eacd3d2e68736fc691cb85ffc39d6923a32b50e5bf17855fdf7d555ed67287ba4d6ebb4d453defbf7",
+                    "receiver": "13ca9a62d10cbc28d55408e0a85d31f5c059fe3bb49316538e1d03064f3f2c8e",
+                    "timestamp": {
+                        "__time__": [
+                            2024,
+                            12,
+                            8,
+                            10,
+                            28,
+                            55,
+                            0
+                        ]
+                    }
+                }
+            },
+            {
+                "key": "con_msg.messages:11",
+                "value": {
+                    "sender": "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e",
+                    "message": "ead1304c7481711f1fd112183790590dc32423b19e5f7cb4d1d5a8e6438c045903bfb410d6051545bd750a8bffbf021e436e650a74",
+                    "receiver": "dff5d54d9c3cdb04d279c3c0a123d6a73a94e0725d7eac955fdf87298dbe45a6",
+                    "timestamp": {
+                        "__time__": [
+                            2024,
+                            12,
+                            8,
+                            10,
+                            35,
+                            10,
+                            0
+                        ]
+                    }
+                }
+            },
+            {
+                "key": "con_msg.messages:12",
+                "value": {
+                    "sender": "dff5d54d9c3cdb04d279c3c0a123d6a73a94e0725d7eac955fdf87298dbe45a6",
+                    "message": "95c26e04eac52173b073e6ee28bc91b3353a13aa34a600557e1de628c86fa91dc22ddb5d0eb41dce8ce584d2fc4653ed7e981680e7",
+                    "receiver": "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e",
+                    "timestamp": {
+                        "__time__": [
+                            2024,
+                            12,
+                            8,
+                            10,
+                            38,
+                            27,
+                            0
+                        ]
+                    }
+                }
+            },
+            {
+                "key": "con_msg.messages:2",
+                "value": {
+                    "sender": "0813b6d7d7507c5f735821c32d06cd8f53e6d29807acb7bc92ab0dfe0417386e",
+                    "message": "this is another one",
+                    "receiver": "eric",
+                    "timestamp": {
+                        "__time__": [
+                            2024,
+                            12,
+                            8,
+                            0,
+                            48,
+                            10,
+                            0
+                        ]
+                    }
+                }
+            },
+            {
+                "key": "con_msg.messages:3",
+                "value": {
+                    "sender": "0813b6d7d7507c5f735821c32d06cd8f53e6d29807acb7bc92ab0dfe0417386e",
+                    "message": "DAMN",
+                    "receiver": "sandy",
+                    "timestamp": {
+                        "__time__": [
+                            2024,
+                            12,
+                            8,
+                            0,
+                            48,
+                            32,
+                            0
+                        ]
+                    }
+                }
+            },
+            {
+                "key": "con_msg.messages:4",
+                "value": {
+                    "sender": "dff5d54d9c3cdb04d279c3c0a123d6a73a94e0725d7eac955fdf87298dbe45a6",
+                    "message": "55c20e92d5d4251dc21238227ea50a4753a3487afceaa52979ebed71cd058b3ea26a42adbca45d1f7be2767b2e057d2a21d3b06649",
+                    "receiver": "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e",
+                    "timestamp": {
+                        "__time__": [
+                            2024,
+                            12,
+                            8,
+                            9,
+                            21,
+                            54,
+                            0
+                        ]
+                    }
+                }
+            },
+            {
+                "key": "con_msg.messages:5",
+                "value": {
+                    "sender": "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e",
+                    "message": "716c794d0da2b258236517a754c58f046af9ac5a5be07750c338c8d372c30b2a8f55a7b7c9c9fe6b9f64884f5eb9a208d5a9ac337038",
+                    "receiver": "dff5d54d9c3cdb04d279c3c0a123d6a73a94e0725d7eac955fdf87298dbe45a6",
+                    "timestamp": {
+                        "__time__": [
+                            2024,
+                            12,
+                            8,
+                            9,
+                            23,
+                            16,
+                            0
+                        ]
+                    }
+                }
+            },
+            {
+                "key": "con_msg.messages:6",
+                "value": {
+                    "sender": "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e",
+                    "message": "19d2cfa41dfbe3c0d2cd98b3a3408dd734b2085547e4410375be03ac7370e77c7995f12e1420c3f25f2d19646155850fda02e7f4793a1045",
+                    "receiver": "dff5d54d9c3cdb04d279c3c0a123d6a73a94e0725d7eac955fdf87298dbe45a6",
+                    "timestamp": {
+                        "__time__": [
+                            2024,
+                            12,
+                            8,
+                            9,
+                            33,
+                            24,
+                            0
+                        ]
+                    }
+                }
+            },
+            {
+                "key": "con_msg.messages:7",
+                "value": {
+                    "sender": "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e",
+                    "message": "b5973a0ef4f0c79d2bbd28fee0842b9883c601a8d09bbf80322e57358727955764917b47b82768ef59d3368e335ab1c1ed636a",
+                    "receiver": "dff5d54d9c3cdb04d279c3c0a123d6a73a94e0725d7eac955fdf87298dbe45a6",
+                    "timestamp": {
+                        "__time__": [
+                            2024,
+                            12,
+                            8,
+                            10,
+                            11,
+                            43,
+                            0
+                        ]
+                    }
+                }
+            },
+            {
+                "key": "con_msg.messages:8",
+                "value": {
+                    "sender": "dff5d54d9c3cdb04d279c3c0a123d6a73a94e0725d7eac955fdf87298dbe45a6",
+                    "message": "91e201fb8e9f0231b3bba256a044a145c5363a36e304791356065ca5ff49467b840d2cb7feca160a100b9ab7ed808e4a46ecd18e",
+                    "receiver": "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e",
+                    "timestamp": {
+                        "__time__": [
+                            2024,
+                            12,
+                            8,
+                            10,
+                            18,
+                            12,
+                            0
+                        ]
+                    }
+                }
+            },
+            {
+                "key": "con_msg.messages:9",
+                "value": {
+                    "sender": "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e",
+                    "message": "55beb1b339e4e988f0b5548b5588c94f142cf2da6f972ad5b24a1cf912a9881ddedb93a41cf112025cf4aae718967557d1dbccf512eeb59f3d7adcd161",
+                    "receiver": "dff5d54d9c3cdb04d279c3c0a123d6a73a94e0725d7eac955fdf87298dbe45a6",
+                    "timestamp": {
+                        "__time__": [
+                            2024,
+                            12,
+                            8,
+                            10,
+                            20,
+                            32,
+                            0
+                        ]
+                    }
+                }
+            },
+            {
+                "key": "con_msg_main.__code__",
+                "value": "__counter = Variable(contract='con_msg_main', name='counter')\n__messages = Hash(contract='con_msg_main', name='messages')\n\n\ndef ____():\n    __counter.set(0)\n\n\n@__export('con_msg_main')\ndef save_msg(msg: str, recipient: str):\n    __counter.set(__counter.get() + 1)\n    __messages[__counter.get()] = {'sender': ctx.signer, 'message': msg,\n        'receiver': recipient, 'timestamp': now}\n"
+            },
+            {
+                "key": "con_msg_main.__developer__",
+                "value": "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e"
+            },
+            {
+                "key": "con_msg_main.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        12,
+                        8,
+                        10,
+                        39,
+                        27,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_msg_main.counter",
+                "value": 0
             },
             {
                 "key": "con_multest.__code__",
@@ -2590,6 +3478,244 @@
             {
                 "key": "con_pixel_frames_auction_v0_1.metadata:operator",
                 "value": "ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_4.S:thing_master_contract",
+                "value": "con_pixel_frames_master_v0_3"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_4.__code__",
+                "value": "import currency\nI = importlib\n__Thing_Info = ForeignHash(foreign_contract='con_pixel_frames_info_v0_3',\n    foreign_name='S', contract='con_pixel_frames_auction_v0_4', name=\n    'Thing_Info')\n__S = Hash(default_value=None, contract='con_pixel_frames_auction_v0_4',\n    name='S')\n__metadata = Hash(default_value=0, contract='con_pixel_frames_auction_v0_4',\n    name='metadata')\n\n\ndef ____():\n    __S['thing_master_contract'] = 'con_pixel_frames_master_v0_3'\n    __metadata['operator'] = ctx.caller\n\n\n@__export('con_pixel_frames_auction_v0_4')\ndef change_metadata(key: str, value: Any):\n    assert ctx.caller == __metadata['operator'\n        ], 'Only auction operator can set metadata!'\n    __metadata[key] = value\n\n\n@__export('con_pixel_frames_auction_v0_4')\ndef operator_transfer_thing(uid: str, new_owner: str):\n    assert ctx.caller == __metadata['operator'\n        ], 'Only auction operator can transfer things from contract.'\n    thing_master_contract = I.import_module(__S['thing_master_contract'])\n    thing_master_contract.transfer(uid=uid, new_owner=new_owner)\n    __S[uid, new_owner] = False\n\n\n@__export('con_pixel_frames_auction_v0_4')\ndef operator_transfer_currency(amount: str, to: float):\n    assert ctx.caller == __metadata['operator'\n        ], 'Only auction operator can transfer currency from contract.'\n    currency.transfer(amount=amount, to=to)\n\n\ndef __get_listing_info(uid: str):\n    listing_info = __S[uid, ctx.caller]\n    assert listing_info is not None, \"Listing doesn't exist!\"\n    return {'start_date': __S[uid, 'start_date'], 'end_date': __S[uid,\n        'end_date'], 'current_owner': __S[uid, 'current_owner'], 'uid': __S\n        [uid, 'uid'], 'reserve_price': __S[uid, 'reserve_price'],\n        'current_bid': __S[uid, 'current_bid'], 'current_winner': __S[uid,\n        'current_winner'], 'royalty_percent': __S[uid, 'royalty_percent'],\n        'creator': __S[uid, 'creator']}\n\n\n@__export('con_pixel_frames_auction_v0_4')\ndef auction_thing(uid: str, reserve_price: float, start_date: datetime.\n    datetime, end_date: datetime.datetime):\n    thing_master_contract = I.import_module(__S['thing_master_contract'])\n    thing_master_contract.transfer_from(uid=uid, to=ctx.this, main_account=\n        ctx.caller)\n    assert not __S[uid, ctx.caller], 'Auction has already started!'\n    assert end_date > now, 'end_date is in the past'\n    assert reserve_price >= 0, 'reserve_price cannot be less than 0'\n    __S[uid, 'start_date'] = start_date\n    __S[uid, 'end_date'] = end_date\n    __S[uid, 'current_owner'] = ctx.caller\n    __S[uid, 'uid'] = uid\n    __S[uid, 'reserve_price'] = reserve_price\n    __S[uid, 'current_bid'] = None\n    __S[uid, 'current_winner'] = ''\n    __S[uid, 'royalty_percent'] = __Thing_Info[uid, 'meta', 'royalty_percent']\n    __S[uid, 'creator'] = __Thing_Info[uid, 'creator']\n    __S[uid, ctx.caller] = True\n\n\n@__export('con_pixel_frames_auction_v0_4')\ndef end_auction(uid: str, end_early: bool):\n    listing_info = __get_listing_info(uid=uid)\n    if end_early:\n        assert listing_info['current_owner'] == ctx.caller or __metadata[\n            'operator'\n            ] == ctx.caller, 'Only thing owner or auction operator can end the auction early!'\n        if now < listing_info['start_date']:\n            __process_auction_result_no_winner(listing_info)\n        elif (listing_info['current_bid'] or -1) < listing_info['reserve_price'\n            ]:\n            __process_auction_result_no_winner(listing_info)\n        else:\n            assert False, 'Cannot end early. Auction started or reserve has been met.'\n    else:\n        assert now > listing_info['end_date'], 'Auction is still pending!'\n        if listing_info['current_bid'] == None or listing_info['current_bid'\n            ] < listing_info['reserve_price']:\n            __process_auction_result_no_winner(listing_info)\n        else:\n            __process_auction_result(listing_info)\n\n\ndef __process_auction_result_no_winner(listing_info):\n    thing_master_contract = I.import_module(__S['thing_master_contract'])\n    thing_master_contract.transfer(uid=listing_info['uid'], new_owner=\n        listing_info['current_owner'])\n    if listing_info['current_winner'] != '':\n        currency.transfer(to=listing_info['current_winner'], amount=\n            listing_info['current_bid'])\n    __S[listing_info['uid'], listing_info['current_owner']] = False\n\n\ndef __process_auction_result(listing_info):\n    thing_master_contract = I.import_module(__S['thing_master_contract'])\n    thing_master_contract.transfer(uid=listing_info['uid'], new_owner=\n        listing_info['current_winner'])\n    royalty_percent = listing_info['royalty_percent']\n    if royalty_percent > 0:\n        royalty_amount = listing_info['current_bid'] * (royalty_percent / 100)\n        net_amount = listing_info['current_bid'] - royalty_amount\n        currency.transfer(to=listing_info['creator'], amount=royalty_amount)\n    else:\n        net_amount = listing_info['current_bid']\n    currency.transfer(to=listing_info['current_owner'], amount=net_amount)\n    __S[listing_info['uid'], listing_info['current_owner']] = False\n\n\n@__export('con_pixel_frames_auction_v0_4')\ndef bid(uid: str, bid_amount: float):\n    listing_info = __get_listing_info(uid=uid)\n    current_bid = listing_info['current_bid'] or 0\n    assert now < listing_info['end_date'], 'Auction has ended.'\n    assert now > listing_info['start_date'], 'Auction has not stared.'\n    assert bid_amount > 0, 'Bid must be greater than zero.'\n    assert bid_amount > current_bid, f'Current bid of {current_bid} is higher!'\n    currency.transfer_from(main_account=ctx.caller, to=ctx.this, amount=\n        bid_amount)\n    if listing_info['current_winner'] != '':\n        currency.transfer(to=listing_info['current_winner'], amount=\n            listing_info['current_bid'])\n    __S[uid, 'current_bid'] = bid_amount\n    __S[uid, 'current_winner'] = ctx.caller\n\n\ndef __strptime_ymdhms(date_string: str):\n    return datetime.datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S')\n"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_4.__developer__",
+                "value": "f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_4.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        12,
+                        6,
+                        3,
+                        33,
+                        39,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_4.metadata:operator",
+                "value": "f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_5.S:aded799648b9d8b71085d8df868180ac40d96bf5e677217092ec76cf410e311a:creator",
+                "value": "f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_5.S:aded799648b9d8b71085d8df868180ac40d96bf5e677217092ec76cf410e311a:current_owner",
+                "value": "f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_5.S:aded799648b9d8b71085d8df868180ac40d96bf5e677217092ec76cf410e311a:current_winner",
+                "value": ""
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_5.S:aded799648b9d8b71085d8df868180ac40d96bf5e677217092ec76cf410e311a:end_date",
+                "value": {
+                    "__time__": [
+                        2024,
+                        12,
+                        10,
+                        12,
+                        0,
+                        0,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_5.S:aded799648b9d8b71085d8df868180ac40d96bf5e677217092ec76cf410e311a:f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce",
+                "value": false
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_5.S:aded799648b9d8b71085d8df868180ac40d96bf5e677217092ec76cf410e311a:reserve_price",
+                "value": 20
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_5.S:aded799648b9d8b71085d8df868180ac40d96bf5e677217092ec76cf410e311a:royalty_percent",
+                "value": 5
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_5.S:aded799648b9d8b71085d8df868180ac40d96bf5e677217092ec76cf410e311a:start_date",
+                "value": {
+                    "__time__": [
+                        2024,
+                        12,
+                        10,
+                        9,
+                        0,
+                        0,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_5.S:aded799648b9d8b71085d8df868180ac40d96bf5e677217092ec76cf410e311a:uid",
+                "value": "aded799648b9d8b71085d8df868180ac40d96bf5e677217092ec76cf410e311a"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_5.S:thing_master_contract",
+                "value": "con_pixel_frames_master_v0_3"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_5.__code__",
+                "value": "import currency\nI = importlib\n__Thing_Info = ForeignHash(foreign_contract='con_pixel_frames_info_v0_3',\n    foreign_name='S', contract='con_pixel_frames_auction_v0_5', name=\n    'Thing_Info')\n__S = Hash(default_value=None, contract='con_pixel_frames_auction_v0_5',\n    name='S')\n__metadata = Hash(default_value=0, contract='con_pixel_frames_auction_v0_5',\n    name='metadata')\n\n\ndef ____():\n    __S['thing_master_contract'] = 'con_pixel_frames_master_v0_3'\n    __metadata['operator'] = ctx.caller\n\n\n@__export('con_pixel_frames_auction_v0_5')\ndef change_metadata(key: str, value: Any):\n    assert ctx.caller == __metadata['operator'\n        ], 'Only auction operator can set metadata!'\n    __metadata[key] = value\n\n\n@__export('con_pixel_frames_auction_v0_5')\ndef operator_transfer_thing(uid: str, new_owner: str):\n    assert ctx.caller == __metadata['operator'\n        ], 'Only auction operator can transfer things from contract.'\n    thing_master_contract = I.import_module(__S['thing_master_contract'])\n    thing_master_contract.transfer(uid=uid, new_owner=new_owner)\n    __S[uid, new_owner] = False\n\n\n@__export('con_pixel_frames_auction_v0_5')\ndef operator_transfer_currency(amount: str, to: float):\n    assert ctx.caller == __metadata['operator'\n        ], 'Only auction operator can transfer currency from contract.'\n    currency.transfer(amount=amount, to=to)\n\n\ndef __get_listing_info(uid: str):\n    listing_info = __S[uid, ctx.caller]\n    assert listing_info is not None, \"Listing doesn't exist!\"\n    return {'start_date': __S[uid, 'start_date'], 'end_date': __S[uid,\n        'end_date'], 'current_owner': __S[uid, 'current_owner'], 'uid': __S\n        [uid, 'uid'], 'reserve_price': __S[uid, 'reserve_price'],\n        'current_bid': __S[uid, 'current_bid'], 'current_winner': __S[uid,\n        'current_winner'], 'royalty_percent': __S[uid, 'royalty_percent'],\n        'creator': __S[uid, 'creator']}\n\n\n@__export('con_pixel_frames_auction_v0_5')\ndef auction_thing(uid: str, reserve_price: float, start_date: datetime.\n    datetime, end_date: datetime.datetime):\n    thing_master_contract = I.import_module(__S['thing_master_contract'])\n    thing_master_contract.transfer_from(uid=uid, to=ctx.this, main_account=\n        ctx.caller)\n    start_date = __strptime_ymdhms(start_date)\n    end_date = __strptime_ymdhms(end_date)\n    assert not __S[uid, ctx.caller], 'Auction has already started!'\n    assert end_date > now, 'end_date is in the past'\n    assert reserve_price >= 0, 'reserve_price cannot be less than 0'\n    __S[uid, 'start_date'] = start_date\n    __S[uid, 'end_date'] = end_date\n    __S[uid, 'current_owner'] = ctx.caller\n    __S[uid, 'uid'] = uid\n    __S[uid, 'reserve_price'] = reserve_price\n    __S[uid, 'current_bid'] = None\n    __S[uid, 'current_winner'] = ''\n    __S[uid, 'royalty_percent'] = __Thing_Info[uid, 'meta', 'royalty_percent']\n    __S[uid, 'creator'] = __Thing_Info[uid, 'creator']\n    __S[uid, ctx.caller] = True\n\n\n@__export('con_pixel_frames_auction_v0_5')\ndef end_auction(uid: str, end_early: bool):\n    listing_info = __get_listing_info(uid=uid)\n    if end_early:\n        assert listing_info['current_owner'] == ctx.caller or __metadata[\n            'operator'\n            ] == ctx.caller, 'Only thing owner or auction operator can end the auction early!'\n        if now < listing_info['start_date']:\n            __process_auction_result_no_winner(listing_info)\n        elif (listing_info['current_bid'] or -1) < listing_info['reserve_price'\n            ]:\n            __process_auction_result_no_winner(listing_info)\n        else:\n            assert False, 'Cannot end early. Auction started or reserve has been met.'\n    else:\n        assert now > listing_info['end_date'], 'Auction is still pending!'\n        if listing_info['current_bid'] == None or listing_info['current_bid'\n            ] < listing_info['reserve_price']:\n            __process_auction_result_no_winner(listing_info)\n        else:\n            __process_auction_result(listing_info)\n\n\ndef __process_auction_result_no_winner(listing_info):\n    thing_master_contract = I.import_module(__S['thing_master_contract'])\n    thing_master_contract.transfer(uid=listing_info['uid'], new_owner=\n        listing_info['current_owner'])\n    if listing_info['current_winner'] != '':\n        currency.transfer(to=listing_info['current_winner'], amount=\n            listing_info['current_bid'])\n    __S[listing_info['uid'], listing_info['current_owner']] = False\n\n\ndef __process_auction_result(listing_info):\n    thing_master_contract = I.import_module(__S['thing_master_contract'])\n    thing_master_contract.transfer(uid=listing_info['uid'], new_owner=\n        listing_info['current_winner'])\n    royalty_percent = listing_info['royalty_percent']\n    if royalty_percent > 0:\n        royalty_amount = listing_info['current_bid'] * (royalty_percent / 100)\n        net_amount = listing_info['current_bid'] - royalty_amount\n        currency.transfer(to=listing_info['creator'], amount=royalty_amount)\n    else:\n        net_amount = listing_info['current_bid']\n    currency.transfer(to=listing_info['current_owner'], amount=net_amount)\n    __S[listing_info['uid'], listing_info['current_owner']] = False\n\n\n@__export('con_pixel_frames_auction_v0_5')\ndef bid(uid: str, bid_amount: float):\n    listing_info = __get_listing_info(uid=uid)\n    current_bid = listing_info['current_bid'] or 0\n    assert now < listing_info['end_date'], 'Auction has ended.'\n    assert now > listing_info['start_date'], 'Auction has not stared.'\n    assert bid_amount > 0, 'Bid must be greater than zero.'\n    assert bid_amount > current_bid, f'Current bid of {current_bid} is higher!'\n    currency.transfer_from(main_account=ctx.caller, to=ctx.this, amount=\n        bid_amount)\n    if listing_info['current_winner'] != '':\n        currency.transfer(to=listing_info['current_winner'], amount=\n            listing_info['current_bid'])\n    __S[uid, 'current_bid'] = bid_amount\n    __S[uid, 'current_winner'] = ctx.caller\n\n\ndef __strptime_ymdhms(date_string: str):\n    return datetime.datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S')\n"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_5.__developer__",
+                "value": "f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_5.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        12,
+                        6,
+                        12,
+                        21,
+                        27,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_5.metadata:operator",
+                "value": "f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6.S:thing_master_contract",
+                "value": "con_pixel_frames_master_v0_3"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6.__code__",
+                "value": "import currency\nI = importlib\n__Thing_Info = ForeignHash(foreign_contract='con_pixel_frames_info_v0_3',\n    foreign_name='S', contract='con_pixel_frames_auction_v0_6', name=\n    'Thing_Info')\n__S = Hash(default_value=None, contract='con_pixel_frames_auction_v0_6',\n    name='S')\n__metadata = Hash(default_value=0, contract='con_pixel_frames_auction_v0_6',\n    name='metadata')\n\n\ndef ____():\n    __S['thing_master_contract'] = 'con_pixel_frames_master_v0_3'\n    __metadata['operator'] = ctx.caller\n\n\n@__export('con_pixel_frames_auction_v0_6')\ndef change_metadata(key: str, value: Any):\n    assert ctx.caller == __metadata['operator'\n        ], 'Only auction operator can set metadata!'\n    __metadata[key] = value\n\n\n@__export('con_pixel_frames_auction_v0_6')\ndef operator_transfer_thing(uid: str, new_owner: str):\n    assert ctx.caller == __metadata['operator'\n        ], 'Only auction operator can transfer things from contract.'\n    thing_master_contract = I.import_module(__S['thing_master_contract'])\n    thing_master_contract.transfer(uid=uid, new_owner=new_owner)\n    __S[uid, new_owner] = False\n\n\n@__export('con_pixel_frames_auction_v0_6')\ndef operator_transfer_currency(amount: str, to: float):\n    assert ctx.caller == __metadata['operator'\n        ], 'Only auction operator can transfer currency from contract.'\n    currency.transfer(amount=amount, to=to)\n\n\ndef __get_listing_info(uid: str):\n    current_owner = __S[uid, 'current_owner']\n    listing_info = __S[uid, current_owner]\n    assert listing_info is not None, \"Listing doesn't exist!\"\n    return {'start_date': __S[uid, 'start_date'], 'end_date': __S[uid,\n        'end_date'], 'current_owner': current_owner, 'uid': __S[uid, 'uid'],\n        'reserve_price': __S[uid, 'reserve_price'], 'current_bid': __S[uid,\n        'current_bid'], 'current_winner': __S[uid, 'current_winner'],\n        'royalty_percent': __S[uid, 'royalty_percent'], 'creator': __S[uid,\n        'creator']}\n\n\n@__export('con_pixel_frames_auction_v0_6')\ndef auction_thing(uid: str, reserve_price: float, start_date: datetime.\n    datetime, end_date: datetime.datetime):\n    thing_master_contract = I.import_module(__S['thing_master_contract'])\n    thing_master_contract.transfer_from(uid=uid, to=ctx.this, main_account=\n        ctx.caller)\n    start_date = __strptime_ymdhms(start_date)\n    end_date = trptime_ymdhms(end_date)\n    assert not __S[uid, ctx.caller], 'Auction has already started!'\n    assert end_date > now, 'end_date is in the past'\n    assert reserve_price >= 0, 'reserve_price cannot be less than 0'\n    __S[uid, 'start_date'] = start_date\n    __S[uid, 'end_date'] = end_date\n    __S[uid, 'current_owner'] = ctx.caller\n    __S[uid, 'uid'] = uid\n    __S[uid, 'reserve_price'] = reserve_price\n    __S[uid, 'current_bid'] = None\n    __S[uid, 'current_winner'] = ''\n    __S[uid, 'royalty_percent'] = __Thing_Info[uid, 'meta', 'royalty_percent']\n    __S[uid, 'creator'] = __Thing_Info[uid, 'creator']\n    __S[uid, ctx.caller] = True\n\n\n@__export('con_pixel_frames_auction_v0_6')\ndef end_auction(uid: str, end_early: bool):\n    listing_info = __get_listing_info(uid=uid)\n    if end_early:\n        assert listing_info['current_owner'] == ctx.caller or __metadata[\n            'operator'\n            ] == ctx.caller, 'Only thing owner or auction operator can end the auction early!'\n        if now < listing_info['start_date']:\n            __process_auction_result_no_winner(listing_info)\n        elif (listing_info['current_bid'] or -1) < listing_info['reserve_price'\n            ]:\n            __process_auction_result_no_winner(listing_info)\n        else:\n            assert False, 'Cannot end early. Auction started or reserve has been met.'\n    else:\n        assert now > listing_info['end_date'], 'Auction is still pending!'\n        if listing_info['current_bid'] == None or listing_info['current_bid'\n            ] < listing_info['reserve_price']:\n            __process_auction_result_no_winner(listing_info)\n        else:\n            __process_auction_result(listing_info)\n\n\ndef __process_auction_result_no_winner(listing_info):\n    thing_master_contract = I.import_module(__S['thing_master_contract'])\n    thing_master_contract.transfer(uid=listing_info['uid'], new_owner=\n        listing_info['current_owner'])\n    if listing_info['current_winner'] != '':\n        currency.transfer(to=listing_info['current_winner'], amount=\n            listing_info['current_bid'])\n    __S[listing_info['uid'], listing_info['current_owner']] = False\n\n\ndef __process_auction_result(listing_info):\n    thing_master_contract = I.import_module(__S['thing_master_contract'])\n    thing_master_contract.transfer(uid=listing_info['uid'], new_owner=\n        listing_info['current_winner'])\n    royalty_percent = listing_info['royalty_percent']\n    if royalty_percent > 0:\n        royalty_amount = listing_info['current_bid'] * (royalty_percent / 100)\n        net_amount = listing_info['current_bid'] - royalty_amount\n        currency.transfer(to=listing_info['creator'], amount=royalty_amount)\n    else:\n        net_amount = listing_info['current_bid']\n    currency.transfer(to=listing_info['current_owner'], amount=net_amount)\n    __S[listing_info['uid'], listing_info['current_owner']] = False\n\n\n@__export('con_pixel_frames_auction_v0_6')\ndef bid(uid: str, bid_amount: float):\n    listing_info = __get_listing_info(uid=uid)\n    current_bid = listing_info['current_bid'] or 0\n    assert now < listing_info['end_date'], 'Auction has ended.'\n    assert now > listing_info['start_date'], 'Auction has not stared.'\n    assert bid_amount > 0, 'Bid must be greater than zero.'\n    assert bid_amount > current_bid, f'Current bid of {current_bid} is higher!'\n    currency.transfer_from(main_account=ctx.caller, to=ctx.this, amount=\n        bid_amount)\n    if listing_info['current_winner'] != '':\n        currency.transfer(to=listing_info['current_winner'], amount=\n            listing_info['current_bid'])\n    __S[uid, 'current_bid'] = bid_amount\n    __S[uid, 'current_winner'] = ctx.caller\n\n\ndef __strptime_ymdhms(date_string: str):\n    return datetime.datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S')\n"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6.__developer__",
+                "value": "f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        12,
+                        10,
+                        9,
+                        41,
+                        10,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6.metadata:operator",
+                "value": "f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:aded799648b9d8b71085d8df868180ac40d96bf5e677217092ec76cf410e311a:creator",
+                "value": "f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:aded799648b9d8b71085d8df868180ac40d96bf5e677217092ec76cf410e311a:current_bid",
+                "value": {
+                    "__fixed__": "1E+1"
+                }
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:aded799648b9d8b71085d8df868180ac40d96bf5e677217092ec76cf410e311a:current_owner",
+                "value": "f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:aded799648b9d8b71085d8df868180ac40d96bf5e677217092ec76cf410e311a:current_winner",
+                "value": "3c2161a4dd5beacbaa630d71423b94e466e903ca349149a89c37ea5317ff5677"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:aded799648b9d8b71085d8df868180ac40d96bf5e677217092ec76cf410e311a:end_date",
+                "value": {
+                    "__time__": [
+                        2024,
+                        12,
+                        10,
+                        12,
+                        50,
+                        0,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:aded799648b9d8b71085d8df868180ac40d96bf5e677217092ec76cf410e311a:f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce",
+                "value": true
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:aded799648b9d8b71085d8df868180ac40d96bf5e677217092ec76cf410e311a:reserve_price",
+                "value": 10
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:aded799648b9d8b71085d8df868180ac40d96bf5e677217092ec76cf410e311a:royalty_percent",
+                "value": 5
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:aded799648b9d8b71085d8df868180ac40d96bf5e677217092ec76cf410e311a:start_date",
+                "value": {
+                    "__time__": [
+                        2024,
+                        12,
+                        10,
+                        10,
+                        20,
+                        0,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:aded799648b9d8b71085d8df868180ac40d96bf5e677217092ec76cf410e311a:uid",
+                "value": "aded799648b9d8b71085d8df868180ac40d96bf5e677217092ec76cf410e311a"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:thing_master_contract",
+                "value": "con_pixel_frames_master_v0_3"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.__code__",
+                "value": "import currency\nI = importlib\n__Thing_Info = ForeignHash(foreign_contract='con_pixel_frames_info_v0_3',\n    foreign_name='S', contract='con_pixel_frames_auction_v0_6_1', name=\n    'Thing_Info')\n__S = Hash(default_value=None, contract='con_pixel_frames_auction_v0_6_1',\n    name='S')\n__metadata = Hash(default_value=0, contract=\n    'con_pixel_frames_auction_v0_6_1', name='metadata')\n\n\ndef ____():\n    __S['thing_master_contract'] = 'con_pixel_frames_master_v0_3'\n    __metadata['operator'] = ctx.caller\n\n\n@__export('con_pixel_frames_auction_v0_6_1')\ndef change_metadata(key: str, value: Any):\n    assert ctx.caller == __metadata['operator'\n        ], 'Only auction operator can set metadata!'\n    __metadata[key] = value\n\n\n@__export('con_pixel_frames_auction_v0_6_1')\ndef operator_transfer_thing(uid: str, new_owner: str):\n    assert ctx.caller == __metadata['operator'\n        ], 'Only auction operator can transfer things from contract.'\n    thing_master_contract = I.import_module(__S['thing_master_contract'])\n    thing_master_contract.transfer(uid=uid, new_owner=new_owner)\n    __S[uid, new_owner] = False\n\n\n@__export('con_pixel_frames_auction_v0_6_1')\ndef operator_transfer_currency(amount: str, to: float):\n    assert ctx.caller == __metadata['operator'\n        ], 'Only auction operator can transfer currency from contract.'\n    currency.transfer(amount=amount, to=to)\n\n\ndef __get_listing_info(uid: str):\n    current_owner = __S[uid, 'current_owner']\n    listing_info = __S[uid, current_owner]\n    assert listing_info is not None, \"Listing doesn't exist!\"\n    return {'start_date': __S[uid, 'start_date'], 'end_date': __S[uid,\n        'end_date'], 'current_owner': current_owner, 'uid': __S[uid, 'uid'],\n        'reserve_price': __S[uid, 'reserve_price'], 'current_bid': __S[uid,\n        'current_bid'], 'current_winner': __S[uid, 'current_winner'],\n        'royalty_percent': __S[uid, 'royalty_percent'], 'creator': __S[uid,\n        'creator']}\n\n\n@__export('con_pixel_frames_auction_v0_6_1')\ndef auction_thing(uid: str, reserve_price: float, start_date: datetime.\n    datetime, end_date: datetime.datetime):\n    thing_master_contract = I.import_module(__S['thing_master_contract'])\n    thing_master_contract.transfer_from(uid=uid, to=ctx.this, main_account=\n        ctx.caller)\n    start_date = __strptime_ymdhms(start_date)\n    end_date = __strptime_ymdhms(end_date)\n    assert not __S[uid, ctx.caller], 'Auction has already started!'\n    assert end_date > now, 'end_date is in the past'\n    assert reserve_price >= 0, 'reserve_price cannot be less than 0'\n    __S[uid, 'start_date'] = start_date\n    __S[uid, 'end_date'] = end_date\n    __S[uid, 'current_owner'] = ctx.caller\n    __S[uid, 'uid'] = uid\n    __S[uid, 'reserve_price'] = reserve_price\n    __S[uid, 'current_bid'] = None\n    __S[uid, 'current_winner'] = ''\n    __S[uid, 'royalty_percent'] = __Thing_Info[uid, 'meta', 'royalty_percent']\n    __S[uid, 'creator'] = __Thing_Info[uid, 'creator']\n    __S[uid, ctx.caller] = True\n\n\n@__export('con_pixel_frames_auction_v0_6_1')\ndef end_auction(uid: str, end_early: bool):\n    listing_info = __get_listing_info(uid=uid)\n    if end_early:\n        assert listing_info['current_owner'] == ctx.caller or __metadata[\n            'operator'\n            ] == ctx.caller, 'Only thing owner or auction operator can end the auction early!'\n        if now < listing_info['start_date']:\n            __process_auction_result_no_winner(listing_info)\n        elif (listing_info['current_bid'] or -1) < listing_info['reserve_price'\n            ]:\n            __process_auction_result_no_winner(listing_info)\n        else:\n            assert False, 'Cannot end early. Auction started or reserve has been met.'\n    else:\n        assert now > listing_info['end_date'], 'Auction is still pending!'\n        if listing_info['current_bid'] == None or listing_info['current_bid'\n            ] < listing_info['reserve_price']:\n            __process_auction_result_no_winner(listing_info)\n        else:\n            __process_auction_result(listing_info)\n\n\ndef __process_auction_result_no_winner(listing_info):\n    thing_master_contract = I.import_module(__S['thing_master_contract'])\n    thing_master_contract.transfer(uid=listing_info['uid'], new_owner=\n        listing_info['current_owner'])\n    if listing_info['current_winner'] != '':\n        currency.transfer(to=listing_info['current_winner'], amount=\n            listing_info['current_bid'])\n    __S[listing_info['uid'], listing_info['current_owner']] = False\n\n\ndef __process_auction_result(listing_info):\n    thing_master_contract = I.import_module(__S['thing_master_contract'])\n    thing_master_contract.transfer(uid=listing_info['uid'], new_owner=\n        listing_info['current_winner'])\n    royalty_percent = listing_info['royalty_percent']\n    if royalty_percent > 0:\n        royalty_amount = listing_info['current_bid'] * (royalty_percent / 100)\n        net_amount = listing_info['current_bid'] - royalty_amount\n        currency.transfer(to=listing_info['creator'], amount=royalty_amount)\n    else:\n        net_amount = listing_info['current_bid']\n    currency.transfer(to=listing_info['current_owner'], amount=net_amount)\n    __S[listing_info['uid'], listing_info['current_owner']] = False\n\n\n@__export('con_pixel_frames_auction_v0_6_1')\ndef bid(uid: str, bid_amount: float):\n    listing_info = __get_listing_info(uid=uid)\n    current_bid = listing_info['current_bid'] or 0\n    assert now < listing_info['end_date'], 'Auction has ended.'\n    assert now > listing_info['start_date'], 'Auction has not stared.'\n    assert bid_amount > 0, 'Bid must be greater than zero.'\n    assert bid_amount > current_bid, f'Current bid of {current_bid} is higher!'\n    currency.transfer_from(main_account=ctx.caller, to=ctx.this, amount=\n        bid_amount)\n    if listing_info['current_winner'] != '':\n        currency.transfer(to=listing_info['current_winner'], amount=\n            listing_info['current_bid'])\n    __S[uid, 'current_bid'] = bid_amount\n    __S[uid, 'current_winner'] = ctx.caller\n\n\ndef __strptime_ymdhms(date_string: str):\n    return datetime.datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S')\n"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.__developer__",
+                "value": "f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        12,
+                        10,
+                        9,
+                        57,
+                        9,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.metadata:operator",
+                "value": "f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce"
             },
             {
                 "key": "con_pixel_frames_info.__code__",
@@ -5666,7 +6792,7 @@
             },
             {
                 "key": "con_pixel_frames_info_v0_3.S:aded799648b9d8b71085d8df868180ac40d96bf5e677217092ec76cf410e311a:owner",
-                "value": "f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce"
+                "value": "con_pixel_frames_auction_v0_6_1"
             },
             {
                 "key": "con_pixel_frames_info_v0_3.S:aded799648b9d8b71085d8df868180ac40d96bf5e677217092ec76cf410e311a:price:amount",
@@ -6913,6 +8039,14 @@
                 }
             },
             {
+                "key": "con_pixel_frames_master_v0_3.balances:con_pixel_frames_auction_v0_5",
+                "value": 0
+            },
+            {
+                "key": "con_pixel_frames_master_v0_3.balances:con_pixel_frames_auction_v0_6_1",
+                "value": 1
+            },
+            {
                 "key": "con_pixel_frames_master_v0_3.balances:e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931",
                 "value": 32
             },
@@ -6922,7 +8056,15 @@
             },
             {
                 "key": "con_pixel_frames_master_v0_3.balances:f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce",
-                "value": 10
+                "value": 9
+            },
+            {
+                "key": "con_pixel_frames_master_v0_3.balances:f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce:aded799648b9d8b71085d8df868180ac40d96bf5e677217092ec76cf410e311a:con_pixel_frames_auction_v0_4",
+                "value": true
+            },
+            {
+                "key": "con_pixel_frames_master_v0_3.balances:f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce:aded799648b9d8b71085d8df868180ac40d96bf5e677217092ec76cf410e311a:con_pixel_frames_auction_v0_6",
+                "value": true
             },
             {
                 "key": "con_pixel_frames_master_v0_3.metadata:operator",
@@ -8242,6 +9384,54 @@
                 "key": "con_s5.game:turtleData:Yellow:probability",
                 "value": {
                     "__fixed__": "0.1"
+                }
+            },
+            {
+                "key": "con_set_value.__code__",
+                "value": "__test = Variable(t=int, contract='con_set_value', name='test')\n\n\n@__export('con_set_value')\ndef set(value: int):\n    __test.set(value)\n\n\ndef __get():\n    return __test.get()\n"
+            },
+            {
+                "key": "con_set_value.__developer__",
+                "value": "0813b6d7d7507c5f735821c32d06cd8f53e6d29807acb7bc92ab0dfe0417386e"
+            },
+            {
+                "key": "con_set_value.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        12,
+                        7,
+                        22,
+                        37,
+                        22,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_set_value.test",
+                "value": 123
+            },
+            {
+                "key": "con_set_value2.__code__",
+                "value": "__test = Variable(t=str, contract='con_set_value2', name='test')\n\n\n@__export('con_set_value2')\ndef set(value: int):\n    __test.set(value)\n\n\ndef __get():\n    return __test.get()\n"
+            },
+            {
+                "key": "con_set_value2.__developer__",
+                "value": "0813b6d7d7507c5f735821c32d06cd8f53e6d29807acb7bc92ab0dfe0417386e"
+            },
+            {
+                "key": "con_set_value2.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        12,
+                        7,
+                        22,
+                        51,
+                        30,
+                        0
+                    ]
                 }
             },
             {
@@ -9795,7 +10985,7 @@
             {
                 "key": "con_testtoken.balances:con_dex_pairs",
                 "value": {
-                    "__fixed__": "1912.706413362678037713460833785799"
+                    "__fixed__": "1739.61316713223260000230453431316"
                 }
             },
             {
@@ -9843,6 +11033,12 @@
             {
                 "key": "con_testtoken.balances:e734ea6c2b6257de72355e472aa05a4c487e6b463c029ed306df2f01b5636b58",
                 "value": 9999998999
+            },
+            {
+                "key": "con_testtoken.balances:e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931",
+                "value": {
+                    "__fixed__": "173.093246230445437711156299472639"
+                }
             },
             {
                 "key": "con_testtoken.balances:test",
@@ -11489,7 +12685,9 @@
             },
             {
                 "key": "currency.balances:0813b6d7d7507c5f735821c32d06cd8f53e6d29807acb7bc92ab0dfe0417386e",
-                "value": 5000000
+                "value": {
+                    "__fixed__": "4499943.479"
+                }
             },
             {
                 "key": "currency.balances:0cbe2684a639d06b2686668fddd6715a6606f4a0387356d5fbe6ede7f17b17cc",
@@ -11568,7 +12766,7 @@
             {
                 "key": "currency.balances:1565ff3ef4e54a73e5782f5c1c30c7106142370f90495ef3bb6dd6c2e17dc158",
                 "value": {
-                    "__fixed__": "7.000010000000000000000000000002"
+                    "__fixed__": "17.000010000000000000000000000002"
                 }
             },
             {
@@ -11774,7 +12972,7 @@
             {
                 "key": "currency.balances:39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0",
                 "value": {
-                    "__fixed__": "9341.510799926559109328263824602773"
+                    "__fixed__": "9342.226199926559109328263824602773"
                 }
             },
             {
@@ -11837,7 +13035,21 @@
             },
             {
                 "key": "currency.balances:3c2161a4dd5beacbaa630d71423b94e466e903ca349149a89c37ea5317ff5677",
-                "value": 1000
+                "value": {
+                    "__fixed__": "10988.48"
+                }
+            },
+            {
+                "key": "currency.balances:3c2161a4dd5beacbaa630d71423b94e466e903ca349149a89c37ea5317ff5677:con_pixel_frames_auction_v0_5",
+                "value": {
+                    "__fixed__": "2E+8"
+                }
+            },
+            {
+                "key": "currency.balances:3c2161a4dd5beacbaa630d71423b94e466e903ca349149a89c37ea5317ff5677:con_pixel_frames_auction_v0_6_1",
+                "value": {
+                    "__fixed__": "9.999999E+7"
+                }
             },
             {
                 "key": "currency.balances:3c460e39312bb6fc9f6f53dfb47459214ee5bde97d43e74ed747fdba3fbd5cb0",
@@ -12000,12 +13212,42 @@
             {
                 "key": "currency.balances:503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b",
                 "value": {
-                    "__fixed__": "291.9678"
+                    "__fixed__": "113.4622"
                 }
             },
             {
                 "key": "currency.balances:503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b:con_dice",
                 "value": 50
+            },
+            {
+                "key": "currency.balances:503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b:con_dice2",
+                "value": {
+                    "__fixed__": "999999999959"
+                }
+            },
+            {
+                "key": "currency.balances:503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b:con_dice3",
+                "value": {
+                    "__fixed__": "999999999987"
+                }
+            },
+            {
+                "key": "currency.balances:503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b:con_dice4",
+                "value": {
+                    "__fixed__": "999999999997"
+                }
+            },
+            {
+                "key": "currency.balances:503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b:con_dice5",
+                "value": {
+                    "__fixed__": "999999999994"
+                }
+            },
+            {
+                "key": "currency.balances:503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b:con_dice6",
+                "value": {
+                    "__fixed__": "999999999974"
+                }
             },
             {
                 "key": "currency.balances:503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b:con_prueba1",
@@ -12424,7 +13666,7 @@
             {
                 "key": "currency.balances:7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e",
                 "value": {
-                    "__fixed__": "59101913.30938205352288775"
+                    "__fixed__": "59101035.45958205352288775"
                 }
             },
             {
@@ -12482,6 +13724,42 @@
                 "value": 10000
             },
             {
+                "key": "currency.balances:8a42ab5235903c76b2ff7f8491aa719685f72c26bf996d7040b1a7ab7a5d47d4",
+                "value": {
+                    "__fixed__": "7.64"
+                }
+            },
+            {
+                "key": "currency.balances:8a42ab5235903c76b2ff7f8491aa719685f72c26bf996d7040b1a7ab7a5d47d4:con_dice2",
+                "value": {
+                    "__fixed__": "999999999998"
+                }
+            },
+            {
+                "key": "currency.balances:8a42ab5235903c76b2ff7f8491aa719685f72c26bf996d7040b1a7ab7a5d47d4:con_dice3",
+                "value": {
+                    "__fixed__": "1999999999998"
+                }
+            },
+            {
+                "key": "currency.balances:8a42ab5235903c76b2ff7f8491aa719685f72c26bf996d7040b1a7ab7a5d47d4:con_dice4",
+                "value": {
+                    "__fixed__": "999999999999"
+                }
+            },
+            {
+                "key": "currency.balances:8a42ab5235903c76b2ff7f8491aa719685f72c26bf996d7040b1a7ab7a5d47d4:con_dice5",
+                "value": {
+                    "__fixed__": "999999999999"
+                }
+            },
+            {
+                "key": "currency.balances:8a42ab5235903c76b2ff7f8491aa719685f72c26bf996d7040b1a7ab7a5d47d4:con_dice6",
+                "value": {
+                    "__fixed__": "999999999999"
+                }
+            },
+            {
                 "key": "currency.balances:8b1e1bdb40c49ecf36b721d27c5ac357ca8a0eb5a45553b594a2f7032c6268da",
                 "value": {
                     "__fixed__": "22.69372984"
@@ -12496,13 +13774,13 @@
             {
                 "key": "currency.balances:8bf21c7dc3a4ff32996bf56a665e1efe3c9261cc95bbf82552c328585c863819",
                 "value": {
-                    "__fixed__": "1.11"
+                    "__fixed__": "5.55"
                 }
             },
             {
                 "key": "currency.balances:8bf21c7dc3a4ff32996bf56a665e1efe3c9261cc95bbf82552c328585c863829",
                 "value": {
-                    "__fixed__": "1.11"
+                    "__fixed__": "500001.11"
                 }
             },
             {
@@ -12786,7 +14064,7 @@
             {
                 "key": "currency.balances:b6504cf056e264a4c1932d5de6893d110db5459ab4f742eb415d98ed989bb98d",
                 "value": {
-                    "__fixed__": "15554.292"
+                    "__fixed__": "15554.092"
                 }
             },
             {
@@ -12926,7 +14204,7 @@
             {
                 "key": "currency.balances:ca9aeee192854dc55a6d3e211bf858cc3ecd41e8b86a55c07740ece29f349597",
                 "value": {
-                    "__fixed__": "903.00000252"
+                    "__fixed__": "902.54000252"
                 }
             },
             {
@@ -12968,7 +14246,7 @@
             {
                 "key": "currency.balances:con_dex_pairs",
                 "value": {
-                    "__fixed__": "2.002000000230291939558750930651"
+                    "__fixed__": "2.102000000230291939558750930651"
                 }
             },
             {
@@ -13005,6 +14283,42 @@
                 "key": "currency.balances:con_dextest_006",
                 "value": {
                     "__fixed__": "1.85"
+                }
+            },
+            {
+                "key": "currency.balances:con_dice2",
+                "value": {
+                    "__fixed__": "39.1"
+                }
+            },
+            {
+                "key": "currency.balances:con_dice3",
+                "value": {
+                    "__fixed__": "4.9"
+                }
+            },
+            {
+                "key": "currency.balances:con_dice4",
+                "value": {
+                    "__fixed__": "1.1"
+                }
+            },
+            {
+                "key": "currency.balances:con_dice5",
+                "value": {
+                    "__fixed__": "5"
+                }
+            },
+            {
+                "key": "currency.balances:con_dice6",
+                "value": {
+                    "__fixed__": "11.9"
+                }
+            },
+            {
+                "key": "currency.balances:con_pixel_frames_auction_v0_6_1",
+                "value": {
+                    "__fixed__": "1E+1"
                 }
             },
             {
@@ -13170,7 +14484,7 @@
             {
                 "key": "currency.balances:dff5d54d9c3cdb04d279c3c0a123d6a73a94e0725d7eac955fdf87298dbe45a6",
                 "value": {
-                    "__fixed__": "2711.9559"
+                    "__fixed__": "3760.5145"
                 }
             },
             {
@@ -13230,12 +14544,18 @@
             {
                 "key": "currency.balances:e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931",
                 "value": {
-                    "__fixed__": "1007977.476214054990895930799999999998"
+                    "__fixed__": "1007959.096214054990895930799999999998"
                 }
             },
             {
                 "key": "currency.balances:e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931:burn",
                 "value": 2
+            },
+            {
+                "key": "currency.balances:e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931:con_dex2test",
+                "value": {
+                    "__fixed__": "99.9"
+                }
             },
             {
                 "key": "currency.balances:e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931:con_multisend",
@@ -13264,7 +14584,37 @@
             {
                 "key": "currency.balances:ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9",
                 "value": {
-                    "__fixed__": "11.82019748"
+                    "__fixed__": "6.58019748"
+                }
+            },
+            {
+                "key": "currency.balances:f0222f00943416a8cacb2160e4af75faff36660b87e99279a045af1f4182dd1f",
+                "value": {
+                    "__fixed__": "17.34"
+                }
+            },
+            {
+                "key": "currency.balances:f0222f00943416a8cacb2160e4af75faff36660b87e99279a045af1f4182dd1f:con_dice3",
+                "value": {
+                    "__fixed__": "1999999999988"
+                }
+            },
+            {
+                "key": "currency.balances:f0222f00943416a8cacb2160e4af75faff36660b87e99279a045af1f4182dd1f:con_dice4",
+                "value": {
+                    "__fixed__": "1999999999997"
+                }
+            },
+            {
+                "key": "currency.balances:f0222f00943416a8cacb2160e4af75faff36660b87e99279a045af1f4182dd1f:con_dice5",
+                "value": {
+                    "__fixed__": "999999999999"
+                }
+            },
+            {
+                "key": "currency.balances:f0222f00943416a8cacb2160e4af75faff36660b87e99279a045af1f4182dd1f:con_dice6",
+                "value": {
+                    "__fixed__": "999999999985"
                 }
             },
             {
@@ -13324,7 +14674,7 @@
             {
                 "key": "currency.balances:f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce",
                 "value": {
-                    "__fixed__": "42417.4906"
+                    "__fixed__": "32352.4702"
                 }
             },
             {
@@ -13795,6 +15145,10 @@
                 "value": 6
             },
             {
+                "key": "0813b6d7d7507c5f735821c32d06cd8f53e6d29807acb7bc92ab0dfe0417386e",
+                "value": 18
+            },
+            {
                 "key": "0f8e2b5f76a54a91cc628dbd5cc3a0b95ab2bfd5a1305da31d011fa3818af868",
                 "value": 0
             },
@@ -13819,6 +15173,10 @@
                 "value": 0
             },
             {
+                "key": "3c2161a4dd5beacbaa630d71423b94e466e903ca349149a89c37ea5317ff5677",
+                "value": 6
+            },
+            {
                 "key": "3c460e39312bb6fc9f6f53dfb47459214ee5bde97d43e74ed747fdba3fbd5cb0",
                 "value": 0
             },
@@ -13840,7 +15198,7 @@
             },
             {
                 "key": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b",
-                "value": 155
+                "value": 320
             },
             {
                 "key": "53b38a255cda4e5fa285fa0baa6b2a845c0f11c6df5913fc492821755cac6328",
@@ -13856,7 +15214,11 @@
             },
             {
                 "key": "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e",
-                "value": 87
+                "value": 96
+            },
+            {
+                "key": "8a42ab5235903c76b2ff7f8491aa719685f72c26bf996d7040b1a7ab7a5d47d4",
+                "value": 7
             },
             {
                 "key": "8ccd49dd13b332fad9d9af8a7a3089c5f1ad17e79d9ce262fcea8dddce16dac4",
@@ -13875,12 +15237,20 @@
                 "value": 0
             },
             {
+                "key": "b6504cf056e264a4c1932d5de6893d110db5459ab4f742eb415d98ed989bb98d",
+                "value": 0
+            },
+            {
                 "key": "c0476b987deee6d9d5eddbae604bf80fc442066f32954ef7120549ff4e51dfd9",
                 "value": 191
             },
             {
                 "key": "c1ae587308612f65005cbbe47565645ff9d83350ce344a9d454641630c9d482a",
                 "value": 0
+            },
+            {
+                "key": "ca9aeee192854dc55a6d3e211bf858cc3ecd41e8b86a55c07740ece29f349597",
+                "value": 1
             },
             {
                 "key": "ce924a8bc4ced8a2b9cef2e2cf7709b1a87f87bd84a9d645de96ec46a458a6c9",
@@ -13896,7 +15266,7 @@
             },
             {
                 "key": "dff5d54d9c3cdb04d279c3c0a123d6a73a94e0725d7eac955fdf87298dbe45a6",
-                "value": 17
+                "value": 21
             },
             {
                 "key": "e734ea6c2b6257de72355e472aa05a4c487e6b463c029ed306df2f01b5636b58",
@@ -13904,11 +15274,15 @@
             },
             {
                 "key": "e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931",
-                "value": 279
+                "value": 287
             },
             {
                 "key": "ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9",
-                "value": 18
+                "value": 22
+            },
+            {
+                "key": "f0222f00943416a8cacb2160e4af75faff36660b87e99279a045af1f4182dd1f",
+                "value": 5
             },
             {
                 "key": "f408f135b8db9d11daafae6b508c98a0cc79556c921b4fafe5d9ada0d5e3910d",
@@ -13920,7 +15294,7 @@
             },
             {
                 "key": "f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce",
-                "value": 16
+                "value": 46
             }
         ]
     }
