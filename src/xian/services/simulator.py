@@ -5,10 +5,11 @@ import json
 import struct
 
 from loguru import logger
+from datetime import datetime
 from contracting.execution.executor import Executor
+from contracting.stdlib.bridge.time import Datetime
 from contracting.storage.encoder import safe_repr, convert_dict
 from contracting.storage.driver import Driver
-from datetime import datetime
 from xian.utils.tx import format_dictionary
 from xian.utils.encoding import stringify_decimals
 from xian.constants import Constants as c
@@ -89,7 +90,7 @@ class Simulator:
             'block_hash': random_hex_string,
             'block_num': num,
             '__input_hash': random_hex_string,
-            'now': str(datetime.now()),
+            'now': Datetime._from_datetime(datetime.now()),
             'AUXILIARY_SALT': random_hex_string
         }
 
