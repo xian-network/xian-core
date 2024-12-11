@@ -36,16 +36,16 @@ def fetch_filebased_state():
     driver = Driver()
     contract_state = driver.get_all_contract_state()
     run_state = driver.get_run_state()
-    print('run_state', run_state)
     return contract_state, run_state
 
 
 def build_genesis_block(founder_sk: str, contract_state: dict, run_state: dict):
-    hash = get_latest_block_hash()['__bytes__']
+    hash = get_latest_block_hash()
+    print('hash', hash)
     block_number = get_latest_block_height()
 
     genesis_block = {
-        'hash': hash,
+        'hash': hash.hex(),
         'number': block_number,
         'origin': {
             'signature': '',
@@ -82,7 +82,7 @@ def main(
     founder_sk: str,
     output_path: Path,
 ):
-    output_path = output_path.joinpath('genesis_block.json')
+    output_path = output_path.joinpath('exported_state.json')
 
     contract_state, run_state = fetch_filebased_state()
 
