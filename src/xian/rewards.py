@@ -62,16 +62,15 @@ class RewardsHandler:
             contract=contract,
             developer_ratio=developer_ratio
         )
-        burn_mapping = {"BURNED": ContractingDecimal(str(total_stamps_to_split * burn_ratio))}
         
-        return master_reward, foundation_reward, developer_mapping, burn_mapping
+        return master_reward, foundation_reward, developer_mapping
     
     def distribute_rewards(self, stamp_rewards_amount, stamp_rewards_contract):
         if not self.client.get_var(contract="rewards", variable="S", arguments=["value"]) or stamp_rewards_amount <= 0:
             return []
         
         driver = self.client.raw_driver
-        master_reward, foundation_reward, developer_mapping, burn_mapping = self.calculate_tx_output_rewards(
+        master_reward, foundation_reward, developer_mapping = self.calculate_tx_output_rewards(
             total_stamps_to_split=stamp_rewards_amount,
             contract=stamp_rewards_contract
         )
@@ -79,21 +78,11 @@ class RewardsHandler:
         stamp_cost = driver.get("stamp_cost.S:value")
         master_reward /= stamp_cost
         foundation_reward /= stamp_cost
-        burned = burn_mapping["BURNED"] / stamp_cost
         
         rewards = self._distribute_masternode_rewards(driver, master_reward)
         rewards.append(self._distribute_foundation_reward(driver, foundation_reward))
         rewards.extend(self._distribute_developer_rewards(driver, developer_mapping, stamp_cost))
-        rewards.extend(self._distribute_burned_rewards(driver, burn_mapping))
         
-        return rewards
-
-    def _distribute_burned_rewards(self, driver, burn_mapping):
-        rewards = []
-        for recipient, amount in burn_mapping.items():
-            recipient_balance = driver.get(f"currency.balances:{recipient}") or 0
-            recipient_balance_after = round(recipient_balance + amount, c.DUST_EXPONENT)
-            rewards.append(driver.set(f"currency.balances:{recipient}", recipient_balance_after))
         return rewards
     
     def _distribute_masternode_rewards(self, driver, master_reward):

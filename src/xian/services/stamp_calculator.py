@@ -79,7 +79,7 @@ class StampCalculator:
             'block_hash': self.generate_random_hex_string(),
             'block_num': num,
             '__input_hash': self.generate_random_hex_string(),
-            'now': now,
+            'now': str(now),
             'AUXILIARY_SALT': self.generate_random_hex_string()
         }
 
