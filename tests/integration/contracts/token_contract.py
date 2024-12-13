@@ -1,8 +1,8 @@
 balances = Hash(default_value=0)
 metadata = Hash()
 
-TransferEvent = LogEvent(event="Transfer", params={"from":{'type':str, 'idx':True}, "to": {'type':str, 'idx':True}, "amount": {'type':(int, float), 'idx':False}})
-ApproveEvent = LogEvent(event="Approve", params={"from":{'type':str, 'idx':True}, "to": {'type':str, 'idx':True}, "amount": {'type':(int, float), 'idx':False}})
+TransferEvent = LogEvent(event="Transfer", params={"from":{'type':str, 'idx':True}, "to": {'type':str, 'idx':True}, "amount": {'type':(int, float, decimal)}})
+ApproveEvent = LogEvent(event="Approve", params={"from":{'type':str, 'idx':True}, "to": {'type':str, 'idx':True}, "amount": {'type':(int, float, decimal)}})
 ChangeMetadataEvent = LogEvent(event="ChangeMetadata", params={"key":{'type':str, 'idx':True}, "value": {'type':str, 'idx':False}})
 
 
@@ -22,6 +22,7 @@ def change_metadata(key: str, value: Any):
     assert ctx.caller == metadata['operator'], 'Only operator can set metadata!'
     metadata[key] = value
     ChangeMetadataEvent({"key": key, "value": value})
+
 
 @export
 def transfer(amount: float, to: str):
