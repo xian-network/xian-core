@@ -23,46 +23,21 @@ def create_block_meta(dt: datetime = datetime.now()):
 class TestProcessor(unittest.TestCase):
     def setUp(self):
         setup_fixtures()
-        # Called before every test, bootstraps the environment.
-        self.c = ContractingClient()
+        self.c = ContractingClient(storage_home=MockConstants.STORAGE_HOME)
         self.d = self.c.raw_driver
-        # self.c.flush()
+        self.c.flush()
         self.tx_processor = TxProcessor(client=self.c)
-        # Hard load the submission contract
         self.script_dir = os.path.dirname(os.path.abspath(__file__))
         
-        # submission_contract_path = os.path.abspath(
-        #     os.path.join(
-        #         self.script_dir,
-        #         "../../xian-contracting/src/contracting/contracts/submission.s.py",
-        #     )
-        # )
-        
-        # with open(submission_contract_path) as f:
-        #     code = f.read()
-        # self.d.set_contract(name="submission", code=code)
-
-        # Get the directory where the script is located
-
-        token_path = os.path.abspath(
-            os.path.join(
-                self.script_dir,
-                "./contracts/token_contract.py",
-            )
-        )
-        with open("./contracts/token_contract.py") as f:
+        token_path = os.path.join(self.script_dir, "contracts", "token_contract.py")
+        with open(token_path) as f:
             code = f.read()
-            self.c.submit(code, name="currency")
+            self.c.submit(code, name="currency_1")
 
-        self.currency = self.c.get_contract("currency")
+        self.currency_1 = self.c.get_contract("currency_1")
 
-        proxy_path = os.path.abspath(
-            os.path.join(
-                self.script_dir,
-                "./contracts/proxy.py",
-            )
-        )
-        with open("./contracts/proxy.py") as f:
+        proxy_path = os.path.join(self.script_dir, "contracts", "proxy.py")    
+        with open(proxy_path) as f:
             code = f.read()
             self.c.submit(code, name="proxy")
 
@@ -71,23 +46,23 @@ class TestProcessor(unittest.TestCase):
     def tearDown(self):
         teardown_fixtures()
         # Called after every test, ensures each test starts with a clean slate and is isolated from others
-        # self.c.flush()
+        self.c.flush()
 
     def test_transfer_returns_event(self):
         # Setup - approve first
         self.d.set(
-            key="currency.balances:sys:bob",
+            key="currency_1.balances:sys:bob",
             value=100000,
         )
         self.d.set(
-            key="currency.balances:sys",
+            key="currency_1.balances:sys",
             value=100000,
         )
         # Now transfer
         res = self.tx_processor.process_tx(
             tx={
                 "payload": {
-                    "contract": "currency",
+                    "contract": "currency_1",
                     "function": "transfer_from",
                     "sender": "bob",
                     "kwargs": {
@@ -104,22 +79,27 @@ class TestProcessor(unittest.TestCase):
         expected_events = [
             {
                 "caller": "bob",
-                "contract": "currency",
+                "contract": "currency_1",
                 "event": "Transfer",
                 "data_indexed": {"from": "sys", "to": "bob"},
                 "data": {"amount": 100},
                 "signer": "bob",
             }
         ]
+
         self.assertEqual(res["tx_result"]["events"], expected_events)
 
     def test_send_multiple_returns_events(self):
         self.d.set(
-            key="currency.balances:proxy",
+            key="currency_1.balances:proxy",
             value=100000,
         )
         self.d.set(
-            key="currency.balances:sys",
+            key="currency_1.balances:sys",
+            value=100000,
+        )
+        self.d.set(
+            key="currency_1.balances:bob",
             value=100000,
         )
         self.d.set(
@@ -143,10 +123,11 @@ class TestProcessor(unittest.TestCase):
                 "b_meta": create_block_meta(),
             }
         )
+
         expected_events = [
             {
                 "caller": "proxy",
-                "contract": "currency",
+                "contract": "currency_1",
                 "event": "Transfer",
                 "data_indexed": {"from": "proxy", "to": "casey"},
                 "data": {"amount": 100},
@@ -154,7 +135,7 @@ class TestProcessor(unittest.TestCase):
             },
             {
                 "caller": "proxy",
-                "contract": "currency",
+                "contract": "currency_1",
                 "event": "Transfer",
                 "data_indexed": {"from": "proxy", "to": "francis"},
                 "data": {"amount": 100},
@@ -162,7 +143,7 @@ class TestProcessor(unittest.TestCase):
             },
             {
                 "caller": "proxy",
-                "contract": "currency",
+                "contract": "currency_1",
                 "event": "Transfer",
                 "data_indexed": {"from": "proxy", "to": "sally"},
                 "data": {"amount": 100},
@@ -170,7 +151,7 @@ class TestProcessor(unittest.TestCase):
             },
             {
                 "caller": "proxy",
-                "contract": "currency",
+                "contract": "currency_1",
                 "event": "Transfer",
                 "data_indexed": {"from": "proxy", "to": "ed"},
                 "data": {"amount": 100},
@@ -178,7 +159,7 @@ class TestProcessor(unittest.TestCase):
             },
             {
                 "caller": "proxy",
-                "contract": "currency",
+                "contract": "currency_1",
                 "event": "Transfer",
                 "data_indexed": {"from": "proxy", "to": "yolanda"},
                 "data": {"amount": 100},
