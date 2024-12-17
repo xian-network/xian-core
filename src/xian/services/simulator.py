@@ -146,5 +146,5 @@ class Simulator:
 
 if __name__ == '__main__':
     sc = Simulator()
-    sc.setup_socket()
+    # sc.setup_socket()
     sc.listen()
