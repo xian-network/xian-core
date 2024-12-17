@@ -251,8 +251,8 @@ class BDS:
                     event['event'],             # Event name
                     event['signer'],    # Signer of the event
                     event['caller'],    # Caller of the event
-                    json.dumps(event['data_indexed']),  # Serialize indexed data
-                    json.dumps(event['data']),          # Serialize non-indexed data
+                    json.dumps(event['data_indexed'], cls=CustomEncoder),  # Serialize indexed data
+                    json.dumps(event['data'], cls=CustomEncoder),          # Serialize non-indexed data
                     tx['tx_result']['hash'],                
                     block_time                  # Created timestamp
                 ])
