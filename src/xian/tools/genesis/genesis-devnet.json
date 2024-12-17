@@ -42,8 +42,8 @@
     ],
     "app_hash": "",
     "abci_genesis": {
-        "hash": "30363033343135356530336637316561356235653932363736316562383437373333653963623166373630613661396133353733613961383834646266386165",
-        "number": 680,
+        "hash": "33666134323064363666343765623162303733396165353430353761366631626166386239363833666232303762313437626431343061643830333237656231",
+        "number": 793,
         "origin": {
             "signature": "",
             "sender": ""
@@ -812,6 +812,28 @@
                 "value": "https://some.token.url"
             },
             {
+                "key": "con_dex22.__code__",
+                "value": "DEX_PAIRS = 'con_dex_pairs2'\nMAX_ROUTE = 32\n__toks_to_pair = ForeignHash(foreign_contract=DEX_PAIRS, foreign_name=\n    'toks_to_pair', contract='con_dex22', name='toks_to_pair')\n__pairsmap = ForeignHash(foreign_contract=DEX_PAIRS, foreign_name='pairs',\n    contract='con_dex22', name='pairsmap')\ntoken_interface = [importlib.Func('transfer_from', args=('amount', 'to',\n    'main_account')), importlib.Func('transfer', args=('amount', 'to')),\n    importlib.Var('balances', Hash)]\n\n\ndef __PAIRS():\n    return importlib.import_module(DEX_PAIRS)\n\n\ndef __safeTransferFrom(token: str, src: str, to: str, value: float):\n    t = importlib.import_module(token)\n    assert importlib.enforce_interface(t, token_interface)\n    t.transfer_from(value, to, src)\n\n\ndef __quote(amountA: float, reserveA: float, reserveB: float):\n    assert amountA > 0, '__DEXNAME: INSUFFICIENT_AMOUNT'\n    assert reserveA > 0 and reserveB > 0, '__DEXNAME: INSUFFICIENT_LIQUIDITY'\n    return amountA * reserveB / reserveA\n\n\ndef __internal_addLiquidity(tokenA: str, tokenB: str, amountADesired: float,\n    amountBDesired: float, amountAMin: float, amountBMin: float):\n    pairs = __PAIRS()\n    desired_pair = __toks_to_pair[tokenA, tokenB]\n    if desired_pair == None:\n        desired_pair = pairs.createPair(tokenA, tokenB)\n    reserveA, reserveB, ignore = pairs.getReserves(desired_pair)\n    if reserveA == 0 and reserveB == 0:\n        return amountADesired, amountBDesired\n    else:\n        amountBOptimal = __quote(amountADesired, reserveA, reserveB)\n        if amountBOptimal <= amountBDesired:\n            assert amountBOptimal >= amountBMin, '__DEXNAME: INSUFFICIENT_B_AMOUNT'\n            return amountADesired, amountBOptimal\n        else:\n            amountAOptimal = __quote(amountBDesired, reserveB, reserveA)\n            assert amountAOptimal <= amountADesired\n            assert amountAOptimal >= amountAMin, '__DEXNAME: INSUFFICIENT_A_AMOUNT'\n            return amountAOptimal, amountBDesired\n\n\n@__export('con_dex22')\ndef addLiquidity(tokenA: str, tokenB: str, amountADesired: float,\n    amountBDesired: float, amountAMin: float, amountBMin: float, to: str,\n    deadline: datetime.datetime):\n    assert now < deadline, '__DEXNAME: EXPIRED'\n    pairs = __PAIRS()\n    if tokenB < tokenA:\n        tokenA, tokenB = tokenB, tokenA\n    amountA, amountB = __internal_addLiquidity(tokenA, tokenB,\n        amountADesired, amountBDesired, amountAMin, amountBMin)\n    pair = __toks_to_pair[tokenA, tokenB]\n    __safeTransferFrom(tokenA, ctx.caller, DEX_PAIRS, amountA)\n    __safeTransferFrom(tokenB, ctx.caller, DEX_PAIRS, amountB)\n    pairs.sync2(pair)\n    liquidity = pairs.mint(pair, to)\n    return amountA, amountB, liquidity\n\n\n@__export('con_dex22')\ndef removeLiquidity(tokenA: str, tokenB: str, liquidity: float, amountAMin:\n    float, amountBMin: float, to: str, deadline: datetime.datetime):\n    assert now < deadline, '__DEXNAME: EXPIRED'\n    pairs = __PAIRS()\n    desired_pair = __toks_to_pair[tokenA, tokenB]\n    assert desired_pair != None, \"Pair doesn't exist!\"\n    pairs.liqTransfer_from(desired_pair, liquidity, DEX_PAIRS, ctx.caller)\n    pairs.sync2(desired_pair)\n    amountA, amountB = pairs.burn(desired_pair, to)\n    assert amountA >= amountAMin, '__DEXNAME: INSUFFICIENT_A_AMOUNT'\n    assert amountB >= amountBMin, '__DEXNAME: INSUFFICIENT_B_AMOUNT'\n    return amountA, amountB\n\n\n@__export('con_dex22')\ndef getAmountOut(amountIn: float, reserveIn: float, reserveOut: float):\n    assert amountIn > 0, '__DEXNAME: INSUFFICIENT_INPUT_AMOUNT'\n    assert reserveIn > 0 and reserveOut > 0, '__DEXNAME: INSUFFICIENT_LIQUIDITY'\n    amountInWithFee = amountIn * decimal('0.997')\n    numerator = amountInWithFee * reserveOut\n    denominator = reserveIn + amountInWithFee\n    return numerator / denominator\n\n\n@__export('con_dex22')\ndef swapExactTokenForToken(amountIn: float, amountOutMin: float, pair: int,\n    src: str, to: str, deadline: datetime.datetime):\n    assert now < deadline, '__DEXNAME: EXPIRED'\n    pairs = __PAIRS()\n    reserve0, reserve1, ignore = pairs.getReserves(pair)\n    order = src == __pairsmap[pair, 'token0']\n    if not order:\n        reserve0, reserve1 = reserve1, reserve0\n    amount = getAmountOut(amountIn, reserve0, reserve1)\n    assert amount >= amountOutMin, '__DEXNAMEe: INSUFFICIENT_OUTPUT_AMOUNT'\n    __safeTransferFrom(src, ctx.caller, DEX_PAIRS, amountIn)\n    pairs.sync2(pair)\n    out0 = 0 if order else amount\n    out1 = amount if order else 0\n    pairs.swap(pair, out0, out1, to)\n"
+            },
+            {
+                "key": "con_dex22.__developer__",
+                "value": "39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0"
+            },
+            {
+                "key": "con_dex22.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        12,
+                        17,
+                        21,
+                        33,
+                        25,
+                        0
+                    ]
+                }
+            },
+            {
                 "key": "con_dex2test.__code__",
                 "value": "DEX_PAIRS = 'con_dex_pairs'\nMAX_ROUTE = 32\n__toks_to_pair = ForeignHash(foreign_contract=DEX_PAIRS, foreign_name=\n    'toks_to_pair', contract='con_dex2test', name='toks_to_pair')\n__pairsmap = ForeignHash(foreign_contract=DEX_PAIRS, foreign_name='pairs',\n    contract='con_dex2test', name='pairsmap')\ntoken_interface = [importlib.Func('transfer_from', args=('amount', 'to',\n    'main_account')), importlib.Func('transfer', args=('amount', 'to')),\n    importlib.Var('balances', Hash)]\n\n\ndef __PAIRS():\n    return importlib.import_module(DEX_PAIRS)\n\n\ndef __safeTransferFrom(token: str, src: str, to: str, value: float):\n    t = importlib.import_module(token)\n    assert importlib.enforce_interface(t, token_interface)\n    t.transfer_from(value, to, src)\n\n\ndef __quote(amountA: float, reserveA: float, reserveB: float):\n    assert amountA > 0, '__DEXNAME: INSUFFICIENT_AMOUNT'\n    assert reserveA > 0 and reserveB > 0, '__DEXNAME: INSUFFICIENT_LIQUIDITY'\n    return amountA * reserveB / reserveA\n\n\ndef __internal_addLiquidity(tokenA: str, tokenB: str, amountADesired: float,\n    amountBDesired: float, amountAMin: float, amountBMin: float):\n    pairs = __PAIRS()\n    desired_pair = __toks_to_pair[tokenA, tokenB]\n    if desired_pair == None:\n        desired_pair = pairs.createPair(tokenA, tokenB)\n    reserveA, reserveB, ignore = pairs.getReserves(desired_pair)\n    if reserveA == 0 and reserveB == 0:\n        return amountADesired, amountBDesired\n    else:\n        amountBOptimal = __quote(amountADesired, reserveA, reserveB)\n        if amountBOptimal <= amountBDesired:\n            assert amountBOptimal >= amountBMin, '__DEXNAME: INSUFFICIENT_B_AMOUNT'\n            return amountADesired, amountBOptimal\n        else:\n            amountAOptimal = __quote(amountBDesired, reserveB, reserveA)\n            assert amountAOptimal <= amountADesired\n            assert amountAOptimal >= amountAMin, '__DEXNAME: INSUFFICIENT_A_AMOUNT'\n            return amountAOptimal, amountBDesired\n\n\n@__export('con_dex2test')\ndef addLiquidity(tokenA: str, tokenB: str, amountADesired: float,\n    amountBDesired: float, amountAMin: float, amountBMin: float, to: str,\n    deadline: datetime.datetime):\n    assert now < deadline, '__DEXNAME: EXPIRED'\n    pairs = __PAIRS()\n    if tokenB < tokenA:\n        tokenA, tokenB = tokenB, tokenA\n    amountA, amountB = __internal_addLiquidity(tokenA, tokenB,\n        amountADesired, amountBDesired, amountAMin, amountBMin)\n    pair = __toks_to_pair[tokenA, tokenB]\n    __safeTransferFrom(tokenA, ctx.caller, DEX_PAIRS, amountA)\n    __safeTransferFrom(tokenB, ctx.caller, DEX_PAIRS, amountB)\n    pairs.sync2(pair)\n    liquidity = pairs.mint(pair, to)\n    return amountA, amountB, liquidity\n\n\n@__export('con_dex2test')\ndef removeLiquidity(tokenA: str, tokenB: str, liquidity: float, amountAMin:\n    float, amountBMin: float, to: str, deadline: datetime.datetime):\n    assert now < deadline, '__DEXNAME: EXPIRED'\n    pairs = __PAIRS()\n    desired_pair = __toks_to_pair[tokenA, tokenB]\n    assert desired_pair != None, \"Pair doesn't exist!\"\n    pairs.liqTransfer_from(desired_pair, liquidity, DEX_PAIRS, ctx.caller)\n    pairs.sync2(desired_pair)\n    amountA, amountB = pairs.burn(desired_pair, to)\n    assert amountA >= amountAMin, '__DEXNAME: INSUFFICIENT_A_AMOUNT'\n    assert amountB >= amountBMin, '__DEXNAME: INSUFFICIENT_B_AMOUNT'\n    return amountA, amountB\n\n\n@__export('con_dex2test')\ndef getAmountOut(amountIn: float, reserveIn: float, reserveOut: float):\n    assert amountIn > 0, '__DEXNAME: INSUFFICIENT_INPUT_AMOUNT'\n    assert reserveIn > 0 and reserveOut > 0, '__DEXNAME: INSUFFICIENT_LIQUIDITY'\n    amountInWithFee = amountIn * decimal('0.997')\n    numerator = amountInWithFee * reserveOut\n    denominator = reserveIn + amountInWithFee\n    return numerator / denominator\n\n\n@__export('con_dex2test')\ndef swapExactTokenForToken(amountIn: float, amountOutMin: float, pair: int,\n    src: str, to: str, deadline: datetime.datetime):\n    assert now < deadline, '__DEXNAME: EXPIRED'\n    pairs = __PAIRS()\n    reserve0, reserve1, ignore = pairs.getReserves(pair)\n    order = src == __pairsmap[pair, 'token0']\n    if not order:\n        reserve0, reserve1 = reserve1, reserve0\n    amount = getAmountOut(amountIn, reserve0, reserve1)\n    assert amount >= amountOutMin, '__DEXNAMEe: INSUFFICIENT_OUTPUT_AMOUNT'\n    __safeTransferFrom(src, ctx.caller, DEX_PAIRS, amountIn)\n    pairs.sync2(pair)\n    out0 = 0 if order else amount\n    out1 = amount if order else 0\n    pairs.swap(pair, out0, out1, to)\n"
             },
@@ -864,13 +886,13 @@
             {
                 "key": "con_dex_pairs.balances:con_testtoken",
                 "value": {
-                    "__fixed__": "1739.61316713223260000230453431316"
+                    "__fixed__": "41.800633596611738895164383427412"
                 }
             },
             {
                 "key": "con_dex_pairs.balances:currency",
                 "value": {
-                    "__fixed__": "2.102000000230291939558750930651"
+                    "__fixed__": "47.102000000230291939558750930651"
                 }
             },
             {
@@ -884,13 +906,13 @@
             {
                 "key": "con_dex_pairs.pairs:1:balance0",
                 "value": {
-                    "__fixed__": "1739.61316712907029072726524750708"
+                    "__fixed__": "41.800633593449429620125096621332"
                 }
             },
             {
                 "key": "con_dex_pairs.pairs:1:balance1",
                 "value": {
-                    "__fixed__": "1.102000000230291939558750930651"
+                    "__fixed__": "46.102000000230291939558750930651"
                 }
             },
             {
@@ -923,10 +945,10 @@
                     "__time__": [
                         2024,
                         12,
-                        10,
-                        22,
-                        34,
-                        1,
+                        12,
+                        4,
+                        35,
+                        0,
                         0
                     ]
                 }
@@ -954,13 +976,13 @@
             {
                 "key": "con_dex_pairs.pairs:1:reserve0",
                 "value": {
-                    "__fixed__": "1739.61316712907029072726524750708"
+                    "__fixed__": "41.800633593449429620125096621332"
                 }
             },
             {
                 "key": "con_dex_pairs.pairs:1:reserve1",
                 "value": {
-                    "__fixed__": "1.102000000230291939558750930651"
+                    "__fixed__": "46.102000000230291939558750930651"
                 }
             },
             {
@@ -1171,6 +1193,140 @@
             },
             {
                 "key": "con_dex_pairs.toks_to_pair:con_testtoken:currency",
+                "value": 1
+            },
+            {
+                "key": "con_dex_pairs2.__code__",
+                "value": "MINIMUM_LIQUIDITY = decimal('1e-08')\nMAXIMUM_BALANCE = decimal('100000000000000.0')\n__PairCreated = LogEvent(event='PairCreated', params={'token0': {'type':\n    str, 'idx': True}, 'token1': {'type': str, 'idx': True}, 'pair': {\n    'type': int}}, contract='con_dex_pairs2', name='PairCreated')\n__Mint = LogEvent(event='Mint', params={'pair': {'type': int, 'idx': True},\n    'amount0': {'type': (int, float, decimal)}, 'amount1': {'type': (int,\n    float, decimal)}, 'to': {'type': str, 'idx': True}}, contract=\n    'con_dex_pairs2', name='Mint')\n__Burn = LogEvent(event='Burn', params={'pair': {'type': int, 'idx': True},\n    'amount0': {'type': (int, float, decimal)}, 'amount1': {'type': (int,\n    float, decimal)}, 'to': {'type': str, 'idx': True}}, contract=\n    'con_dex_pairs2', name='Burn')\n__Swap = LogEvent(event='Swap', params={'pair': {'type': int, 'idx': True},\n    'amount0In': {'type': (int, float, decimal)}, 'amount1In': {'type': (\n    int, float, decimal)}, 'amount0Out': {'type': (int, float, decimal)},\n    'amount1Out': {'type': (int, float, decimal)}, 'to': {'type': (str, int\n    ), 'idx': True}}, contract='con_dex_pairs2', name='Swap')\n__Sync = LogEvent(event='Sync', params={'pair': {'type': int, 'idx': True},\n    'reserve0': {'type': (int, float, decimal)}, 'reserve1': {'type': (int,\n    float, decimal)}}, contract='con_dex_pairs2', name='Sync')\n__toks_to_pair = Hash(default_value=None, contract='con_dex_pairs2', name=\n    'toks_to_pair')\n__pairs = Hash(default_value=0, contract='con_dex_pairs2', name='pairs')\n__pairs_num = Variable(contract='con_dex_pairs2', name='pairs_num')\n__feeTo = Variable(contract='con_dex_pairs2', name='feeTo')\n__owner = Variable(contract='con_dex_pairs2', name='owner')\n__balances = Hash(default_value=decimal('0.0'), contract='con_dex_pairs2',\n    name='balances')\ntoken_interface = [importlib.Func('transfer_from', args=('amount', 'to',\n    'main_account')), importlib.Func('transfer', args=('amount', 'to')),\n    importlib.Var('balances', Hash)]\n\n\ndef ____():\n    __pairs_num.set(0)\n    __owner.set(ctx.signer)\n    __feeTo.set(ctx.signer)\n\n\n@__export('con_dex_pairs2')\ndef createPair(tokenA: str, tokenB: str):\n    assert tokenA != tokenB, '__DEXNAME: IDENTICAL_ADDRESSES'\n    assert tokenA < tokenB, '__DEXNAME: BAD_ORDER'\n    assert __toks_to_pair[tokenA, tokenB] == None, '__DEXNAME: PAIR_EXISTS'\n    tA = importlib.import_module(tokenA)\n    assert importlib.enforce_interface(tA, token_interface\n        ), '__DEXNAME: NO_TOKA'\n    tB = importlib.import_module(tokenB)\n    assert importlib.enforce_interface(tB, token_interface\n        ), '__DEXNAME: NO_TOKB'\n    p_num = __pairs_num.get() + 1\n    __pairs_num.set(p_num)\n    __pairs[p_num, 'token0'] = tokenA\n    __pairs[p_num, 'token1'] = tokenB\n    __pairs[p_num, 'reserve0'] = decimal('0.0')\n    __pairs[p_num, 'reserve1'] = decimal('0.0')\n    __pairs[p_num, 'balance0'] = decimal('0.0')\n    __pairs[p_num, 'balance1'] = decimal('0.0')\n    __pairs[p_num, 'blockTimestampLast'] = now\n    __pairs[p_num, 'totalSupply'] = decimal('0.0')\n    __pairs[p_num, 'kLast'] = decimal('0.0')\n    __pairs[p_num, 'creationTime'] = now\n    __toks_to_pair[tokenA, tokenB] = p_num\n    __PairCreated({'token0': tokenA, 'token1': tokenB, 'pair': p_num})\n    return p_num\n\n\n@__export('con_dex_pairs2')\ndef pairFor(tokenA: str, tokenB: str):\n    if tokenB < tokenA:\n        tokenA, tokenB = tokenB, tokenA\n    return __toks_to_pair[tokenA, tokenB]\n\n\n@__export('con_dex_pairs2')\ndef liqTransfer(pair: int, amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    assert __pairs[pair, 'balances', ctx.caller\n        ] >= amount, 'Not enough coins to send!'\n    __pairs[pair, 'balances', ctx.caller] -= amount\n    __pairs[pair, 'balances', to] += amount\n\n\n@__export('con_dex_pairs2')\ndef liqApprove(pair: int, amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    __pairs[pair, 'balances', ctx.caller, to] = amount\n\n\n@__export('con_dex_pairs2')\ndef liqTransfer_from(pair: int, amount: float, to: str, main_account: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    assert __pairs[pair, 'balances', main_account, ctx.caller\n        ] >= amount, 'Not enough coins approved to send! You have {} and are trying to spend {}'.format(\n        __pairs[pair, 'balances', main_account, ctx.caller], amount)\n    assert __pairs[pair, 'balances', main_account\n        ] >= amount, 'Not enough coins to send!'\n    __pairs[pair, 'balances', main_account, ctx.caller] -= amount\n    __pairs[pair, 'balances', main_account] -= amount\n    __pairs[pair, 'balances', to] += amount\n\n\ndef __safeTransferFromPair(pair: int, token: str, to: str, value: float):\n    assert value >= 0 and value <= MAXIMUM_BALANCE, 'Invalid value!'\n    t = importlib.import_module(token)\n    assert importlib.enforce_interface(t, token_interface)\n    __tok_balances = ForeignHash(foreign_contract=token, foreign_name=\n        'balances', contract='con_dex_pairs2', name='tok_balances')\n    prev_balance = __tok_balances[ctx.this]\n    if prev_balance == None:\n        prev_balance = 0\n    if token == __pairs[pair, 'token0']:\n        assert __pairs[pair, 'balance0'] >= value, 'Not enough coins to send!'\n        t.transfer(value, to)\n        new_balance = __tok_balances[ctx.this]\n        assert new_balance >= 0, 'Negative balance!'\n        __pairs[pair, 'balance0'] += new_balance - prev_balance\n        assert __pairs[pair, 'balance0'] >= 0, 'Negative pair balance0!'\n        return True\n    elif token == __pairs[pair, 'token1']:\n        assert __pairs[pair, 'balance1'] >= value, 'Not enough coins to send!'\n        t.transfer(value, to)\n        new_balance = __tok_balances[ctx.this]\n        assert new_balance >= 0, 'Negative balance!'\n        __pairs[pair, 'balance1'] += new_balance - prev_balance\n        assert __pairs[pair, 'balance1'] >= 0, 'Negative pair balance1!'\n        return True\n    assert False, 'Wrong token!'\n    return False\n\n\ndef __safeTransferFromPairToPair(pair: int, token: str, to: int, value: float):\n    assert value >= 0 and value <= MAXIMUM_BALANCE, 'Invalid value!'\n    if token == __pairs[pair, 'token0']:\n        assert __pairs[pair, 'balance0'] >= value, 'Not enough coins to send!'\n        prev_balance = __pairs[pair, 'balance0']\n        __pairs[pair, 'balance0'] -= value\n        if __pairs[to, 'token0'] == token:\n            __pairs[to, 'balance0'] += value\n        elif __pairs[to, 'token1'] == token:\n            __pairs[to, 'balance1'] += value\n        else:\n            assert False, 'No token in TO'\n        new_balance = __pairs[pair, 'balance0']\n        assert new_balance >= 0, 'Negative balance!'\n        return True\n    elif token == __pairs[pair, 'token1']:\n        assert __pairs[pair, 'balance1'] >= value, 'Not enough coins to send!'\n        prev_balance = __pairs[pair, 'balance1']\n        __pairs[pair, 'balance1'] -= value\n        if __pairs[to, 'token0'] == token:\n            __pairs[to, 'balance0'] += value\n        elif __pairs[to, 'token1'] == token:\n            __pairs[to, 'balance1'] += value\n        else:\n            assert False, 'No token in TO'\n        new_balance = __pairs[pair, 'balance1']\n        assert new_balance >= 0, 'Negative balance!'\n        return True\n    assert False, 'Wrong token!'\n    return False\n\n\n@__export('con_dex_pairs2')\ndef sync(pair: int):\n    tokenA = __pairs[pair, 'token0']\n    tokenB = __pairs[pair, 'token1']\n    tA = importlib.import_module(tokenA)\n    assert importlib.enforce_interface(tA, token_interface)\n    __hashA = ForeignHash(foreign_contract=tokenA, foreign_name='balances',\n        contract='con_dex_pairs2', name='hashA')\n    balA = __hashA[ctx.this]\n    if balA == None:\n        balA = decimal('0.0')\n    tB = importlib.import_module(tokenA)\n    assert importlib.enforce_interface(tB, token_interface)\n    __hashB = ForeignHash(foreign_contract=tokenB, foreign_name='balances',\n        contract='con_dex_pairs2', name='hashB')\n    balB = __hashB[ctx.this]\n    if balB == None:\n        balB = decimal('0.0')\n    __balances[tokenA] = balA\n    __balances[tokenB] = balB\n\n\n@__export('con_dex_pairs2')\ndef sync2(pair: int):\n    tokenA = __pairs[pair, 'token0']\n    tokenB = __pairs[pair, 'token1']\n    tA = importlib.import_module(tokenA)\n    assert importlib.enforce_interface(tA, token_interface)\n    __hashA = ForeignHash(foreign_contract=tokenA, foreign_name='balances',\n        contract='con_dex_pairs2', name='hashA')\n    balA = __hashA[ctx.this]\n    if balA == None:\n        balA = decimal('0.0')\n    tB = importlib.import_module(tokenA)\n    assert importlib.enforce_interface(tB, token_interface)\n    __hashB = ForeignHash(foreign_contract=tokenB, foreign_name='balances',\n        contract='con_dex_pairs2', name='hashB')\n    balB = __hashB[ctx.this]\n    if balB == None:\n        balB = decimal('0.0')\n    incA = balA - __balances[tokenA]\n    assert incA >= 0, '__DEXNAME: token0_neg'\n    incB = balB - __balances[tokenB]\n    assert incB >= 0, '__DEXNAME: token1_neg'\n    __pairs[pair, 'balance0'] += incA\n    __pairs[pair, 'balance1'] += incB\n    assert __pairs[pair, 'balance0'] <= MAXIMUM_BALANCE, 'TokenA OVERFLOW'\n    assert __pairs[pair, 'balance1'] <= MAXIMUM_BALANCE, 'TokenB OVERFLOW'\n\n\n@__export('con_dex_pairs2')\ndef getReserves(pair: int):\n    return __pairs[pair, 'reserve0'], __pairs[pair, 'reserve1'], __pairs[\n        pair, 'blockTimestampLast']\n\n\ndef __internal_update(pair: int, balance0: float, balance1: float):\n    assert balance0 <= MAXIMUM_BALANCE and balance1 <= MAXIMUM_BALANCE, '__DEXNAME: BALANCE OVERFLOW'\n    __pairs[pair, 'reserve0'] = balance0\n    __pairs[pair, 'reserve1'] = balance1\n    __pairs[pair, 'blockTimestampLast'] = now\n    __Sync({'pair': pair, 'reserve0': balance0, 'reserve1': balance1})\n\n\ndef __internal_mintFee(pair: int, reserve0: float, reserve1: float):\n    feeOn = __feeTo.get() != False\n    kLast = __pairs[pair, 'kLast']\n    if feeOn:\n        if kLast != 0:\n            rootK = (reserve0 * reserve1) ** decimal('0.5')\n            rootKLast = kLast ** decimal('0.5')\n            if rootK > rootKLast:\n                numerator = __pairs[pair, 'totalSupply'] * (rootK - rootKLast)\n                denominator = rootK * 5 + rootKLast\n                liquidity = numerator / denominator\n                if liquidity > 0:\n                    __internal_mint(pair, __feeTo.get(), liquidity)\n    elif kLast != 0:\n        __pairs[pair, 'kLast'] = decimal('0.0')\n    return feeOn\n\n\ndef __internal_burn(pair: int, src: str, value: float):\n    __pairs[pair, 'totalSupply'] -= value\n    assert __pairs[pair, 'totalSupply'] >= 0, 'Negative supply!'\n    __pairs[pair, 'balances', src] -= value\n    assert __pairs[pair, 'balances', src] >= 0, 'Negative balance!'\n\n\n@__export('con_dex_pairs2')\ndef burn(pair: int, to: str):\n    reserve0, reserve1, ignore = getReserves(pair)\n    token0 = __pairs[pair, 'token0']\n    token1 = __pairs[pair, 'token1']\n    balance0 = __pairs[pair, 'balance0']\n    balance1 = __pairs[pair, 'balance1']\n    liquidity = __pairs[pair, 'balances', ctx.this]\n    feeOn = __internal_mintFee(pair, reserve0, reserve1)\n    totalSupply = __pairs[pair, 'totalSupply']\n    amount0 = liquidity * balance0 / totalSupply\n    amount1 = liquidity * balance1 / totalSupply\n    assert amount0 > 0 and amount1 > 0, '__DEXNAME: INSUFFICIENT_LIQUIDITY_BURNED'\n    __internal_burn(pair, ctx.this, liquidity)\n    __safeTransferFromPair(pair, token0, to, amount0)\n    __safeTransferFromPair(pair, token1, to, amount1)\n    balance0 = __pairs[pair, 'balance0']\n    balance1 = __pairs[pair, 'balance1']\n    __internal_update(pair, balance0, balance1)\n    sync(pair)\n    if feeOn:\n        __pairs[pair, 'kLast'] = balance0 * balance1\n    __Burn({'pair': pair, 'amount0': amount0, 'amount1': amount1, 'to': to})\n    return amount0, amount1\n\n\ndef __internal_mint(pair: int, to: str, value: float):\n    __pairs[pair, 'totalSupply'] += value\n    __pairs[pair, 'balances', to] += value\n\n\n@__export('con_dex_pairs2')\ndef mint(pair: int, to: str):\n    reserve0, reserve1, ignore = getReserves(pair)\n    balance0 = __pairs[pair, 'balance0']\n    balance1 = __pairs[pair, 'balance1']\n    amount0 = balance0 - reserve0\n    amount1 = balance1 - reserve1\n    feeOn = __internal_mintFee(pair, reserve0, reserve1)\n    totalSupply = __pairs[pair, 'totalSupply']\n    liquidity = 0\n    if totalSupply == 0:\n        liquidity = (amount0 * amount1) ** decimal('0.5') - MINIMUM_LIQUIDITY\n        __internal_mint(pair, 'DEAD', MINIMUM_LIQUIDITY)\n    else:\n        liquidity = min(amount0 * totalSupply / reserve0, amount1 *\n            totalSupply / reserve1)\n    assert liquidity > 0, '__DEXNAME: INSUFFICIENT_LIQUIDITY_MINTED'\n    __internal_mint(pair, to, liquidity)\n    __internal_update(pair, balance0, balance1)\n    sync(pair)\n    if feeOn:\n        __pairs[pair, 'kLast'] = balance0 * balance1\n    __Mint({'pair': pair, 'amount0': amount0, 'amount1': amount1, 'to': to})\n    return liquidity\n\n\n@__export('con_dex_pairs2')\ndef swap(pair: int, amount0Out: float, amount1Out: float, to: str):\n    assert amount0Out > 0 or amount1Out > 0, '__DEXNAME: INSUFFICIENT_OUTPUT_AMOUNT'\n    reserve0, reserve1, ignore = getReserves(pair)\n    assert amount0Out < reserve0 and amount1Out < reserve1, '__DEXNAME: INSUFFICIENT_LIQUIDITY'\n    token0 = __pairs[pair, 'token0']\n    token1 = __pairs[pair, 'token1']\n    assert to != token0 and to != token1, '__DEXNAME: INVALID_TO'\n    if amount0Out > 0:\n        __safeTransferFromPair(pair, token0, to, amount0Out)\n    if amount1Out > 0:\n        __safeTransferFromPair(pair, token1, to, amount1Out)\n    balance0 = __pairs[pair, 'balance0']\n    balance1 = __pairs[pair, 'balance1']\n    amount0In = balance0 - (reserve0 - amount0Out\n        ) if balance0 > reserve0 - amount0Out else 0\n    amount1In = balance1 - (reserve1 - amount1Out\n        ) if balance1 > reserve1 - amount1Out else 0\n    assert amount0In > 0 or amount1In > 0, '__DEXNAME: INSUFFICIENT_INPUT_AMOUNT'\n    balance0Adjusted = balance0 - amount0In * decimal('0.003')\n    balance1Adjusted = balance1 - amount1In * decimal('0.003')\n    assert balance0Adjusted * balance1Adjusted >= reserve0 * reserve1, '__DEXNAME: K'\n    __internal_update(pair, balance0, balance1)\n    sync(pair)\n    __Swap({'pair': pair, 'amount0In': amount0In, 'amount1In': amount1In,\n        'amount0Out': amount0Out, 'amount1Out': amount1Out, 'to': to})\n\n\n@__export('con_dex_pairs2')\ndef swapToPair(pair: int, amount0Out: float, amount1Out: float, to: int):\n    assert amount0Out > 0 or amount1Out > 0, '__DEXNAME: INSUFFICIENT_OUTPUT_AMOUNT'\n    reserve0, reserve1, ignore = getReserves(pair)\n    assert amount0Out < reserve0 and amount1Out < reserve1, '__DEXNAME: INSUFFICIENT_LIQUIDITY'\n    token0 = __pairs[pair, 'token0']\n    token1 = __pairs[pair, 'token1']\n    if amount0Out > 0:\n        __safeTransferFromPairToPair(pair, token0, to, amount0Out)\n    if amount1Out > 0:\n        __safeTransferFromPairToPair(pair, token1, to, amount1Out)\n    balance0 = __pairs[pair, 'balance0']\n    balance1 = __pairs[pair, 'balance1']\n    amount0In = balance0 - (reserve0 - amount0Out\n        ) if balance0 > reserve0 - amount0Out else 0\n    amount1In = balance1 - (reserve1 - amount1Out\n        ) if balance1 > reserve1 - amount1Out else 0\n    assert amount0In > 0 or amount1In > 0, '__DEXNAME: INSUFFICIENT_INPUT_AMOUNT'\n    balance0Adjusted = balance0 - amount0In * decimal('0.003')\n    balance1Adjusted = balance1 - amount1In * decimal('0.003')\n    assert balance0Adjusted * balance1Adjusted >= reserve0 * reserve1, '__DEXNAME: K'\n    __internal_update(pair, balance0, balance1)\n    __Swap({'pair': pair, 'amount0In': amount0In, 'amount1In': amount1In,\n        'amount0Out': amount0Out, 'amount1Out': amount1Out, 'to': to})\n"
+            },
+            {
+                "key": "con_dex_pairs2.__developer__",
+                "value": "39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0"
+            },
+            {
+                "key": "con_dex_pairs2.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        12,
+                        17,
+                        19,
+                        51,
+                        1,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_dex_pairs2.balances:con_testtoken",
+                "value": {
+                    "__fixed__": "9.093389106119850868418659634446"
+                }
+            },
+            {
+                "key": "con_dex_pairs2.balances:currency",
+                "value": {
+                    "__fixed__": "11"
+                }
+            },
+            {
+                "key": "con_dex_pairs2.feeTo",
+                "value": "39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0"
+            },
+            {
+                "key": "con_dex_pairs2.owner",
+                "value": "39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0"
+            },
+            {
+                "key": "con_dex_pairs2.pairs:1:balance0",
+                "value": {
+                    "__fixed__": "9.093389106119850868418659634446"
+                }
+            },
+            {
+                "key": "con_dex_pairs2.pairs:1:balance1",
+                "value": {
+                    "__fixed__": "11"
+                }
+            },
+            {
+                "key": "con_dex_pairs2.pairs:1:balances:39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0",
+                "value": {
+                    "__fixed__": "9.999999989999999999999999999999"
+                }
+            },
+            {
+                "key": "con_dex_pairs2.pairs:1:balances:DEAD",
+                "value": {
+                    "__fixed__": "1E-8"
+                }
+            },
+            {
+                "key": "con_dex_pairs2.pairs:1:blockTimestampLast",
+                "value": {
+                    "__time__": [
+                        2024,
+                        12,
+                        17,
+                        21,
+                        44,
+                        54,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_dex_pairs2.pairs:1:creationTime",
+                "value": {
+                    "__time__": [
+                        2024,
+                        12,
+                        17,
+                        21,
+                        44,
+                        41,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_dex_pairs2.pairs:1:kLast",
+                "value": {
+                    "__fixed__": "1E+2"
+                }
+            },
+            {
+                "key": "con_dex_pairs2.pairs:1:reserve0",
+                "value": {
+                    "__fixed__": "9.093389106119850868418659634446"
+                }
+            },
+            {
+                "key": "con_dex_pairs2.pairs:1:reserve1",
+                "value": {
+                    "__fixed__": "11"
+                }
+            },
+            {
+                "key": "con_dex_pairs2.pairs:1:token0",
+                "value": "con_testtoken"
+            },
+            {
+                "key": "con_dex_pairs2.pairs:1:token1",
+                "value": "currency"
+            },
+            {
+                "key": "con_dex_pairs2.pairs:1:totalSupply",
+                "value": {
+                    "__fixed__": "9.999999999999999999999999999999"
+                }
+            },
+            {
+                "key": "con_dex_pairs2.pairs_num",
+                "value": 1
+            },
+            {
+                "key": "con_dex_pairs2.toks_to_pair:con_testtoken:currency",
                 "value": 1
             },
             {
@@ -2460,6 +2616,84 @@
                 }
             },
             {
+                "key": "con_games.__code__",
+                "value": "__owner = Variable(contract='con_games', name='owner')\n__game_counter = Variable(contract='con_games', name='game_counter')\n__games = Hash(default_value=None, contract='con_games', name='games')\n\n\ndef ____():\n    __owner.set(ctx.caller)\n    __game_counter.set(0)\n\n\n@__export('con_games')\ndef create_game(name: str, image: str, description: str, external_link: str):\n    assert ctx.caller == __owner.get(), 'Solo el due\u00f1o puede crear juegos.'\n    game_id = __game_counter.get() + 1\n    __game_counter.set(game_id)\n    __games[game_id] = {'name': name, 'image': image, 'description':\n        description, 'external_link': external_link}\n    return f'Juego creado con ID {game_id}'\n\n\n@__export('con_games')\ndef update_game(game_id: int, name: str=None, image: str=None, description:\n    str=None, external_link: str=None):\n    assert ctx.caller == __owner.get(), 'Solo el due\u00f1o puede modificar juegos.'\n    game = __games[game_id]\n    assert game is not None, 'El ID del juego no existe.'\n    if name is not None:\n        game['name'] = name\n    if image is not None:\n        game['image'] = image\n    if description is not None:\n        game['description'] = description\n    if external_link is not None:\n        game['external_link'] = external_link\n    __games[game_id] = game\n    return f'Juego ID {game_id} actualizado.'\n\n\n@__export('con_games')\ndef get_game(game_id: int):\n    game = __games[game_id]\n    assert game is not None, 'El ID del juego no existe.'\n    return game\n\n\n@__export('con_games')\ndef list_games():\n    results = []\n    count = __game_counter.get()\n    for i in range(1, count + 1):\n        g = __games[i]\n        if g is not None:\n            results.append({'game_id': i, 'name': g['name'], 'image': g[\n                'image'], 'description': g['description'], 'external_link':\n                g['external_link']})\n    return results\n"
+            },
+            {
+                "key": "con_games.__developer__",
+                "value": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b"
+            },
+            {
+                "key": "con_games.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        12,
+                        13,
+                        16,
+                        41,
+                        45,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_games.game_counter",
+                "value": 2
+            },
+            {
+                "key": "con_games.games:1",
+                "value": {
+                    "name": "pruebas",
+                    "image": "imagen",
+                    "description": "descripcion",
+                    "external_link": "link"
+                }
+            },
+            {
+                "key": "con_games.games:2",
+                "value": {
+                    "name": "pruebas2",
+                    "image": "imagen2",
+                    "description": "descripcion2",
+                    "external_link": "link2"
+                }
+            },
+            {
+                "key": "con_games.owner",
+                "value": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b"
+            },
+            {
+                "key": "con_gamess.__code__",
+                "value": "__owner = Variable(contract='con_gamess', name='owner')\n__game_counter = Variable(contract='con_gamess', name='game_counter')\n__games = Hash(default_value=None, contract='con_gamess', name='games')\n\n\ndef ____():\n    __owner.set(ctx.caller)\n    __game_counter.set(0)\n\n\n@__export('con_gamess')\ndef create_game(name: str, image: str, description: str, external_link: str):\n    assert ctx.caller == __owner.get(), 'Solo el due\u00f1o puede crear juegos.'\n    game_id = __game_counter.get() + 1\n    __game_counter.set(game_id)\n    __games[game_id] = {'name': name, 'image': image, 'description':\n        description, 'external_link': external_link}\n    return f'Juego creado con ID {game_id}'\n\n\n@__export('con_gamess')\ndef update_game(game_id: int, name: str=None, image: str=None, description:\n    str=None, external_link: str=None):\n    assert ctx.caller == __owner.get(), 'Solo el due\u00f1o puede modificar juegos.'\n    game = __games[game_id]\n    assert game is not None, 'El ID del juego no existe.'\n    if name is not None:\n        game['name'] = name\n    if image is not None:\n        game['image'] = image\n    if description is not None:\n        game['description'] = description\n    if external_link is not None:\n        game['external_link'] = external_link\n    __games[game_id] = game\n    return f'Juego ID {game_id} actualizado.'\n\n\n@__export('con_gamess')\ndef get_game(game_id: int):\n    game = __games[game_id]\n    assert game is not None, 'El ID del juego no existe.'\n    return game\n\n\n@__export('con_gamess')\ndef list_games():\n    results = []\n    count = __game_counter.get()\n    for i in range(1, count + 1):\n        g = __games[i]\n        if g is not None:\n            results.append({'game_id': i, 'name': g['name'], 'image': g[\n                'image'], 'description': g['description'], 'external_link':\n                g['external_link']})\n    return results\n"
+            },
+            {
+                "key": "con_gamess.__developer__",
+                "value": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b"
+            },
+            {
+                "key": "con_gamess.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        12,
+                        14,
+                        11,
+                        45,
+                        57,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_gamess.game_counter",
+                "value": 0
+            },
+            {
+                "key": "con_gamess.owner",
+                "value": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b"
+            },
+            {
                 "key": "con_getthis.__code__",
                 "value": "@__export('con_getthis')\ndef exported():\n    return 0\n\n\n@__export('con_getthis')\ndef getthis():\n    exported()\n    return ctx.this\n"
             },
@@ -2617,6 +2851,56 @@
             },
             {
                 "key": "con_importme.metadata:token_website",
+                "value": "https://some.token.url"
+            },
+            {
+                "key": "con_logevent_test_token.__code__",
+                "value": "__balances = Hash(default_value=0, contract='con_logevent_test_token', name\n    ='balances')\n__metadata = Hash(contract='con_logevent_test_token', name='metadata')\n__TransferEvent = LogEvent(event='Transfer', params={'from': {'type': str,\n    'idx': True}, 'to': {'type': str, 'idx': True}, 'amount': {'type': (int,\n    float, decimal)}}, contract='con_logevent_test_token', name='TransferEvent'\n    )\n__ApproveEvent = LogEvent(event='Approve', params={'from': {'type': str,\n    'idx': True}, 'to': {'type': str, 'idx': True}, 'amount': {'type': (int,\n    float, decimal)}}, contract='con_logevent_test_token', name='ApproveEvent')\n__ChangeMetadataEvent = LogEvent(event='ChangeMetadata', params={'key': {\n    'type': str, 'idx': True}, 'value': {'type': str, 'idx': False}},\n    contract='con_logevent_test_token', name='ChangeMetadataEvent')\n\n\ndef ____():\n    __balances[ctx.caller] = 1000000\n    __metadata['token_name'] = 'LOG EVENT TEST TOKEN'\n    __metadata['token_symbol'] = 'LETT'\n    __metadata['token_logo_url'] = 'https://some.token.url/test-token.png'\n    __metadata['token_website'] = 'https://some.token.url'\n    __metadata['operator'] = ctx.caller\n\n\n@__export('con_logevent_test_token')\ndef change_metadata(key: str, value: Any):\n    assert ctx.caller == __metadata['operator'\n        ], 'Only operator can set metadata!'\n    __metadata[key] = value\n    __ChangeMetadataEvent({'key': key, 'value': value})\n\n\n@__export('con_logevent_test_token')\ndef transfer(amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    assert __balances[ctx.caller] >= amount, 'Not enough coins to send!'\n    __balances[ctx.caller] -= amount\n    __balances[to] += amount\n    __TransferEvent({'from': ctx.caller, 'to': to, 'amount': amount})\n    return f'Sent {amount} to {to}'\n\n\n@__export('con_logevent_test_token')\ndef approve(amount: float, to: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    __balances[ctx.caller, to] = amount\n    __ApproveEvent({'from': ctx.caller, 'to': to, 'amount': amount})\n    return f'Approved {amount} for {to}'\n\n\n@__export('con_logevent_test_token')\ndef transfer_from(amount: float, to: str, main_account: str):\n    assert amount > 0, 'Cannot send negative balances!'\n    assert __balances[main_account, ctx.caller\n        ] >= amount, f'Not enough coins approved to send! You have {__balances[main_account, ctx.caller]} and are trying to spend {amount}'\n    assert __balances[main_account] >= amount, 'Not enough coins to send!'\n    __balances[main_account, ctx.caller] -= amount\n    __balances[main_account] -= amount\n    __balances[to] += amount\n    __TransferEvent({'from': main_account, 'to': to, 'amount': amount})\n    return f'Sent {amount} to {to} from {main_account}'\n"
+            },
+            {
+                "key": "con_logevent_test_token.__developer__",
+                "value": "e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931"
+            },
+            {
+                "key": "con_logevent_test_token.__submitted__",
+                "value": {
+                    "__time__": [
+                        2024,
+                        12,
+                        13,
+                        16,
+                        33,
+                        30,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_logevent_test_token.balances:1565ff3ef4e54a73e5782f5c1c30c7106142370f90495ef3bb6dd6c2e17dc158",
+                "value": 200
+            },
+            {
+                "key": "con_logevent_test_token.balances:e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931",
+                "value": 999800
+            },
+            {
+                "key": "con_logevent_test_token.metadata:operator",
+                "value": "e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931"
+            },
+            {
+                "key": "con_logevent_test_token.metadata:token_logo_url",
+                "value": "https://some.token.url/test-token.png"
+            },
+            {
+                "key": "con_logevent_test_token.metadata:token_name",
+                "value": "LOG EVENT TEST TOKEN"
+            },
+            {
+                "key": "con_logevent_test_token.metadata:token_symbol",
+                "value": "LETT"
+            },
+            {
+                "key": "con_logevent_test_token.metadata:token_website",
                 "value": "https://some.token.url"
             },
             {
@@ -2941,7 +3225,26 @@
             },
             {
                 "key": "con_msg_main.counter",
-                "value": 0
+                "value": 1
+            },
+            {
+                "key": "con_msg_main.messages:1",
+                "value": {
+                    "sender": "ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9",
+                    "message": "cdd844c372d4d7ea662bcd0352796087ad9ebbacda25b34cdde174a11ccef35a66a3e78c9d81ed7906f3dde8e55aeaa80bc2197a",
+                    "receiver": "ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9",
+                    "timestamp": {
+                        "__time__": [
+                            2024,
+                            12,
+                            12,
+                            4,
+                            35,
+                            7,
+                            0
+                        ]
+                    }
+                }
             },
             {
                 "key": "con_multest.__code__",
@@ -3624,6 +3927,242 @@
                 "value": "f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce"
             },
             {
+                "key": "con_pixel_frames_auction_v0_6_1.S:36047ee45b11eac5cb151c48868b9683f9f59006127b0f1f4889cf70ad58ad7e:creator",
+                "value": "f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:36047ee45b11eac5cb151c48868b9683f9f59006127b0f1f4889cf70ad58ad7e:current_owner",
+                "value": "f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:36047ee45b11eac5cb151c48868b9683f9f59006127b0f1f4889cf70ad58ad7e:current_winner",
+                "value": ""
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:36047ee45b11eac5cb151c48868b9683f9f59006127b0f1f4889cf70ad58ad7e:end_date",
+                "value": {
+                    "__time__": [
+                        2024,
+                        12,
+                        17,
+                        20,
+                        0,
+                        0,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:36047ee45b11eac5cb151c48868b9683f9f59006127b0f1f4889cf70ad58ad7e:f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce",
+                "value": true
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:36047ee45b11eac5cb151c48868b9683f9f59006127b0f1f4889cf70ad58ad7e:reserve_price",
+                "value": 10
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:36047ee45b11eac5cb151c48868b9683f9f59006127b0f1f4889cf70ad58ad7e:royalty_percent",
+                "value": 5
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:36047ee45b11eac5cb151c48868b9683f9f59006127b0f1f4889cf70ad58ad7e:start_date",
+                "value": {
+                    "__time__": [
+                        2024,
+                        12,
+                        17,
+                        19,
+                        47,
+                        0,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:36047ee45b11eac5cb151c48868b9683f9f59006127b0f1f4889cf70ad58ad7e:uid",
+                "value": "36047ee45b11eac5cb151c48868b9683f9f59006127b0f1f4889cf70ad58ad7e"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:6847e8c0e9633eec65c9a3b3c76d96eb720c01b8cbf22bfdb21ca4245355a917:creator",
+                "value": "f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:6847e8c0e9633eec65c9a3b3c76d96eb720c01b8cbf22bfdb21ca4245355a917:current_bid",
+                "value": {
+                    "__fixed__": "1E+1"
+                }
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:6847e8c0e9633eec65c9a3b3c76d96eb720c01b8cbf22bfdb21ca4245355a917:current_owner",
+                "value": "f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:6847e8c0e9633eec65c9a3b3c76d96eb720c01b8cbf22bfdb21ca4245355a917:current_winner",
+                "value": "3c2161a4dd5beacbaa630d71423b94e466e903ca349149a89c37ea5317ff5677"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:6847e8c0e9633eec65c9a3b3c76d96eb720c01b8cbf22bfdb21ca4245355a917:end_date",
+                "value": {
+                    "__time__": [
+                        2024,
+                        12,
+                        16,
+                        1,
+                        20,
+                        0,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:6847e8c0e9633eec65c9a3b3c76d96eb720c01b8cbf22bfdb21ca4245355a917:f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce",
+                "value": false
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:6847e8c0e9633eec65c9a3b3c76d96eb720c01b8cbf22bfdb21ca4245355a917:reserve_price",
+                "value": 10
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:6847e8c0e9633eec65c9a3b3c76d96eb720c01b8cbf22bfdb21ca4245355a917:royalty_percent",
+                "value": 5
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:6847e8c0e9633eec65c9a3b3c76d96eb720c01b8cbf22bfdb21ca4245355a917:start_date",
+                "value": {
+                    "__time__": [
+                        2024,
+                        12,
+                        16,
+                        0,
+                        50,
+                        0,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:6847e8c0e9633eec65c9a3b3c76d96eb720c01b8cbf22bfdb21ca4245355a917:uid",
+                "value": "6847e8c0e9633eec65c9a3b3c76d96eb720c01b8cbf22bfdb21ca4245355a917"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:92846ad290d0c08156ee9258382a0f05d419640f01eea82d1d99c7013f4f4dec:creator",
+                "value": "f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:92846ad290d0c08156ee9258382a0f05d419640f01eea82d1d99c7013f4f4dec:current_bid",
+                "value": {
+                    "__fixed__": "1E+1"
+                }
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:92846ad290d0c08156ee9258382a0f05d419640f01eea82d1d99c7013f4f4dec:current_owner",
+                "value": "f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:92846ad290d0c08156ee9258382a0f05d419640f01eea82d1d99c7013f4f4dec:current_winner",
+                "value": "3c2161a4dd5beacbaa630d71423b94e466e903ca349149a89c37ea5317ff5677"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:92846ad290d0c08156ee9258382a0f05d419640f01eea82d1d99c7013f4f4dec:end_date",
+                "value": {
+                    "__time__": [
+                        2024,
+                        12,
+                        16,
+                        1,
+                        40,
+                        0,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:92846ad290d0c08156ee9258382a0f05d419640f01eea82d1d99c7013f4f4dec:f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce",
+                "value": false
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:92846ad290d0c08156ee9258382a0f05d419640f01eea82d1d99c7013f4f4dec:reserve_price",
+                "value": 10
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:92846ad290d0c08156ee9258382a0f05d419640f01eea82d1d99c7013f4f4dec:royalty_percent",
+                "value": 5
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:92846ad290d0c08156ee9258382a0f05d419640f01eea82d1d99c7013f4f4dec:start_date",
+                "value": {
+                    "__time__": [
+                        2024,
+                        12,
+                        16,
+                        0,
+                        30,
+                        0,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:92846ad290d0c08156ee9258382a0f05d419640f01eea82d1d99c7013f4f4dec:uid",
+                "value": "92846ad290d0c08156ee9258382a0f05d419640f01eea82d1d99c7013f4f4dec"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:a1d5cd78d5e9cfe7ecf8031db06fa6cdca6fafc84419758844c42a95172ce90a:creator",
+                "value": "f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:a1d5cd78d5e9cfe7ecf8031db06fa6cdca6fafc84419758844c42a95172ce90a:current_owner",
+                "value": "f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:a1d5cd78d5e9cfe7ecf8031db06fa6cdca6fafc84419758844c42a95172ce90a:current_winner",
+                "value": ""
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:a1d5cd78d5e9cfe7ecf8031db06fa6cdca6fafc84419758844c42a95172ce90a:end_date",
+                "value": {
+                    "__time__": [
+                        2024,
+                        12,
+                        17,
+                        20,
+                        0,
+                        0,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:a1d5cd78d5e9cfe7ecf8031db06fa6cdca6fafc84419758844c42a95172ce90a:f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce",
+                "value": true
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:a1d5cd78d5e9cfe7ecf8031db06fa6cdca6fafc84419758844c42a95172ce90a:reserve_price",
+                "value": 10
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:a1d5cd78d5e9cfe7ecf8031db06fa6cdca6fafc84419758844c42a95172ce90a:royalty_percent",
+                "value": 5
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:a1d5cd78d5e9cfe7ecf8031db06fa6cdca6fafc84419758844c42a95172ce90a:start_date",
+                "value": {
+                    "__time__": [
+                        2024,
+                        12,
+                        17,
+                        19,
+                        52,
+                        0,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:a1d5cd78d5e9cfe7ecf8031db06fa6cdca6fafc84419758844c42a95172ce90a:uid",
+                "value": "a1d5cd78d5e9cfe7ecf8031db06fa6cdca6fafc84419758844c42a95172ce90a"
+            },
+            {
                 "key": "con_pixel_frames_auction_v0_6_1.S:aded799648b9d8b71085d8df868180ac40d96bf5e677217092ec76cf410e311a:creator",
                 "value": "f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce"
             },
@@ -3657,7 +4196,7 @@
             },
             {
                 "key": "con_pixel_frames_auction_v0_6_1.S:aded799648b9d8b71085d8df868180ac40d96bf5e677217092ec76cf410e311a:f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce",
-                "value": true
+                "value": false
             },
             {
                 "key": "con_pixel_frames_auction_v0_6_1.S:aded799648b9d8b71085d8df868180ac40d96bf5e677217092ec76cf410e311a:reserve_price",
@@ -3684,6 +4223,68 @@
             {
                 "key": "con_pixel_frames_auction_v0_6_1.S:aded799648b9d8b71085d8df868180ac40d96bf5e677217092ec76cf410e311a:uid",
                 "value": "aded799648b9d8b71085d8df868180ac40d96bf5e677217092ec76cf410e311a"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:b5d06e834eca4e9ee7cd2c25bee9d77dcbfc25dd1aa9c30ec7583e5fe994666b:creator",
+                "value": "f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:b5d06e834eca4e9ee7cd2c25bee9d77dcbfc25dd1aa9c30ec7583e5fe994666b:current_bid",
+                "value": {
+                    "__fixed__": "2E+1"
+                }
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:b5d06e834eca4e9ee7cd2c25bee9d77dcbfc25dd1aa9c30ec7583e5fe994666b:current_owner",
+                "value": "f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:b5d06e834eca4e9ee7cd2c25bee9d77dcbfc25dd1aa9c30ec7583e5fe994666b:current_winner",
+                "value": "3c2161a4dd5beacbaa630d71423b94e466e903ca349149a89c37ea5317ff5677"
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:b5d06e834eca4e9ee7cd2c25bee9d77dcbfc25dd1aa9c30ec7583e5fe994666b:end_date",
+                "value": {
+                    "__time__": [
+                        2024,
+                        12,
+                        14,
+                        12,
+                        20,
+                        0,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:b5d06e834eca4e9ee7cd2c25bee9d77dcbfc25dd1aa9c30ec7583e5fe994666b:f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce",
+                "value": false
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:b5d06e834eca4e9ee7cd2c25bee9d77dcbfc25dd1aa9c30ec7583e5fe994666b:reserve_price",
+                "value": 10
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:b5d06e834eca4e9ee7cd2c25bee9d77dcbfc25dd1aa9c30ec7583e5fe994666b:royalty_percent",
+                "value": 5
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:b5d06e834eca4e9ee7cd2c25bee9d77dcbfc25dd1aa9c30ec7583e5fe994666b:start_date",
+                "value": {
+                    "__time__": [
+                        2024,
+                        12,
+                        14,
+                        11,
+                        20,
+                        0,
+                        0
+                    ]
+                }
+            },
+            {
+                "key": "con_pixel_frames_auction_v0_6_1.S:b5d06e834eca4e9ee7cd2c25bee9d77dcbfc25dd1aa9c30ec7583e5fe994666b:uid",
+                "value": "b5d06e834eca4e9ee7cd2c25bee9d77dcbfc25dd1aa9c30ec7583e5fe994666b"
             },
             {
                 "key": "con_pixel_frames_auction_v0_6_1.S:thing_master_contract",
@@ -5296,7 +5897,7 @@
             },
             {
                 "key": "con_pixel_frames_info_v0_3.S:36047ee45b11eac5cb151c48868b9683f9f59006127b0f1f4889cf70ad58ad7e:owner",
-                "value": "f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce"
+                "value": "con_pixel_frames_auction_v0_6_1"
             },
             {
                 "key": "con_pixel_frames_info_v0_3.S:36047ee45b11eac5cb151c48868b9683f9f59006127b0f1f4889cf70ad58ad7e:price:amount",
@@ -6049,7 +6650,7 @@
             },
             {
                 "key": "con_pixel_frames_info_v0_3.S:6847e8c0e9633eec65c9a3b3c76d96eb720c01b8cbf22bfdb21ca4245355a917:owner",
-                "value": "f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce"
+                "value": "3c2161a4dd5beacbaa630d71423b94e466e903ca349149a89c37ea5317ff5677"
             },
             {
                 "key": "con_pixel_frames_info_v0_3.S:6847e8c0e9633eec65c9a3b3c76d96eb720c01b8cbf22bfdb21ca4245355a917:price:amount",
@@ -6454,7 +7055,7 @@
             },
             {
                 "key": "con_pixel_frames_info_v0_3.S:92846ad290d0c08156ee9258382a0f05d419640f01eea82d1d99c7013f4f4dec:owner",
-                "value": "f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce"
+                "value": "3c2161a4dd5beacbaa630d71423b94e466e903ca349149a89c37ea5317ff5677"
             },
             {
                 "key": "con_pixel_frames_info_v0_3.S:92846ad290d0c08156ee9258382a0f05d419640f01eea82d1d99c7013f4f4dec:price:amount",
@@ -6622,7 +7223,7 @@
             },
             {
                 "key": "con_pixel_frames_info_v0_3.S:a1d5cd78d5e9cfe7ecf8031db06fa6cdca6fafc84419758844c42a95172ce90a:owner",
-                "value": "f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce"
+                "value": "con_pixel_frames_auction_v0_6_1"
             },
             {
                 "key": "con_pixel_frames_info_v0_3.S:a1d5cd78d5e9cfe7ecf8031db06fa6cdca6fafc84419758844c42a95172ce90a:price:amount",
@@ -6790,7 +7391,7 @@
             },
             {
                 "key": "con_pixel_frames_info_v0_3.S:aded799648b9d8b71085d8df868180ac40d96bf5e677217092ec76cf410e311a:owner",
-                "value": "con_pixel_frames_auction_v0_6_1"
+                "value": "3c2161a4dd5beacbaa630d71423b94e466e903ca349149a89c37ea5317ff5677"
             },
             {
                 "key": "con_pixel_frames_info_v0_3.S:aded799648b9d8b71085d8df868180ac40d96bf5e677217092ec76cf410e311a:price:amount",
@@ -7120,7 +7721,7 @@
             },
             {
                 "key": "con_pixel_frames_info_v0_3.S:b5d06e834eca4e9ee7cd2c25bee9d77dcbfc25dd1aa9c30ec7583e5fe994666b:owner",
-                "value": "f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce"
+                "value": "3c2161a4dd5beacbaa630d71423b94e466e903ca349149a89c37ea5317ff5677"
             },
             {
                 "key": "con_pixel_frames_info_v0_3.S:b5d06e834eca4e9ee7cd2c25bee9d77dcbfc25dd1aa9c30ec7583e5fe994666b:price:amount",
@@ -8037,12 +8638,16 @@
                 }
             },
             {
+                "key": "con_pixel_frames_master_v0_3.balances:3c2161a4dd5beacbaa630d71423b94e466e903ca349149a89c37ea5317ff5677",
+                "value": 4
+            },
+            {
                 "key": "con_pixel_frames_master_v0_3.balances:con_pixel_frames_auction_v0_5",
                 "value": 0
             },
             {
                 "key": "con_pixel_frames_master_v0_3.balances:con_pixel_frames_auction_v0_6_1",
-                "value": 1
+                "value": 2
             },
             {
                 "key": "con_pixel_frames_master_v0_3.balances:e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931",
@@ -8054,7 +8659,7 @@
             },
             {
                 "key": "con_pixel_frames_master_v0_3.balances:f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce",
-                "value": 9
+                "value": 4
             },
             {
                 "key": "con_pixel_frames_master_v0_3.balances:f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce:aded799648b9d8b71085d8df868180ac40d96bf5e677217092ec76cf410e311a:con_pixel_frames_auction_v0_4",
@@ -10935,7 +11540,13 @@
             {
                 "key": "con_testtoken.balances:39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0",
                 "value": {
-                    "__fixed__": "9891792834981048.899810358880721561166334440412"
+                    "__fixed__": "9891792834981039.806421252760870692747674805966"
+                }
+            },
+            {
+                "key": "con_testtoken.balances:39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0:con_dex22",
+                "value": {
+                    "__fixed__": "1"
                 }
             },
             {
@@ -10983,7 +11594,13 @@
             {
                 "key": "con_testtoken.balances:con_dex_pairs",
                 "value": {
-                    "__fixed__": "1739.61316713223260000230453431316"
+                    "__fixed__": "41.800633596611738895164383427412"
+                }
+            },
+            {
+                "key": "con_testtoken.balances:con_dex_pairs2",
+                "value": {
+                    "__fixed__": "9.093389106119850868418659634446"
                 }
             },
             {
@@ -11035,7 +11652,7 @@
             {
                 "key": "con_testtoken.balances:e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931",
                 "value": {
-                    "__fixed__": "173.093246230445437711156299472639"
+                    "__fixed__": "1870.905779766066298818296450358387"
                 }
             },
             {
@@ -12762,9 +13379,13 @@
                 }
             },
             {
+                "key": "currency.balances:15628f7ae7bfb16ce1cc9a16af7d349d7e898d5b22a05aeb55817602d0c5350b",
+                "value": 10000
+            },
+            {
                 "key": "currency.balances:1565ff3ef4e54a73e5782f5c1c30c7106142370f90495ef3bb6dd6c2e17dc158",
                 "value": {
-                    "__fixed__": "17.000010000000000000000000000002"
+                    "__fixed__": "117.000010000000000000000000000002"
                 }
             },
             {
@@ -12970,7 +13591,13 @@
             {
                 "key": "currency.balances:39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0",
                 "value": {
-                    "__fixed__": "9342.226199926559109328263824602773"
+                    "__fixed__": "9291.372599926559109328263824602773"
+                }
+            },
+            {
+                "key": "currency.balances:39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0:con_dex22",
+                "value": {
+                    "__fixed__": "-0"
                 }
             },
             {
@@ -13034,7 +13661,7 @@
             {
                 "key": "currency.balances:3c2161a4dd5beacbaa630d71423b94e466e903ca349149a89c37ea5317ff5677",
                 "value": {
-                    "__fixed__": "10988.48"
+                    "__fixed__": "10940.62"
                 }
             },
             {
@@ -13046,7 +13673,7 @@
             {
                 "key": "currency.balances:3c2161a4dd5beacbaa630d71423b94e466e903ca349149a89c37ea5317ff5677:con_pixel_frames_auction_v0_6_1",
                 "value": {
-                    "__fixed__": "9.999999E+7"
+                    "__fixed__": "3.9999995E+8"
                 }
             },
             {
@@ -13210,7 +13837,7 @@
             {
                 "key": "currency.balances:503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b",
                 "value": {
-                    "__fixed__": "113.4622"
+                    "__fixed__": "104.379"
                 }
             },
             {
@@ -13664,7 +14291,7 @@
             {
                 "key": "currency.balances:7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e",
                 "value": {
-                    "__fixed__": "59101035.45958205352288775"
+                    "__fixed__": "59101092.07938205352288775"
                 }
             },
             {
@@ -14244,7 +14871,13 @@
             {
                 "key": "currency.balances:con_dex_pairs",
                 "value": {
-                    "__fixed__": "2.102000000230291939558750930651"
+                    "__fixed__": "47.102000000230291939558750930651"
+                }
+            },
+            {
+                "key": "currency.balances:con_dex_pairs2",
+                "value": {
+                    "__fixed__": "11"
                 }
             },
             {
@@ -14316,7 +14949,7 @@
             {
                 "key": "currency.balances:con_pixel_frames_auction_v0_6_1",
                 "value": {
-                    "__fixed__": "1E+1"
+                    "__fixed__": "-0"
                 }
             },
             {
@@ -14482,7 +15115,7 @@
             {
                 "key": "currency.balances:dff5d54d9c3cdb04d279c3c0a123d6a73a94e0725d7eac955fdf87298dbe45a6",
                 "value": {
-                    "__fixed__": "3760.5145"
+                    "__fixed__": "3788.0133"
                 }
             },
             {
@@ -14542,7 +15175,7 @@
             {
                 "key": "currency.balances:e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931",
                 "value": {
-                    "__fixed__": "1007959.096214054990895930799999999998"
+                    "__fixed__": "992796.130614054990895930799999999998"
                 }
             },
             {
@@ -14552,7 +15185,7 @@
             {
                 "key": "currency.balances:e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931:con_dex2test",
                 "value": {
-                    "__fixed__": "99.9"
+                    "__fixed__": "54.9"
                 }
             },
             {
@@ -14582,7 +15215,7 @@
             {
                 "key": "currency.balances:ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9",
                 "value": {
-                    "__fixed__": "6.58019748"
+                    "__fixed__": "6.30019748"
                 }
             },
             {
@@ -14646,6 +15279,10 @@
                 }
             },
             {
+                "key": "currency.balances:f4304ff51bccf98aa7f5a8d1e881787fe77f450d8997be99719261c06fdbac0d",
+                "value": 5000
+            },
+            {
                 "key": "currency.balances:f4d0d7bee54dbd6b7c01ef726781e1ed501a0842937f943a7228c4214fef5d5f",
                 "value": {
                     "__fixed__": "0.1001"
@@ -14672,7 +15309,7 @@
             {
                 "key": "currency.balances:f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce",
                 "value": {
-                    "__fixed__": "32352.4702"
+                    "__fixed__": "32377.7516"
                 }
             },
             {
@@ -15164,7 +15801,7 @@
             },
             {
                 "key": "39a982e221a2805a585fad76cc4147daba631ff8e64e640a4ff3815dc780e7f0",
-                "value": 188
+                "value": 194
             },
             {
                 "key": "3bc2445f8daa06789b9c932faa6cd5de56b0da7298d1432db677de1dba54bdc6",
@@ -15172,7 +15809,7 @@
             },
             {
                 "key": "3c2161a4dd5beacbaa630d71423b94e466e903ca349149a89c37ea5317ff5677",
-                "value": 6
+                "value": 16
             },
             {
                 "key": "3c460e39312bb6fc9f6f53dfb47459214ee5bde97d43e74ed747fdba3fbd5cb0",
@@ -15196,7 +15833,7 @@
             },
             {
                 "key": "503e10f0c38a5f6844306f83f8f78ddd38a0c7977b4295fe1b840bb0d0e0de4b",
-                "value": 320
+                "value": 324
             },
             {
                 "key": "53b38a255cda4e5fa285fa0baa6b2a845c0f11c6df5913fc492821755cac6328",
@@ -15272,11 +15909,11 @@
             },
             {
                 "key": "e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931",
-                "value": 287
+                "value": 297
             },
             {
                 "key": "ee06a34cf08bf72ce592d26d36b90c79daba2829ba9634992d034318160d49f9",
-                "value": 22
+                "value": 23
             },
             {
                 "key": "f0222f00943416a8cacb2160e4af75faff36660b87e99279a045af1f4182dd1f",
@@ -15292,7 +15929,7 @@
             },
             {
                 "key": "f84eae148729b12f79875be889933ad378ffa4d4fcb5ec65d2e314b8730b1fce",
-                "value": 46
+                "value": 71
             }
         ]
     }
