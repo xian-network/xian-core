@@ -247,8 +247,8 @@ class BDS:
         for event in tx['tx_result']['events']:
             try:
                 self.db.add_query_to_batch(sql.insert_events(), [
-                    tx['payload']['contract'],  # Contract name
-                    event['event'],             # Event name
+                    event['contract'],  # Contract name
+                    event['event'],     # Event name
                     event['signer'],    # Signer of the event
                     event['caller'],    # Caller of the event
                     json.dumps(event['data_indexed'], cls=CustomEncoder),  # Serialize indexed data
