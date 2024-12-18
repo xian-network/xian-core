@@ -5,7 +5,7 @@ import logging
 import sys
 from pathlib import Path
 
-from fixtures.test_constants import TestConstants
+from fixtures.mock_constants import MockConstants
 import pytest
 import xian_py
 
@@ -21,6 +21,7 @@ from cometbft.abci.v1beta3.types_pb2 import (
     RequestFinalizeBlock,
 )
 
+from utils import setup_fixtures, teardown_fixtures
 # Disable any kind of logging
 logging.disable(logging.CRITICAL)
 
@@ -35,10 +36,14 @@ async def deserialize(raw: bytes) -> Response:
 class TestCommit(unittest.IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self):
-        self.app = await Xian.create(constants=TestConstants)
+        setup_fixtures()
+        self.app = await Xian.create(constants=MockConstants)
         self.app.current_block_meta = {"height": 0, "nanos": 0}
         self.app.client.raw_driver.set("currency.balances:invalid_vk", 100000)
         self.handler = ProtocolHandler(self.app)
+        
+    async def asyncTearDown(self):
+        teardown_fixtures()
 
     async def process_request(self, request_type, req):
         raw = await self.handler.process(request_type, req)
