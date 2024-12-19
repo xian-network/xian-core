@@ -19,7 +19,9 @@ from cometbft.abci.v1beta1.types_pb2 import (
     RequestCheckTx,
 )
 
-from fixtures.test_constants import TestConstants
+from utils import setup_fixtures, teardown_fixtures
+
+from fixtures.mock_constants import MockConstants
 
 # Disable any kind of logging
 logging.disable(logging.CRITICAL)
@@ -35,12 +37,15 @@ async def deserialize(raw: bytes) -> Response:
 class TestCheckTx(unittest.IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self):
-        self.app = await Xian.create(constants=TestConstants)
+        setup_fixtures()
+        self.app = await Xian.create(constants=MockConstants)
         self.app.current_block_meta = {"height": 0, "nanos": 0}
         self.app.chain_id = "xian-testnet-1"
         self.app.client.raw_driver.set("currency.balances:e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931", 100000)
         self.handler = ProtocolHandler(self.app)
 
+    async def asyncTearDown(self):
+        teardown_fixtures()
 
     async def process_request(self, request_type, req):
         raw = await self.handler.process(request_type, req)
