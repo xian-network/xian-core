@@ -7,6 +7,7 @@ from xian.services.bds.config import Config
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 from contracting.stdlib.bridge.time import Datetime, Timedelta
 from xian.services.bds.database import DB, result_to_json
+from xian_py.decompiler import ContractDecompiler
 from xian_py.wallet import key_is_valid
 from timeit import default_timer as timer
 from decimal import Decimal
@@ -376,12 +377,14 @@ class BDS:
         ])
 
     async def insert_genesis_state_contract(self, contract_name, code, submission_time):
+        original_code = ContractDecompiler().decompile(code)
+
         try:
             await self.db.execute(sql.insert_contracts(), [
                 f"GENESIS",
                 contract_name,
-                code,
-                self.is_XSC0001(code),
+                original_code,
+                self.is_XSC0001(original_code),
                 submission_time
             ])
         except Exception as e:
