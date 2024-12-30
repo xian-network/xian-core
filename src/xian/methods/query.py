@@ -7,6 +7,8 @@ import socket
 import struct
 
 from cometbft.abci.v1beta1.types_pb2 import ResponseQuery
+from contracting.execution.executor import ReadOnlyExecutor
+from contracting.storage.driver import ReadOnlyDriver
 from xian.utils.encoding import encode_str
 from xian.constants import Constants as c
 
@@ -33,10 +35,32 @@ async def query(self, req) -> ResponseQuery:
     loop = asyncio.get_event_loop()
     key = path_parts[1] if len(path_parts) > 1 else ""
     result = None
+
     try:
         # http://localhost:26657/abci_query?path="/get/currency.balances:c93dee52d7dc6cc43af44007c3b1dae5b730ccf18a9e6fb43521f8e4064561e6"
         if path_parts and path_parts[0] == "get":
             result = self.client.raw_driver.get(path_parts[1])
+
+        # http://localhost:26657/abci_query?path="/execute_read_only/<encoded_payload>"
+        elif path_parts[0] == "execute_read_only":
+            raw_tx = path_parts[1]
+
+            # Retrieve payload
+            byte_data = bytes.fromhex(raw_tx)
+            json_string = byte_data.decode('utf-8')
+            tx_payload = json.loads(json_string)
+
+            # Create read-only components
+            readonly_driver = ReadOnlyDriver(storage_home=c.STORAGE_HOME)
+            readonly_executor = ReadOnlyExecutor(driver=readonly_driver)
+
+            # Execute without stamps/metering
+            result = readonly_executor.execute(
+                sender=tx_payload['sender'],
+                contract_name=tx_payload['contract'],
+                function_name=tx_payload['function'],
+                kwargs=tx_payload['kwargs']
+            )
 
         # http://localhost:26657/abci_query?path="/health"
         elif path_parts[0] == "health":
@@ -65,6 +89,8 @@ async def query(self, req) -> ResponseQuery:
         # http://localhost:26657/abci_query?path="/ping"
         elif path_parts[0] == "ping":
             result = {'status': 'online'}
+
+
 
         # Blockchain Data Service
         elif self.block_service_mode:
