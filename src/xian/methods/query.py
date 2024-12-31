@@ -120,43 +120,6 @@ async def query(self, req) -> ResponseQuery:
             elif path_parts[0] == "contracts":
                 result = await self.bds.get_contracts(limit, offset)
 
-            # http://localhost:26657/abci_query?path="/lint/<code>"
-            elif path_parts[0] == "lint":
-                try:
-                    code = base64.b64decode(path_parts[1]).decode("utf-8")
-                    code = unquote(code)
-
-                    # Pyflakes linting
-                    stdout = StringIO()
-                    stderr = StringIO()
-                    reporter = Reporter(stdout, stderr)
-                    await loop.run_in_executor(None, check, code, "<string>", reporter)
-                    stdout_output = stdout.getvalue()
-                    stderr_output = stderr.getvalue()
-
-                    # Contracting linting
-                    try:
-                        linter = Linter()
-                        tree = await loop.run_in_executor(None, ast.parse, code)
-                        violations = await loop.run_in_executor(None, linter.check, tree)
-                        formatted_new_linter_output = ""
-                        # Transform new linter output to match pyflakes format
-                        if violations:
-                            for violation in violations:
-                                line = int(re.search(r"Line (\d+):", violation).group(1))
-                                message = re.search(r"Line \d+: (.+)", violation).group(1)
-                                formatted_violation_output = f"<string>:{line}:0: {message}\n"
-                                formatted_new_linter_output += formatted_violation_output
-                    except:
-                        formatted_new_linter_output = ""
-
-                    # Combine stderr output
-                    combined_stderr_output = f"{stderr_output}{formatted_new_linter_output}"
-
-                    result = {"stdout": stdout_output, "stderr": combined_stderr_output}
-                except:
-                    result = {"stdout": "", "stderr": ""}
-
             # http://localhost:26657/abci_query?path="/simulate_tx/<encoded_payload>"
             elif path_parts[0] == "simulate_tx":
                 connection = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
