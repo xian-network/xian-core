@@ -62,6 +62,8 @@ async def query(self, req) -> ResponseQuery:
                 kwargs=tx_payload['kwargs']
             )
 
+            result = str(result['result'])
+
         # http://localhost:26657/abci_query?path="/health"
         elif path_parts[0] == "health":
             result = "OK"
