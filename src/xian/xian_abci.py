@@ -23,7 +23,6 @@ from xian.methods import (
     prepare_proposal,
     query,
 )
-from xian.upgrader import UpgradeHandler
 from xian.validators import ValidatorHandler
 from xian.nonce import NonceStorage
 from xian.processor import TxProcessor
@@ -72,7 +71,6 @@ class Xian:
 
         self.client = ContractingClient(storage_home=constants.STORAGE_HOME)
         self.nonce_storage = NonceStorage(self.client)
-        self.upgrader = UpgradeHandler(self)
         self.validator_handler = ValidatorHandler(self)
         self.tx_processor = TxProcessor(client=self.client)
         self.rewards_handler = RewardsHandler(client=self.client)
@@ -142,7 +140,6 @@ class Xian:
         Contains the fields of the newly decided block.
         This method is equivalent to the call sequence BeginBlock, [DeliverTx], and EndBlock in the previous version of ABCI.
         """
-        await self.upgrader.check_version(req.height)
         res = await finalize_block.finalize_block(self, req)
         return res
 
