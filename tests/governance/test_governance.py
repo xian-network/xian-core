@@ -13,6 +13,7 @@ from loguru import logger
 from contracting.stdlib.bridge.time import Datetime
 from fixtures.mock_constants import MockConstants
 from utils import setup_fixtures, teardown_fixtures
+from pathlib import Path
 
 # Get the directory where the script is located
 script_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
@@ -50,6 +51,8 @@ node_2 = "dff5d54d9c3cdb04d279c3c0a123d6a73a94e0725d7eac955fdf87298dbe45a6"
 node_3 = "6d2476cd66fa277b6077c76cdcd92733040dada2e12a28c3ebb08af44e12be76"
 node_4 = "b4d1967e6264bbcd61fd487caf3cafaffdc34be31d0994bf02afdcc2056c053c"
 node_5 = "db21a73137672f075f9a8ee142a1aa4839a5deb28ef03a10f3e7e16c87db8f24"
+
+delegate = "crosschainer"
 
 
 from datetime import datetime, timedelta
@@ -158,6 +161,7 @@ class MyTestCase(unittest.TestCase):
         )
         self.d.set(key="currency.balances:new_node", value=1000000)
 
+        self.d.set(key="currency.balances:crosschainer", value=1000000)
         with open(dao_contract_path) as f:
             contract = f.read()
         self.c.submit(contract, name="dao", owner="masternodes")
@@ -961,6 +965,106 @@ class MyTestCase(unittest.TestCase):
             ["new_type1", "new_type2", "new_type3", "new_type4"],
         )
 
+    def test_delegate(self):
+        block_meta = create_block_meta(datetime.now())
+        self.assertEqual(self.currency.balances["crosschainer"], 1000000)
+
+        approve_currency = self.tx_processor.process_tx(
+            tx={
+                "payload": {
+                    "sender": "crosschainer",
+                    "contract": "currency",
+                    "function": "approve",
+                    "kwargs": {"amount": 100000, "to": "masternodes"},
+                    "stamps_supplied": 1000,
+                },
+                "metadata": {"signature": "abc"},
+                "b_meta": block_meta,
+            }
+        )
+        
+        delegate_res = self.tx_processor.process_tx(
+            tx={
+                "payload": {
+                    "sender": "crosschainer",
+                    "contract": "masternodes",
+                    "function": "delegate",
+                    "kwargs": {"amount": 1000, "node": "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e"},
+                    "stamps_supplied": 1000,
+                },
+                "metadata": {"signature": "abc"},
+                "b_meta": block_meta,
+            }
+        ).get('tx_result').get('result')
+        self.assertEqual(delegate_res, "'Delegated'")
+        self.assertEqual(self.currency.balances["crosschainer"], 999000)
+        self.assertEqual(self.masternodes.delegate_holdings["7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e","crosschainer"], 1000)
+
+    def test_undelegate(self):
+        block_meta = create_block_meta(datetime.now())
+        self.assertEqual(self.currency.balances["crosschainer"], 1000000)
+
+        approve_currency = self.tx_processor.process_tx(
+            tx={
+                "payload": {
+                    "sender": "crosschainer",
+                    "contract": "currency",
+                    "function": "approve",
+                    "kwargs": {"amount": 100000, "to": "masternodes"},
+                    "stamps_supplied": 1000,
+                },
+                "metadata": {"signature": "abc"},
+                "b_meta": block_meta,
+            }
+        )
+        
+        delegate_res = self.tx_processor.process_tx(
+            tx={
+                "payload": {
+                    "sender": "crosschainer",
+                    "contract": "masternodes",
+                    "function": "delegate",
+                    "kwargs": {"amount": 1000, "node": "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e"},
+                    "stamps_supplied": 1000,
+                },
+                "metadata": {"signature": "abc"},
+                "b_meta": block_meta,
+            }
+        ).get('tx_result').get('result')
+        self.assertEqual(delegate_res, "'Delegated'")
+        self.assertEqual(self.currency.balances["crosschainer"], 999000)
+        self.assertEqual(self.masternodes.delegate_holdings["7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e","crosschainer"], 1000)
+        
+        undelegate_res = self.tx_processor.process_tx(
+            tx={
+                "payload": {
+                    "sender": "crosschainer",
+                    "contract": "masternodes",
+                    "function": "undelegate",
+                    "kwargs": {"amount": 1000, "node": "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e"},
+                    "stamps_supplied": 1000,
+                },
+                "metadata": {"signature": "abc"},
+                "b_meta": block_meta,
+            }
+        ).get('tx_result').get('result')
+        self.assertEqual(undelegate_res, "'Undelegate request pending for 7 days'")
+        
+        block_meta = create_block_meta(datetime.now() + timedelta(days=8))
+        undelegate_res = self.tx_processor.process_tx(
+            tx={
+                "payload": {
+                    "sender": "crosschainer",
+                    "contract": "masternodes",
+                    "function": "undelegate",
+                    "kwargs": {"amount": 1000, "node": "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e"},
+                    "stamps_supplied": 1000,
+                },
+                "metadata": {"signature": "abc"},
+                "b_meta": block_meta,
+            }
+        ).get('tx_result').get('result')
+        self.assertEqual(undelegate_res, "'Undelegate request complete'")
 
 if __name__ == "__main__":
     unittest.main()
