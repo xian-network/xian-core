@@ -11,7 +11,9 @@ types = Variable()
 registration_fee = Variable()
 pending_registrations = Hash(default_value=False)
 pending_leave = Hash(default_value=False)
-holdings = Hash(default_value=0)
+node_holdings = Hash(default_value=0)
+delegate_holdings = Hash(default_value=0)
+pending_undelegates = Hash(default_value=False)
 
 PASS_THRESHOLD = 0.8
 PROPOSAL_EXPIRY_DAYS = 7
@@ -130,14 +132,33 @@ def register():
     assert ctx.caller not in nodes.get(), "Already a node"
     assert pending_registrations[ctx.caller] == False, "Already pending registration"
     currency.transfer_from(amount=registration_fee.get(), to=ctx.this, main_account=ctx.caller)
-    holdings[ctx.caller] = registration_fee.get()
+    node_holdings[ctx.caller] = registration_fee.get()
     pending_registrations[ctx.caller] = True
 
 @export
 def unregister():
     assert ctx.caller not in nodes.get(), "If you're a node already, you can't unregister. You need to leave or be removed."
     assert pending_registrations[ctx.caller] == True, "No pending registration"
-    if holdings[ctx.caller] > 0:
-        currency.transfer(holdings[ctx.caller], ctx.caller)
+    if node_holdings[ctx.caller] > 0:
+        currency.transfer(node_holdings[ctx.caller], ctx.caller)
     pending_registrations[ctx.caller] = False
-    holdings[ctx.caller] = 0
+    node_holdings[ctx.caller] = 0
+
+@export
+def delegate(amount: float, node: str):
+    assert amount + delegate_holdings[node, ctx.caller] >= 10, "Must delegate at least 10"
+    assert pending_undelegates[node, ctx.caller] == False, "Must wait for pending undelegate to finish"
+    currency.transfer_from(amount=amount, to=ctx.this, main_account=ctx.caller)
+    delegate_holdings[node, ctx.caller] += amount
+
+@export
+def undelegate(amount: float, node: str):
+    assert delegate_holdings[node, ctx.caller] >= amount, "Not enough delegated"
+    if pending_undelegates[node, ctx.caller] == False:
+        pending_undelegates[node, ctx.caller] = now + timedelta(days=7)
+        return "Undelegate request pending for 7 days"
+    else:
+        assert pending_undelegates[node, ctx.caller] < now, "Undelegate request not over"
+        currency.transfer(delegate_holdings[node, ctx.caller], ctx.caller)
+        delegate_holdings[node, ctx.caller] = 0
+        pending_undelegates[node, ctx.caller] = False
