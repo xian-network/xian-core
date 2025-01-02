@@ -150,6 +150,7 @@ def delegate(amount: float, node: str):
     assert pending_undelegates[node, ctx.caller] == False, "Must wait for pending undelegate to finish"
     currency.transfer_from(amount=amount, to=ctx.this, main_account=ctx.caller)
     delegate_holdings[node, ctx.caller] += amount
+    return "Delegated"
 
 @export
 def undelegate(amount: float, node: str):
@@ -157,8 +158,10 @@ def undelegate(amount: float, node: str):
     if pending_undelegates[node, ctx.caller] == False:
         pending_undelegates[node, ctx.caller] = now + timedelta(days=7)
         return "Undelegate request pending for 7 days"
-    else:
-        assert pending_undelegates[node, ctx.caller] < now, "Undelegate request not over"
+    elif pending_undelegates[node, ctx.caller] < now:
+        return "Undelegate request period not yet over"
+    elif pending_undelegates[node, ctx.caller] >= now:
         currency.transfer(delegate_holdings[node, ctx.caller], ctx.caller)
         delegate_holdings[node, ctx.caller] = 0
         pending_undelegates[node, ctx.caller] = False
+        return "Undelegate request complete"
