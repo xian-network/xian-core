@@ -167,7 +167,12 @@ def undelegate(amount: float, node: str):
         return "Undelegate request complete"
 
 @export
-def get_total_power(node: str):
+def get_total_power_of_node(node: str):
+    assert node in nodes.get(), "Not a node"
     delegates = sum([delegate_holdings[node, delegator] for delegator in delegate_holdings.keys() if delegator == node])
     node_power = node_holdings[node]
     return delegates + node_power
+
+@export
+def get_total_power():
+    return sum([get_total_power_of_node(node) for node in nodes.get()])
