@@ -3,11 +3,12 @@ import importlib
 import sys
 import gc
 import asyncio
+import signal
 
 from xian.constants import Constants
 
 from loguru import logger
-from datetime import timedelta
+from datetime import timedelta, datetime
 from abci.server import ABCIServer
 from xian.services.bds.bds import BDS
 from contracting.client import ContractingClient
@@ -176,24 +177,62 @@ class Xian:
         return res
 
 
+def cleanup_old_logs(logs_dir: str, days: int = 3):
+    """Clean up log files older than specified days on startup"""
+    try:
+        threshold = datetime.now() - timedelta(days=days)
+        for f in os.listdir(logs_dir):
+            if not f.endswith('.log'):
+                continue
+
+            file_path = os.path.join(logs_dir, f)
+            file_time = datetime.fromtimestamp(os.path.getctime(file_path))
+
+            if file_time < threshold:
+                try:
+                    os.remove(file_path)
+                    logger.debug(f"Removed old log file: {f}")
+                except OSError as e:
+                    logger.error(f"Error removing old log file {f}: {e}")
+    except Exception as e:
+        logger.error(f"Error during log cleanup: {e}")
+
+
 def main():
     logger.remove()
-
     logger.add(sys.stderr, level="DEBUG")
 
     start_path = os.path.dirname(os.path.realpath(__file__))
     log_path = os.path.realpath(os.path.join(start_path, '..', '..'))
+    logs_dir = os.path.join(log_path, 'logs')
+
+    os.makedirs(logs_dir, exist_ok=True)
+
+    # Clean up old logs on startup
+    cleanup_old_logs(logs_dir)
 
     logger.add(
         os.path.join(log_path, 'logs', '{time}.log'),
         retention=timedelta(days=3),
+        rotation=timedelta(hours=1),
         format="{time} {level} {name} {message}",
         level="DEBUG",
-        rotation="10 MB",
+        enqueue=True,
+        compression="zip"  # Compress old logs
     )
+
+    # Register signal handlers
+    signal.signal(signal.SIGTERM, signal_handler)
+    signal.signal(signal.SIGINT, signal_handler)
 
     app = asyncio.get_event_loop().run_until_complete(Xian.create())
     ABCIServer(app=app).run()
+
+
+def signal_handler(signum, frame):
+    logger.info("Shutting down...")
+    logger.remove()
+    sys.exit(0)
 
 
 if __name__ == "__main__":
