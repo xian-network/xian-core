@@ -5,11 +5,10 @@ import gc
 import asyncio
 import signal
 
-from xian.constants import Constants
-
 from loguru import logger
 from datetime import timedelta, datetime
 from abci.server import ABCIServer
+from xian.constants import Constants
 from xian.services.bds.bds import BDS
 from contracting.client import ContractingClient
 
@@ -40,6 +39,8 @@ from abci.utils import get_logger
 get_logger("requests").setLevel(30)
 get_logger("urllib3").setLevel(30)
 get_logger("asyncio").setLevel(30)
+
+LOG_RETENTION_DAYS = 3
 
 
 def load_module(module_path, original_module_path):
@@ -209,11 +210,11 @@ def main():
     os.makedirs(logs_dir, exist_ok=True)
 
     # Clean up old logs on startup
-    cleanup_old_logs(logs_dir)
+    cleanup_old_logs(logs_dir, days=LOG_RETENTION_DAYS)
 
     logger.add(
         os.path.join(log_path, 'logs', '{time}.log'),
-        retention=timedelta(days=3),
+        retention=timedelta(days=LOG_RETENTION_DAYS),
         rotation=timedelta(hours=1),
         format="{time} {level} {name} {message}",
         level="DEBUG",
