@@ -141,3 +141,7 @@ def unregister():
         currency.transfer(holdings[ctx.caller], ctx.caller)
     pending_registrations[ctx.caller] = False
     holdings[ctx.caller] = 0
+    
+@export
+def balance_stream():
+    dao.balance_dao_stream()

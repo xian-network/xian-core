@@ -3,6 +3,72 @@ metadata = Hash()
 permits = Hash()
 streams = Hash()
 
+TransferEvent = LogEvent(
+    event="Transfer",
+    params={
+        "from": {"type": str, "idx": True},
+        "to": {"type": str, "idx": True},
+        "amount": {"type": (int, float, decimal)},
+    },
+)
+ApproveEvent = LogEvent(
+    event="Approve",
+    params={
+        "from": {"type": str, "idx": True},
+        "to": {"type": str, "idx": True},
+        "amount": {"type": (int, float, decimal)},
+    },
+)
+StreamCreatedEvent = LogEvent(
+    event="StreamCreated",
+    params={
+        "sender": {"type": str, "idx": True},
+        "receiver": {"type": str, "idx": True},
+        "stream_id": {"type": str, "idx": True},
+        "rate": {"type": (int, float, decimal)},
+        "begins": {"type": str},
+        "closes": {"type": str},
+    },
+)
+StreamBalanceEvent = LogEvent(
+    event="StreamBalance",
+    params={
+        "receiver": {"type": str, "idx": True},
+        "sender": {"type": str, "idx": True},
+        "stream_id": {"type": str, "idx": True},
+        "amount": {"type": (int, float, decimal)},
+        "balancer": {"type": str},
+    },
+)
+StreamCloseChangeEvent = LogEvent(
+    event="StreamCloseChange",
+    params={
+        "receiver": {"type": str, "idx": True},
+        "sender": {"type": str, "idx": True},
+        "stream_id": {"type": str, "idx": True},
+        "time": {"type": str},
+    },
+)
+StreamForfeitEvent = LogEvent(
+    event="StreamForfeit",
+    params={
+        "receiver": {"type": str, "idx": True},
+        "sender": {"type": str, "idx": True},
+        "stream_id": {"type": str, "idx": True},
+        "time": {"type": str},
+    },
+)
+
+StreamFinalizedEvent = LogEvent(
+    event="StreamFinalized",
+    params={
+        "receiver": {"type": str, "idx": True},
+        "sender": {"type": str, "idx": True},
+        "stream_id": {"type": str, "idx": True},
+        "time": {"type": str},
+    },
+)
+
 
 @construct
 def seed(vk: str):
@@ -12,7 +78,14 @@ def seed(vk: str):
     balances["dao_funding_stream"] = 22333333.311 # 67% DAO Tokens, to be streamed over 6 years.
     balances["team_lock"] += 49999999.95 # 45% Second batch of public tokens, to be sent out after mint
     balances[vk] += 5555555.55 # 5% Seed participation tokens
-        
+    
+    
+    metadata["token_name"] = "XIAN"
+    metadata["token_symbol"] = "XIAN"
+    metadata["token_logo_url"] = "https://xian.org/assets/img/logo.svg"
+    metadata["token_website"] = "https://xian.org"
+    metadata["operator"] = "team_lock"
+
     # TEAM LOCK
     # 365 * 4 + 364 = 1824 (4 years + 1 leap-year)
     # 1824 * 24 * 60 * 60 = 157593600 (seconds in duration)
@@ -35,6 +108,12 @@ def setup_seed_stream(stream_id: str, sender: str, receiver: str, rate: float, d
     streams[stream_id, 'sender'] = sender
     streams[stream_id, 'rate'] = rate
     streams[stream_id, 'claimed'] = 0
+    
+
+@export
+def change_metadata(key: str, value: Any):
+    assert ctx.caller == metadata["operator"], "Only operator can set metadata."
+    metadata[key] = value
 
 
 @export
@@ -44,16 +123,15 @@ def transfer(amount: float, to: str):
 
     balances[ctx.caller] -= amount
     balances[to] += amount
-
-    return f"Sent {amount} to {to}"
+    
+    TransferEvent({"from":ctx.caller, "to":to, "amount":amount})
 
 
 @export
 def approve(amount: float, to: str):
     assert amount >= 0, 'Cannot approve negative balances.'
     balances[ctx.caller, to] = amount
-
-    return f"Approved {amount} for {to}"
+    ApproveEvent({"from":ctx.caller, "to":to, "amount":amount})
 
 
 @export
@@ -61,20 +139,20 @@ def transfer_from(amount: float, to: str, main_account: str):
     assert amount > 0, 'Cannot send negative balances.'
     assert balances[main_account, ctx.caller] >= amount, f'Not enough coins approved to send. You have {balances[main_account, ctx.caller]} approved and are trying to spend {amount}'
     assert balances[main_account] >= amount, 'Not enough coins to send.'
+    
 
     balances[main_account, ctx.caller] -= amount
     balances[main_account] -= amount
     balances[to] += amount
 
-    return f"Sent {amount} to {to} from {main_account}"
-
+    TransferEvent({"from":main_account, "to":to, "amount":amount})
 
 @export 
 def balance_of(address: str):
     return balances[address]
 
 
-# XST002 / Permit
+# XSC002 / Permit
 
 @export
 def permit(owner: str, spender: str, value: float, deadline: str, signature: str):
@@ -84,19 +162,22 @@ def permit(owner: str, spender: str, value: float, deadline: str, signature: str
 
     assert permits[permit_hash] is None, 'Permit can only be used once.'
     assert now < deadline, 'Permit has expired.'
+    assert value >= 0, 'Cannot approve negative balances!'
     assert crypto.verify(owner, permit_msg, signature), 'Invalid signature.'
-
-    balances[owner, spender] += value
+    
+    balances[owner, spender] = value
     permits[permit_hash] = True
 
-    return f"Permit granted for {value} to {spender} from {owner}"
+    ApproveEvent({"from":owner, "to":spender, "amount":value})
+    
+    return permit_hash
 
 
 def construct_permit_msg(owner: str, spender: str, value: float, deadline: str):
     return f"{owner}:{spender}:{value}:{deadline}:{ctx.this}:{chain_id}"
 
 
-# XST003 / Streaming Payments
+# XSC003 / Streaming Payments
 
 
 SENDER_KEY = "sender"
@@ -139,6 +220,8 @@ def perform_create_stream(sender: str, receiver: str, rate: float, begins: str, 
     streams[stream_id, SENDER_KEY] = sender
     streams[stream_id, RATE_KEY] = rate
     streams[stream_id, CLAIMED_KEY] = 0
+
+    StreamCreatedEvent({"sender":sender, "receiver":receiver, "stream_id":stream_id, "rate":rate, "begins":str(begins), "closes":str(closes)})
 
     return stream_id
 
@@ -193,8 +276,9 @@ def balance_stream(stream_id: str):
     balances[receiver] += claimable_amount
 
     streams[stream_id, CLAIMED_KEY] += claimable_amount
+    
+    StreamBalanceEvent({"receiver":receiver, "sender":sender, "stream_id":stream_id, "amount":claimable_amount, "balancer":ctx.caller})
 
-    return f"Claimed {claimable_amount} tokens from stream"
 
 
 # Sets a stream to expire at some point greater than or equal to the current time.
@@ -209,8 +293,10 @@ def change_close_time(stream_id: str, new_close_time: str):
     assert streams[stream_id, STATUS_KEY] == STREAM_ACTIVE, 'Stream is not active.'
 
     sender = streams[stream_id, SENDER_KEY]
+    receiver = streams[stream_id, RECEIVER_KEY]
 
-    assert ctx.caller == sender, 'Only sender can extend the close time of a stream.'
+
+    assert ctx.caller == sender, 'Only sender can change the close time of a stream.'
 
     if new_close_time < streams[stream_id, BEGIN_KEY] and now < streams[stream_id, BEGIN_KEY]:
         streams[stream_id, CLOSE_KEY] = streams[stream_id, BEGIN_KEY]
@@ -218,8 +304,9 @@ def change_close_time(stream_id: str, new_close_time: str):
         streams[stream_id, CLOSE_KEY] = now
     else:
         streams[stream_id, CLOSE_KEY] = new_close_time
+        
+    StreamCloseChangeEvent({"receiver":receiver, "sender":sender, "stream_id":stream_id, "time":str(new_close_time)})
 
-    return f"Changed close time of stream to {streams[stream_id, CLOSE_KEY]}"
 
 
 # Set the stream inactive.
@@ -249,8 +336,9 @@ def finalize_stream(stream_id: str):
     assert outstanding_balance == 0, 'Stream has outstanding balance.'
 
     streams[stream_id, STATUS_KEY] = STREAM_FINALIZED
+    
+    StreamFinalizedEvent({"receiver":receiver, "sender":sender, "stream_id":stream_id, "time":str(now)})
 
-    return f"Finalized stream {stream_id}"
 
 
 # Convenience method to close a stream, balance it and finalize it
@@ -277,13 +365,15 @@ def forfeit_stream(stream_id: str) -> str:
     assert streams[stream_id, STATUS_KEY] == STREAM_ACTIVE, 'Stream is not active.'
 
     receiver = streams[stream_id, RECEIVER_KEY]
+    sender = streams[stream_id, SENDER_KEY]
 
     assert ctx.caller == receiver, 'Only receiver can forfeit a stream.'
 
     streams[stream_id, STATUS_KEY] = STREAM_FORFEIT
     streams[stream_id, CLOSE_KEY] = now
+    
+    StreamForfeitEvent({"receiver":receiver, "sender":sender, "stream_id":stream_id, "time":str(now)})
 
-    return f"Forfeit stream {stream_id}"
 
 
 def calc_outstanding_balance(begins: datetime.datetime, closes: datetime.datetime, rate: float, claimed: float) -> float:
@@ -304,4 +394,3 @@ def construct_stream_permit_msg(sender:str, receiver:str, rate:float, begins:str
 
 def strptime_ymdhms(date_string: str) -> datetime.datetime:
     return datetime.datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S')
-

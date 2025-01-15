@@ -115,3 +115,11 @@ def balance_stream():
     contract which sends tokens to this contract
     """
     currency.balance_stream(stream_id.get())
+
+@export
+def change_currency_metadata(key: str, value: str):
+    """
+    Changes the metadata of the currency contract
+    """
+    assert owners[ctx.caller], 'Only owners can change metadata.'
+    currency.change_metadata(key, value)
