@@ -15,6 +15,8 @@ logs:
 	pm2 logs --lines 1000
 
 down:
+	pm2 stop all
+	sleep 5  # Give Loguru time to handle any final cleanup
 	pm2 delete all
 
 restart:
