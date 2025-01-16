@@ -1,5 +1,4 @@
 import json
-import asyncio
 import socket
 import struct
 
@@ -21,7 +20,6 @@ async def query(self, req) -> ResponseQuery:
 
     logger.debug(req.path)
     path_parts = [part for part in req.path.split("/") if part]
-    loop = asyncio.get_event_loop()
     key = path_parts[1] if len(path_parts) > 1 else ""
     result = None
     try:
