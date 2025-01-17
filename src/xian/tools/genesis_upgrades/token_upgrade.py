@@ -57,17 +57,31 @@ def transfer_from(amount: float, to: str, main_account: str):
 
     def visit_Module(self, node: ast.Module) -> ast.Module:
         """Add new imports and state variables at the module level"""
-        # First apply any base class transformations
+        # First check if balance_of already exists
+        has_balance_of = any(
+            isinstance(n, ast.FunctionDef) and n.name == 'balance_of'
+            for n in node.body
+        )
+        
+        # Apply existing transformations
         node = self.generic_visit(node)
         
         # Add new imports and state variables at the top
         new_header = ast.parse("""
 __approvals = Hash(default_value=0)
 """).body
-
         
-        # Combine everything
-        node.body = new_header + node.body
+        # Add balance_of function if it doesn't exist
+        if not has_balance_of:
+            balance_of_func = ast.parse("""
+@export
+def balance_of(account: str):
+    return __balances[account]
+""").body
+            node.body = new_header + node.body + balance_of_func
+        else:
+            node.body = new_header + node.body
+            
         return node
 
 def find_code_entries(genesis_data: dict) -> List[Tuple[int, str, str]]:
@@ -98,23 +112,9 @@ def is_xsc001_token(code: str) -> bool:
         'def transfer_from('
     ]
     
+    # Note: We don't include balance_of in required_elements since we'll add it if missing
     return all(element in code for element in required_elements)
 
-def is_xsc002_token(code: str) -> bool:
-    """
-    Check if the given code matches XSC002 token structure
-    """
-    required_elements = [
-        '__balances = Hash(',
-        '__metadata = Hash(',
-        '__permits = Hash(',
-        '__streams = Hash(',
-        'def transfer(',
-        'def approve(',
-        'def transfer_from(',
-        'def permit('
-    ]
-    return all(element in code for element in required_elements)
 
 def process_genesis_data(genesis_data: dict):
     """

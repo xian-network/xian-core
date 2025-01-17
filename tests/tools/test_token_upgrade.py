@@ -89,5 +89,24 @@ class TestTokenUpgrade(unittest.TestCase):
                 contract.approve(amount=200, to="spender", signer="sys")
                 self.assertEqual(contract.approvals["sys", "spender"], 200)
 
+    def test_all_tokens_balance_of_functionality(self):
+        """Test that all tokens have the balance_of functionality working correctly"""
+        for contract_name, contract in self.token_contracts.items():
+            with self.subTest(contract=contract_name):
+                # First set up some balances
+                contract.transfer(amount=100, to="recipient", signer="sys")
+                
+                # Test balance_of for recipient
+                recipient_balance = contract.balance_of(account="recipient")
+                self.assertEqual(recipient_balance, 100)
+                
+                # Test balance_of for sys account
+                sys_balance = contract.balance_of(account="sys")
+                self.assertGreater(sys_balance, 0)  # sys should have some balance as initial holder
+                
+                # Test balance_of for non-existent account
+                zero_balance = contract.balance_of(account="non_existent")
+                self.assertEqual(zero_balance, 0)  # Should return default value of 0
+
 if __name__ == "__main__":
     unittest.main()
