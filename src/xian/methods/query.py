@@ -1,24 +1,14 @@
-import base64
 import json
-import ast
-import re
-import asyncio
 import socket
 import struct
 
 from cometbft.abci.v1beta1.types_pb2 import ResponseQuery
 from xian.utils.encoding import encode_str
 from xian.constants import Constants as c
-
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 from contracting.compilation import parser
-from contracting.compilation.linter import Linter
 from contracting.storage.encoder import Encoder
 from loguru import logger
-from pyflakes.api import check
-from pyflakes.reporter import Reporter
-from urllib.parse import unquote
-from io import StringIO
 
 
 async def query(self, req) -> ResponseQuery:
@@ -30,7 +20,6 @@ async def query(self, req) -> ResponseQuery:
 
     logger.debug(req.path)
     path_parts = [part for part in req.path.split("/") if part]
-    loop = asyncio.get_event_loop()
     key = path_parts[1] if len(path_parts) > 1 else ""
     result = None
     try:
