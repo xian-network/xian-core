@@ -1,12 +1,12 @@
 import ast
-from ast import NodeTransformer, AST
+from ast import NodeTransformer
 import json
 from typing import List, Tuple
 
 class TokenFunctionTransformer(NodeTransformer):
     """AST transformer for updating XSC001 token functions"""
-    def __init__(self, token_type: str = 'xsc001'):
-        self.token_type = token_type
+    def __init__(self, contract_name: str):
+        self.contract_name = contract_name
         
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
         """Visit and potentially transform function definitions"""
@@ -38,12 +38,11 @@ class TokenFunctionTransformer(NodeTransformer):
     def _update_approve_function(self, node: ast.FunctionDef) -> ast.FunctionDef:
         """Update the approve function with new checks"""
         new_body = ast.parse("""
-@export
 def approve(amount: float, to: str):
     assert amount >= 0, "Cannot approve negative balances."
-    balances[ctx.caller, to] = amount
+    __balances[ctx.caller, to] = amount
 
-    ApproveEvent({"from": ctx.caller, "to": to, "amount": amount})
+    __ApproveEvent({"from": ctx.caller, "to": to, "amount": amount})
 
 """).body[0]
         
@@ -57,14 +56,14 @@ def approve(amount: float, to: str):
         new_body = ast.parse("""
 def transfer_from(amount: float, to: str, main_account: str):
     assert amount > 0, 'Cannot send negative balances!'
-    assert balances[main_account, ctx.caller] >= amount, f'Not enough coins approved to send! You have {balances[main_account, ctx.caller]} and are trying to spend {amount}'
-    assert balances[main_account] >= amount, 'Not enough coins to send!'
+    assert __balances[main_account, ctx.caller] >= amount, f'Not enough coins approved to send! You have {__balances[main_account, ctx.caller]} and are trying to spend {amount}'
+    assert __balances[main_account] >= amount, 'Not enough coins to send!'
 
-    balances[main_account, ctx.caller] -= amount
-    balances[main_account] -= amount
-    balances[to] += amount
+    __balances[main_account, ctx.caller] -= amount
+    __balances[main_account] -= amount
+    __balances[to] += amount
 
-    TransferEvent({"from": main_account, "to": to, "amount": amount})
+    __TransferEvent({"from": main_account, "to": to, "amount": amount})
 """).body[0]
         
         # Preserve original decorator
@@ -76,19 +75,19 @@ def transfer_from(amount: float, to: str, main_account: str):
         """Update the permit function"""
         new_body = ast.parse("""
 def permit(owner: str, spender: str, value: float, deadline: str, signature: str):
-    deadline = strptime_ymdhms(deadline)
-    permit_msg = construct_permit_msg(owner, spender, value, str(deadline))
+    deadline = __strptime_ymdhms(deadline)
+    permit_msg = __construct_permit_msg(owner, spender, value, str(deadline))
     permit_hash = hashlib.sha3(permit_msg)
 
-    assert permits[permit_hash] is None, 'Permit can only be used once.'
+    assert __permits[permit_hash] is None, 'Permit can only be used once.'
     assert value >= 0, 'Cannot approve negative balances!'
     assert now < deadline, 'Permit has expired.'
     assert crypto.verify(owner, permit_msg, signature), 'Invalid signature.'
 
-    balances[owner, spender] = value
-    permits[permit_hash] = True
+    __balances[owner, spender] = value
+    __permits[permit_hash] = True
 
-    ApproveEvent({"from": owner, "to": spender, "amount": value})
+    __ApproveEvent({"from": owner, "to": spender, "amount": value})
     
     return permit_hash
 """).body[0]
@@ -111,7 +110,7 @@ def balance_of(address: str):
     def _update_construct_permit_msg_function(self, node: ast.FunctionDef) -> ast.FunctionDef:
         """Update the construct_permit_msg function"""
         new_body = ast.parse("""
-def construct_permit_msg(owner: str, spender: str, value: float, deadline: str):
+def __construct_permit_msg(owner: str, spender: str, value: float, deadline: str):
     return f"{owner}:{spender}:{value}:{deadline}:{ctx.this}:{chain_id}"
 """).body[0]
         
@@ -131,15 +130,13 @@ def construct_permit_msg(owner: str, spender: str, value: float, deadline: str):
         node = self.generic_visit(node)
         
         # Adds events to top of contract if they are missing...
-        if self.token_type == 'xsc001' and needs_xsc001_events(node.body):
-            new_header = xsc001_header()
-        elif self.token_type == 'xsc002' and needs_xsc001_events(node.body):
-            new_header = xsc002_header()
+        if needs_xsc001_events(node.body):
+            new_header = xsc001_header(self.contract_name)
         
         # Add balance_of function if it doesn't exist
         if not has_balance_of:
-            balance_of_func = ast.parse("""
-@export
+            balance_of_func = ast.parse(f"""
+@__export('{self.contract_name}')
 def balance_of(address: str):
     return __balances[address]
 """).body
@@ -156,15 +153,32 @@ def find_code_entries(genesis_data: dict) -> List[Tuple[int, str, str]]:
     """
     code_entries = []
     
+    excluded_contracts = [
+        "con_snake.__code__",
+        "con_xfinxty.__code__",
+        "con_stk.__code__",
+        "con_stk001.__code__",
+        "con_stk5.__code__",
+        "con_stk6.__code__",
+        "con_stk003.__code__",
+        "con_stk005.__code__",
+        "con_stk006.__code__",
+        "con_snake.__code__",
+    ]
+    
     for idx, entry in enumerate(genesis_data['abci_genesis']['genesis']):
         key = entry.get('key', '')
-        if key.endswith('.__code__') and key.startswith('con_') and "pixel" not in key and "con_snake" != key:
+        if (
+            key.endswith('.__code__') and 
+            key.startswith('con_') and 
+            "pixel" not in key and 
+            key not in excluded_contracts
+        ):
             contract_name = key.replace('.__code__', '')
             code_entries.append((idx, contract_name, entry['value']))
     
     return code_entries
 
-    return all(element in code for element in required_elements)
 def process_genesis_data(genesis_data: dict):
     """
     Main function to process the genesis data
@@ -179,22 +193,15 @@ def process_genesis_data(genesis_data: dict):
     
     # Process each code entry
     for idx, contract_name, code_value in code_entries:
-
-        if is_xsc002_token(code_value):
-            print(f"Found XSC002 token contract: {contract_name} at index {idx}")
-            updated_code = update_token_code(code_value, 'xsc002')
-            genesis_data['abci_genesis']['genesis'][idx]['value'] = updated_code
-            changes_made = True
-
-        elif is_xsc001_token(code_value):
+        if is_xsc001_token(code_value):
             print(f"Found XSC001 token contract: {contract_name} at index {idx}")
-            updated_code = update_token_code(code_value, 'xsc001')
+            updated_code = update_token_code(contract_name, code_value)
             genesis_data['abci_genesis']['genesis'][idx]['value'] = updated_code
             changes_made = True
 
     return genesis_data, changes_made
 
-def update_token_code(code: str, token_type: str) -> str:
+def update_token_code(contract_name: str, code: str) -> str:
     """
     Update the token code with new functionality using AST transformation
     """
@@ -202,7 +209,7 @@ def update_token_code(code: str, token_type: str) -> str:
     tree = ast.parse(code)
     
     # Apply our transformations
-    transformer = TokenFunctionTransformer()
+    transformer = TokenFunctionTransformer(contract_name)
     modified_tree = transformer.visit(tree)
     
     # Convert back to source code
@@ -225,23 +232,6 @@ def is_xsc001_token(code: str) -> bool:
     # Note: We don't include balance_of in required_elements since we'll add it if missing
     return all(element in code for element in required_elements)
 
-
-def is_xsc002_token(code: str) -> bool:
-    """
-    Check if the given code matches XSC002 token structure
-    """
-    # Basic checks for XSC002 token structure
-    required_elements = [
-        '__balances = Hash(',
-        '__metadata = Hash(',
-        'def transfer(',
-        'def approve(',
-        'def transfer_from(',
-        'def permit('
-    ]
-
-    return all(element in code for element in required_elements)
-
     
 def needs_xsc001_events(code: str) -> bool:
     xsc001_events = [
@@ -251,18 +241,12 @@ def needs_xsc001_events(code: str) -> bool:
     return not any(element in code for element in xsc001_events)
 
     
-def xsc001_header():
-    return ast.parse("""
-TransferEvent = LogEvent(event="Transfer", params={"from":{'type':str, 'idx':True}, "to": {'type':str, 'idx':True}, "amount": {'type':(int, float, decimal)}})
-ApproveEvent = LogEvent(event="Approve", params={"from":{'type':str, 'idx':True}, "to": {'type':str, 'idx':True}, "amount": {'type':(int, float, decimal)}})
-""").body
+def xsc001_header(contract_name: str):
+    return ast.parse(f'''
+__TransferEvent = LogEvent(event="Transfer", params={{"from": {{"type": str, "idx": True}}, "to": {{"type": str, "idx": True}}, "amount": {{"type": (int, float, decimal)}}}}, contract="{contract_name}", name="TransferEvent")
+__ApproveEvent = LogEvent(event="Approve", params={{"from": {{"type": str, "idx": True}}, "to": {{"type": str, "idx": True}}, "amount": {{"type": (int, float, decimal)}}}}, contract="{contract_name}", name="ApproveEvent")
+''').body
 
-def xsc002_header():
-    return ast.parse("""
-TransferEvent = LogEvent(event="Transfer", params={"from":{'type':str, 'idx':True}, "to": {'type':str, 'idx':True}, "amount": {'type':(int, float, decimal)}})
-ApproveEvent = LogEvent(event="Approve", params={"from":{'type':str, 'idx':True}, "to": {'type':str, 'idx':True}, "amount": {'type':(int, float, decimal)}})
-""").body
-    
 
 if __name__ == "__main__":
     genesis_file_path = "./genesis.json"
