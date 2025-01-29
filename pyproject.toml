@@ -27,6 +27,9 @@ include = [
     "protos/**/*",
 ]
 
+[tool.poetry.scripts]
+xian = "xian.cli:main"
+
 [tool.poetry.dependencies]
 python = "~=3.11.0"
 protobuf = "3.20.3"
