@@ -1,6 +1,48 @@
-[build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
+[tool.poetry]
+name = "xian-core"
+version = "1.0.0"
+description = "Xian Network Python ABCI Server for CometBFT"
+authors = ["Xian Network <info@xian.org>"]
+readme = "README.md"
+license = "Apache-2.0"
+homepage = "https://github.com/XianChain/xian"
+repository = "https://github.com/XianChain/xian"
+documentation = "https://github.com/XianChain/xian"
+keywords = ["blockchain", "xian", "cometbft", "abci", "python"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3.11"
+]
+packages = [
+    { include = "abci", from = "src" },
+    { include = "cometbft", from = "src" },
+    { include = "gogoproto", from = "src" },
+    { include = "tendermint", from = "src" },
+    { include = "xian", from = "src" },
+]
+include = [
+    "Makefile",
+    "protos/**/*",
+]
 
-[tool.black]
-line-length = 80
+[tool.poetry.dependencies]
+python = "~=3.11.0"
+protobuf = "3.20.3"
+colorlog = ">=3.1.4"
+certifi = ">=2022.12.7"
+pyflakes = "*"
+toml = "*"
+pynacl = "*"
+requests = "*"
+xian-py = "*"
+loguru = "*"
+urwid = "*"
+asyncpg = "*"
+parameterized = "*"
+xian-contracting = "*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
