@@ -30,7 +30,6 @@ def seed(genesis_nodes: list, genesis_registration_fee: int):
         "create_stream", 
         "change_close_time", 
         "finalize_stream", 
-        "balance_stream",
         "close_balance_finalize",
         "topic_vote"
     ])
