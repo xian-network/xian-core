@@ -11,6 +11,74 @@ Python-based ABCI (Application Blockchain Interface) server designed for CometBF
 - PostgreSQL (for Blockchain Data Service)
 - PM2 (for process management)
 
+## Installation and Usage
+
+There are two ways to set up and run Xian Core:
+
+### Method 1: Production Installation (via PyPI)
+
+```bash
+# Create and activate a virtual environment
+python -m venv venv
+source venv/bin/activate
+
+# Install the package
+pip install xian-core
+
+# Initialize the node
+xian init
+
+# Start the node
+xian up
+
+# View logs
+xian logs
+
+# Stop the node
+xian down
+```
+
+Additional commands:
+```bash
+xian node-id  # Get node ID
+xian wipe     # Wipe blockchain data
+xian help     # Show all available commands
+```
+
+### Method 2: Development Installation (from source)
+
+```bash
+# Clone the repository
+git clone https://github.com/xian-network/xian-core.git
+cd xian-core
+
+# Create and activate a virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install in development mode
+pip install -e .
+
+# Initialize CometBFT
+make init
+
+# Start the node
+make up
+
+# View logs
+make logs
+
+# Stop all services
+make down
+```
+
+Additional Makefile commands:
+```bash
+make dwu       # Down, wipe, init, up sequence
+make node-id   # Show node ID
+make ex-state  # Export state
+```
+
 ## Key Features
 
 - **ABCI Server**: Full implementation of CometBFT's ABCI protocol
@@ -21,48 +89,15 @@ Python-based ABCI (Application Blockchain Interface) server designed for CometBF
 - **Blockchain Data Service (BDS)**: PostgreSQL-based service for storing and querying blockchain data
 - **Validator Management**: Flexible validator set management
 - **Rewards System**: Built-in system for handling transaction fees and rewards
-- **Process Monitoring**: PM2-based process management
 
-## Installation
+## Architecture Components
 
-```bash
-# Install the package
-pip install xian-core
-```
-
-## Basic Usage
-
-### Starting the Node
-
-```bash
-# Initialize CometBFT
-make init
-
-# Start Xian ABCI and CometBFT
-make up
-
-# View logs
-make logs
-
-# Stop all services
-make down
-```
-
-### Advanced Commands
-
-```bash
-# Wipe and restart
-make dwu  # (down, wipe, init, up)
-
-# Start with simulator
-make up-bds
-
-# Get node ID
-make node-id
-
-# Export state
-make ex-state
-```
+- **ABCI Server**: Handles communication with CometBFT
+- **Transaction Processor**: Manages transaction execution and state updates
+- **Validator Handler**: Manages validator set changes
+- **Rewards Handler**: Processes transaction fees and rewards
+- **Nonce Manager**: Handles transaction ordering
+- **Event System**: Tracks and logs blockchain events
 
 ## Configuration
 
@@ -72,17 +107,9 @@ The node uses several configuration files:
 - Genesis file: `~/.cometbft/config/genesis.json`
 - BDS configuration: Located in the BDS service directory
 
-## Blockchain Data Service
+## Query Interface
 
-The BDS provides persistent storage and querying capabilities:
-
-- Transaction history
-- State changes
-- Contract deployments
-- Events and rewards
-- Address tracking
-
-### Query Examples
+Examples of querying the node:
 
 ```bash
 # Get contract state
@@ -95,28 +122,23 @@ curl "http://localhost:26657/abci_query?path=\"/health\""
 curl "http://localhost:26657/abci_query?path=\"/get_next_nonce/ADDRESS\""
 ```
 
-## Architecture Components
-
-- **ABCI Server**: Handles communication with CometBFT
-- **Transaction Processor**: Manages transaction execution and state updates
-- **Validator Handler**: Manages validator set changes
-- **Rewards Handler**: Processes transaction fees and rewards
-- **Nonce Manager**: Handles transaction ordering
-- **Event System**: Tracks and logs blockchain events
-
 ## Development
 
-To set up a development environment:
-
+### Testing
 ```bash
-# Clone the repository
-git clone https://github.com/xian-network/xian-core.git
-
-# Install dependencies
-pip install -e .
-
 # Run tests
 python -m pytest tests/
+```
+
+### Creating a Release
+```bash
+# Install required tools
+pip install poetry
+
+# Create a new release
+./release.sh patch  # For bug fixes (0.1.0 -> 0.1.1)
+./release.sh minor  # For new features (0.1.0 -> 0.2.0)
+./release.sh major  # For breaking changes (0.1.0 -> 2.0.0)
 ```
 
 ## License
