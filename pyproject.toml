@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "xian-core"
-version = "1.0.0"
+version = "1.0.1"
 description = "Xian Network Python ABCI Server for CometBFT"
 authors = ["Xian Network <info@xian.org>"]
 readme = "README.md"
