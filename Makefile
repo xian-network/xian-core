@@ -15,11 +15,11 @@ XIAN_DIR := ./src/xian
 
 help:
 	@echo "Available commands:"
-	@echo "  make up         - Start xian node and cometbft"
-	@echo "  make up-bds     - Start with simulator"
-	@echo "  make down       - Stop all services"
-	@echo "  make logs       - Show logs"
-	@echo "  make restart    - Restart all services"
+	@echo "  make up        - Start xian node and cometbft"
+	@echo "  make up-bds    - Start with simulator"
+	@echo "  make down      - Stop all services"
+	@echo "  make logs      - Show logs"
+	@echo "  make restart   - Restart all services"
 	@echo "  make wipe      - Clean blockchain data"
 	@echo "  make init      - Initialize cometbft"
 	@echo "  make node-id   - Show node ID"
