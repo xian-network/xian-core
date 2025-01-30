@@ -56,8 +56,9 @@ git clone https://github.com/xian-network/xian-core.git
 cd xian-core
 
 # Create and activate a virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+python3.11 -m venv xian-venv
+source xian-venv/bin/activate
+cd xian-core
 
 # Install in development mode
 pip install -e .
