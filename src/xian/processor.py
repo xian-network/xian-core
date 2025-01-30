@@ -29,7 +29,6 @@ class TxProcessor:
                 environment=environment,
                 metering=enabled_fees
             )
-
             if output is None:
                 return {
                     'tx_result': None,
@@ -185,6 +184,7 @@ class TxProcessor:
             'transaction': transaction,
             'status': output['status_code'],
             'state': writes,
+            'events': output['events'],
             'stamps_used': output['stamps_used'],
             'result': safe_repr(output['result']),
             'rewards': rewards if rewards else None

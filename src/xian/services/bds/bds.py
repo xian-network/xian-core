@@ -7,30 +7,43 @@ from xian.services.bds.config import Config
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 from contracting.stdlib.bridge.time import Datetime, Timedelta
 from xian.services.bds.database import DB, result_to_json
+from xian_py.decompiler import ContractDecompiler
 from xian_py.wallet import key_is_valid
 from timeit import default_timer as timer
+from decimal import Decimal
 
 
 # Custom JSON encoder for our own objects
+def strip_trailing_zeros(s: str) -> str:
+    if '.' in s:
+        s = s.rstrip('0').rstrip('.')
+    return s
+
+
+# Encodes everything to string - except for unknown objects
 class CustomEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, ContractingDecimal):
-            v = float(str(obj))
-            return int(v) if v.is_integer() else v
-        if isinstance(obj, Datetime):
-            # Convert to ISO 8601 format string with microseconds
+            return strip_trailing_zeros(str(obj))
+        elif isinstance(obj, Decimal):
+            return strip_trailing_zeros(str(obj))
+        elif isinstance(obj, Datetime):
             return obj._datetime.isoformat(timespec='microseconds')
-        if isinstance(obj, Timedelta):
-            # Convert to total seconds with microseconds
-            return obj._timedelta.total_seconds()
-        return super().default(obj)
+        elif isinstance(obj, Timedelta):
+            total_seconds = str(obj._timedelta.total_seconds())
+            return strip_trailing_zeros(total_seconds)
+        elif isinstance(obj, int):
+            return str(obj)
+        else:
+            return super().default(obj)
 
+    # To recursively process and handle custom types within nested structures
     def encode(self, obj):
         def process(o):
             if isinstance(o, dict):
                 if len(o) == 1:
                     if '__fixed__' in o:
-                        return float(o['__fixed__'])
+                        return strip_trailing_zeros(str(o['__fixed__']))
                     elif '__time__' in o:
                         # Convert __time__ list to ISO 8601 string
                         time_list = o['__time__']
@@ -39,18 +52,28 @@ class CustomEncoder(json.JSONEncoder):
                         dt_obj = datetime(*time_list)
                         # Convert to ISO 8601 string with microseconds
                         return dt_obj.isoformat(timespec='microseconds')
-                    else:
-                        return {k: process(v) for k, v in o.items()}
-                else:
-                    return {k: process(v) for k, v in o.items()}
+                # Process nested dictionaries and convert keys to strings
+                return {str(k): process(v) for k, v in o.items()}
             elif isinstance(o, list):
+                # Process each item in the list
                 return [process(v) for v in o]
+            elif isinstance(o, ContractingDecimal):
+                return strip_trailing_zeros(str(o))
+            elif isinstance(o, Decimal):
+                return strip_trailing_zeros(str(o))
             elif isinstance(o, Datetime):
+                # Serialize datetime as ISO formatted string
                 return o._datetime.isoformat(timespec='microseconds')
             elif isinstance(o, Timedelta):
-                return o._timedelta.total_seconds()
+                # Serialize total seconds as a string
+                total_seconds = str(o._timedelta.total_seconds())
+                return strip_trailing_zeros(total_seconds)
+            elif isinstance(o, int):
+                return str(o)
             else:
+                # Return the object as-is if it doesn't match any custom types
                 return o
+        # Encode the processed object
         return super().encode(process(obj))
 
 
@@ -72,6 +95,7 @@ class BDS:
 
     async def process_genesis_block(self, cometbft_genesis: dict):
         start_time = timer()
+
         genesis_state = cometbft_genesis["abci_genesis"]["genesis"]
 
         # insert genesis txn
@@ -89,7 +113,7 @@ class BDS:
                 await self.insert_genesis_state_change(state["key"], state["value"])
                 await self.insert_genesis_state(state["key"], state["value"])
 
-        logger.debug(f'Processed genesis block in {timer() - start_time:.3f} seconds')
+        logger.debug(f'Saved genesis block to BDS in {timer() - start_time:.3f} seconds')
 
     async def __init_tables(self):
         try:
@@ -100,47 +124,27 @@ class BDS:
             await self.db.execute(sql.create_addresses())
             await self.db.execute(sql.create_readonly_role())
             await self.db.execute(sql.create_state())
+            await self.db.execute(sql.create_events())
             await self.db.execute(sql.enforce_table_limits())
         except Exception as e:
             logger.exception(e)
 
 
-    async def insert_full_data(self, tx: dict, block_time: datetime):
-        total_time = timer()
-
-        # Tx
-        start_time = timer()
+    async def add_to_batch(self, tx: dict, block_time: datetime):
         await self._insert_tx(tx, block_time)
-        logger.debug(f'Saved tx in {timer() - start_time:.3f} seconds')
-
-        # State
-        start_time = timer()
         await self._insert_state(tx, block_time)
-        logger.debug(f'Saved contracts in {timer() - start_time:.3f} seconds')
-
-        # State changes
-        start_time = timer()
         await self._insert_state_changes(tx, block_time)
-        logger.debug(f'Saved state changes in {timer() - start_time:.3f} seconds')
-
-        # Rewards
-        start_time = timer()
         await self._insert_rewards(tx, block_time)
-        logger.debug(f'Saved rewards in {timer() - start_time:.3f} seconds')
-
-        # Addresses
-        start_time = timer()
         await self._insert_addresses(tx, block_time)
-        logger.debug(f'Saved addresses in {timer() - start_time:.3f} seconds')
+        await self._insert_contracts(tx, block_time)
+        await self._insert_events(tx, block_time)
 
-        # Contracts
-        # Only save contracts if tx was successful
-        if tx["tx_result"]["status"] == 0:
-            start_time = timer()
-            await self._insert_contracts(tx, block_time)
-            logger.debug(f'Saved contracts in {timer() - start_time:.3f} seconds')
+    async def commit_batch(self):
+        if len(self.db.batch) == 0: return
 
-        logger.debug(f'Processed tx {tx["tx_result"]["hash"]} in {timer() - total_time:.3f} seconds')
+        start_time = timer()
+        await self.db.commit_batch_to_disk()
+        logger.debug(f'Saved block to BDS in {timer() - start_time:.3f} seconds')
 
     async def _insert_tx(self, tx: dict, block_time: datetime):
         status = True if tx['tx_result']['status'] == 0 else False
@@ -198,7 +202,7 @@ class BDS:
                 tx['tx_result']['hash'],
                 type,
                 key,
-                json.dumps(value, cls=CustomEncoder),
+                strip_trailing_zeros(str(value)),
                 block_time
             ])
 
@@ -208,21 +212,21 @@ class BDS:
             # Developer reward
             for address, reward in rewards['developer_reward'].items():
                 try:
-                    await insert('developer', address, float(reward))
+                    await insert('developer', address, reward)
                 except Exception as e:
                     logger.exception(e)
 
             # Masternode reward
             for address, reward in rewards['masternode_reward'].items():
                 try:
-                    await insert('masternode', address, float(reward))
+                    await insert('masternode', address, reward)
                 except Exception as e:
                     logger.exception(e)
 
             # Foundation reward
             for address, reward in rewards['foundation_reward'].items():
                 try:
-                    await insert('foundation', address, float(reward))
+                    await insert('foundation', address, reward)
                 except Exception as e:
                     logger.exception(e)
 
@@ -239,8 +243,27 @@ class BDS:
                         ])
                     except Exception as e:
                         logger.exception(e)
+                        
+    async def _insert_events(self, tx: dict, block_time: datetime):
+        for event in tx['tx_result']['events']:
+            try:
+                self.db.add_query_to_batch(sql.insert_events(), [
+                    event['contract'],  # Contract name
+                    event['event'],     # Event name
+                    event['signer'],    # Signer of the event
+                    event['caller'],    # Caller of the event
+                    json.dumps(event['data_indexed'], cls=CustomEncoder),  # Serialize indexed data
+                    json.dumps(event['data'], cls=CustomEncoder),          # Serialize non-indexed data
+                    tx['tx_result']['hash'],                
+                    block_time                  # Created timestamp
+                ])
+            except Exception as e:
+                logger.exception(e)
 
     async def _insert_contracts(self, tx: dict, block_time: datetime):
+        # Only save contracts if tx was successful
+        if tx["tx_result"]["status"] != 0: return
+
         if tx['payload']['contract'] == 'submission' and tx['payload']['function'] == 'submit_contract':
             try:
                 self.db.add_query_to_batch(sql.insert_contracts(), [
@@ -354,12 +377,14 @@ class BDS:
         ])
 
     async def insert_genesis_state_contract(self, contract_name, code, submission_time):
+        original_code = ContractDecompiler().decompile(code)
+
         try:
             await self.db.execute(sql.insert_contracts(), [
                 f"GENESIS",
                 contract_name,
-                code,
-                self.is_XSC0001(code),
+                original_code,
+                self.is_XSC0001(original_code),
                 submission_time
             ])
         except Exception as e:

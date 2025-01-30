@@ -29,6 +29,57 @@ def create_state_changes():
     )
     """
 
+# event = [
+#     {
+#         "caller": "e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931",
+#         "contract": "con_event_token",
+#         "data": {
+#             "amount": 10
+#         },
+#         "data_indexed": {
+#             "from": "e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931",
+#             "to": "burn"
+#         },
+#         "event": "Transfer",
+#         "signer": "e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931"
+#     }
+# ]
+    
+def create_events():
+    return """
+-- Create the events table if it doesn't exist
+    CREATE TABLE IF NOT EXISTS events (
+        id SERIAL PRIMARY KEY, -- Unique identifier for each event
+        contract VARCHAR(255) NOT NULL, -- Contract name
+        event VARCHAR(255) NOT NULL, -- Event name
+        signer VARCHAR(255) NOT NULL, -- Signer of the event
+        caller VARCHAR(255) NOT NULL, -- Caller of the event
+        data_indexed JSONB NOT NULL, -- Indexed data stored as JSON
+        data JSONB NOT NULL, -- Non-indexed data stored as JSON
+        tx_hash TEXT REFERENCES transactions(hash),
+        created TIMESTAMP NOT NULL
+    );
+
+    -- Add a GIN index on the data_indexed column
+    CREATE INDEX IF NOT EXISTS idx_data_indexed ON events USING GIN (data_indexed);
+
+    -- Add indexes on contract, signer, and caller columns
+    CREATE INDEX IF NOT EXISTS idx_contract ON events (contract);
+    CREATE INDEX IF NOT EXISTS idx_signer ON events (signer);
+    CREATE INDEX IF NOT EXISTS idx_caller ON events (caller);
+
+    -- Create or replace the function to filter events by data_indexed
+    CREATE OR REPLACE FUNCTION public.filter_events_by_data_indexed(key TEXT, value TEXT)
+    RETURNS SETOF events AS $$
+    BEGIN
+    RETURN QUERY
+    SELECT * FROM events
+    WHERE data_indexed ->> key = value;
+    END;
+    $$ LANGUAGE plpgsql STABLE;
+"""
+
+
 
 def create_state():
     return """
@@ -131,6 +182,15 @@ def insert_transaction():
     VALUES (
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
     ON CONFLICT (hash) DO NOTHING;
+    """
+    
+def insert_events():
+    return """
+    INSERT INTO events(
+        contract, event, signer, caller, data_indexed, data, tx_hash, created)
+    VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8)
+    ON CONFLICT (id) DO NOTHING;
     """
 
 def insert_or_update_state():

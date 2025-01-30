@@ -1,24 +1,14 @@
-import base64
 import json
-import ast
-import re
-import asyncio
 import socket
 import struct
 
 from cometbft.abci.v1beta1.types_pb2 import ResponseQuery
 from xian.utils.encoding import encode_str
 from xian.constants import Constants as c
-
 from contracting.stdlib.bridge.decimal import ContractingDecimal
 from contracting.compilation import parser
-from contracting.compilation.linter import Linter
 from contracting.storage.encoder import Encoder
 from loguru import logger
-from pyflakes.api import check
-from pyflakes.reporter import Reporter
-from urllib.parse import unquote
-from io import StringIO
 
 
 async def query(self, req) -> ResponseQuery:
@@ -30,7 +20,6 @@ async def query(self, req) -> ResponseQuery:
 
     logger.debug(req.path)
     path_parts = [part for part in req.path.split("/") if part]
-    loop = asyncio.get_event_loop()
     key = path_parts[1] if len(path_parts) > 1 else ""
     result = None
     try:
@@ -120,56 +109,68 @@ async def query(self, req) -> ResponseQuery:
             elif path_parts[0] == "contracts":
                 result = await self.bds.get_contracts(limit, offset)
 
-            # http://localhost:26657/abci_query?path="/lint/<code>"
-            elif path_parts[0] == "lint":
-                try:
-                    code = base64.b64decode(path_parts[1]).decode("utf-8")
-                    code = unquote(code)
-
-                    # Pyflakes linting
-                    stdout = StringIO()
-                    stderr = StringIO()
-                    reporter = Reporter(stdout, stderr)
-                    await loop.run_in_executor(None, check, code, "<string>", reporter)
-                    stdout_output = stdout.getvalue()
-                    stderr_output = stderr.getvalue()
-
-                    # Contracting linting
-                    try:
-                        linter = Linter()
-                        tree = await loop.run_in_executor(None, ast.parse, code)
-                        violations = await loop.run_in_executor(None, linter.check, tree)
-                        formatted_new_linter_output = ""
-                        # Transform new linter output to match pyflakes format
-                        if violations:
-                            for violation in violations:
-                                line = int(re.search(r"Line (\d+):", violation).group(1))
-                                message = re.search(r"Line \d+: (.+)", violation).group(1)
-                                formatted_violation_output = f"<string>:{line}:0: {message}\n"
-                                formatted_new_linter_output += formatted_violation_output
-                    except:
-                        formatted_new_linter_output = ""
-
-                    # Combine stderr output
-                    combined_stderr_output = f"{stderr_output}{formatted_new_linter_output}"
-
-                    result = {"stdout": stdout_output, "stderr": combined_stderr_output}
-                except:
-                    result = {"stdout": "", "stderr": ""}
-
-            # http://localhost:26657/abci_query?path="/calculate_stamps/<encoded_tx>"
-            elif path_parts[0] == "calculate_stamps":
+            # http://localhost:26657/abci_query?path="/simulate_tx/<encoded_payload>"
+            elif path_parts[0] == "simulate_tx":
                 connection = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-                connection.connect(c.STAMPESTIMATOR_SOCKET)
+                connection.connect(c.SIMULATOR_SOCKET)
 
                 raw_tx = path_parts[1]
                 byte_data = bytes.fromhex(raw_tx)
                 message_length = struct.pack('>I', len(byte_data))
                 connection.sendall(message_length + byte_data)
                 recv_length = connection.recv(4)
-                length = struct.unpack('>I', recv_length)[0]
-                recv = connection.recv(length)
-                result = recv.decode()
+
+                if len(recv_length) < 4:
+                    # Handle error or incomplete length prefix
+                    raise ValueError("Incomplete length prefix received")
+                else:
+                    length = struct.unpack('>I', recv_length)[0]
+                    recv = b''
+                    while len(recv) < length:
+                        packet = connection.recv(length - len(recv))
+                        if not packet:
+                            # Connection closed or error
+                            raise ConnectionError("Connection closed before receiving all data")
+                        recv += packet
+                    if len(recv) == length:
+                        result = recv.decode('utf-8')
+                    else:
+                        # Handle incomplete data error
+                        raise ValueError("Did not receive all expected data")
+
+            # TODO: Deprecated - Remove after wallet and tools are reworked to use 'simulate_tx'
+            # http://localhost:26657/abci_query?path="/calculate_stamps/<encoded_payload>"
+            elif path_parts[0] == "calculate_stamps":
+                connection = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                connection.connect(c.SIMULATOR_SOCKET)
+
+                raw_tx = path_parts[1]
+                byte_data = bytes.fromhex(raw_tx)
+                # extract payload from the raw_tx
+                decoded_dict = json.loads(byte_data.decode('utf-8'))
+                payload = decoded_dict.get('payload', {})
+                payload_byte_data = bytes.fromhex(json.dumps(payload).encode('utf-8').hex())
+                message_length = struct.pack('>I', len(payload_byte_data))
+                connection.sendall(message_length + payload_byte_data)
+                recv_length = connection.recv(4)
+
+                if len(recv_length) < 4:
+                    # Handle error or incomplete length prefix
+                    raise ValueError("Incomplete length prefix received")
+                else:
+                    length = struct.unpack('>I', recv_length)[0]
+                    recv = b''
+                    while len(recv) < length:
+                        packet = connection.recv(length - len(recv))
+                        if not packet:
+                            # Connection closed or error
+                            raise ConnectionError("Connection closed before receiving all data")
+                        recv += packet
+                    if len(recv) == length:
+                        result = recv.decode('utf-8')
+                    else:
+                        # Handle incomplete data error
+                        raise ValueError("Did not receive all expected data")
 
         else:
             error = f'Unknown query path: {path_parts[0]}'

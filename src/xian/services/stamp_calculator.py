@@ -19,13 +19,13 @@ class StampCalculator:
 
     def setup_socket(self):
         # If the socket file exists, remove it
-        STAMPESTIMATOR_SOCKET = pathlib.Path(self.constants.STAMPESTIMATOR_SOCKET)
-        if STAMPESTIMATOR_SOCKET.exists():
-            STAMPESTIMATOR_SOCKET.unlink()
+        SIMULATOR_SOCKET = pathlib.Path(self.constants.SIMULATOR_SOCKET)
+        if SIMULATOR_SOCKET.exists():
+            SIMULATOR_SOCKET.unlink()
 
         # Create a socket
         self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        self.socket.bind(self.constants.STAMPESTIMATOR_SOCKET)
+        self.socket.bind(self.constants.SIMULATOR_SOCKET)
         self.socket.listen(1)
 
     def listen(self):
@@ -79,7 +79,7 @@ class StampCalculator:
             'block_hash': self.generate_random_hex_string(),
             'block_num': num,
             '__input_hash': self.generate_random_hex_string(),
-            'now': now,
+            'now': str(now),
             'AUXILIARY_SALT': self.generate_random_hex_string()
         }
 

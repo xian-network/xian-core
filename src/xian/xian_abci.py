@@ -3,12 +3,12 @@ import importlib
 import sys
 import gc
 import asyncio
-
-from xian.constants import Constants
+import signal
 
 from loguru import logger
-from datetime import timedelta
+from datetime import timedelta, datetime
 from abci.server import ABCIServer
+from xian.constants import Constants
 from xian.services.bds.bds import BDS
 from contracting.client import ContractingClient
 
@@ -23,7 +23,6 @@ from xian.methods import (
     prepare_proposal,
     query,
 )
-from xian.upgrader import UpgradeHandler
 from xian.validators import ValidatorHandler
 from xian.nonce import NonceStorage
 from xian.processor import TxProcessor
@@ -39,6 +38,8 @@ from abci.utils import get_logger
 get_logger("requests").setLevel(30)
 get_logger("urllib3").setLevel(30)
 get_logger("asyncio").setLevel(30)
+
+LOG_RETENTION_DAYS = 3
 
 
 def load_module(module_path, original_module_path):
@@ -72,7 +73,6 @@ class Xian:
 
         self.client = ContractingClient(storage_home=constants.STORAGE_HOME)
         self.nonce_storage = NonceStorage(self.client)
-        self.upgrader = UpgradeHandler(self)
         self.validator_handler = ValidatorHandler(self)
         self.tx_processor = TxProcessor(client=self.client)
         self.rewards_handler = RewardsHandler(client=self.client)
@@ -142,7 +142,6 @@ class Xian:
         Contains the fields of the newly decided block.
         This method is equivalent to the call sequence BeginBlock, [DeliverTx], and EndBlock in the previous version of ABCI.
         """
-        await self.upgrader.check_version(req.height)
         res = await finalize_block.finalize_block(self, req)
         return res
 
@@ -176,24 +175,62 @@ class Xian:
         return res
 
 
+def cleanup_old_logs(logs_dir: str, days: int = 3):
+    """Clean up log files older than specified days on startup"""
+    try:
+        threshold = datetime.now() - timedelta(days=days)
+        for f in os.listdir(logs_dir):
+            if not f.endswith('.log'):
+                continue
+
+            file_path = os.path.join(logs_dir, f)
+            file_time = datetime.fromtimestamp(os.path.getctime(file_path))
+
+            if file_time < threshold:
+                try:
+                    os.remove(file_path)
+                    logger.debug(f"Removed old log file: {f}")
+                except OSError as e:
+                    logger.error(f"Error removing old log file {f}: {e}")
+    except Exception as e:
+        logger.error(f"Error during log cleanup: {e}")
+
+
 def main():
     logger.remove()
-
     logger.add(sys.stderr, level="DEBUG")
 
     start_path = os.path.dirname(os.path.realpath(__file__))
     log_path = os.path.realpath(os.path.join(start_path, '..', '..'))
+    logs_dir = os.path.join(log_path, 'logs')
+
+    os.makedirs(logs_dir, exist_ok=True)
+
+    # Clean up old logs on startup
+    cleanup_old_logs(logs_dir, days=LOG_RETENTION_DAYS)
 
     logger.add(
         os.path.join(log_path, 'logs', '{time}.log'),
-        retention=timedelta(days=3),
+        retention=timedelta(days=LOG_RETENTION_DAYS),
+        rotation=timedelta(hours=1),
         format="{time} {level} {name} {message}",
         level="DEBUG",
-        rotation="10 MB",
+        enqueue=True,
+        compression="zip"  # Compress old logs
     )
+
+    # Register signal handlers
+    signal.signal(signal.SIGTERM, signal_handler)
+    signal.signal(signal.SIGINT, signal_handler)
 
     app = asyncio.get_event_loop().run_until_complete(Xian.create())
     ABCIServer(app=app).run()
+
+
+def signal_handler(signum, frame):
+    logger.info("Shutting down...")
+    logger.remove()
+    sys.exit(0)
 
 
 if __name__ == "__main__":
