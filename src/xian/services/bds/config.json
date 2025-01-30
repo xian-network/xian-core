@@ -1,5 +1,5 @@
 {
-    "db_host": "127.0.0.1",
+    "db_host": "postgres",
     "db_name": "xian",
     "db_pass": "1234",
     "db_port": 5432,
