@@ -91,7 +91,6 @@ def seed(vk: str):
     # 1824 * 24 * 60 * 60 = 157593600 (seconds in duration)
     # 16666666.65 / 157593600 (release per second)
     
-    # This stream has been removed for rcnet/mainnet but leaving it here as some tests rely on it.
     setup_seed_stream(stream_id="team_vesting", sender="team_vesting", receiver="team_lock", rate=0.10575725568804825, duration_days=1824)
 
     # DAO FUNDING STREAM
@@ -99,7 +98,7 @@ def seed(vk: str):
     # 2189 * 24 * 60 * 60 = 189129600 (seconds in duration)
     # 22333333.311 / 189129600 = 0.1180848122715852 (release per second)
     
-    setup_seed_stream(stream_id="dao_funding_stream", sender="dao_funding_stream", receiver="dao", rate=0.15823364844392418, duration_days=2189)
+    setup_seed_stream(stream_id="dao_funding_stream", sender="dao_funding_stream", receiver="dao", rate=0.1180848122715852, duration_days=2189)
 
 def setup_seed_stream(stream_id: str, sender: str, receiver: str, rate: float, duration_days: int):
     streams[stream_id, 'status'] = "active"
