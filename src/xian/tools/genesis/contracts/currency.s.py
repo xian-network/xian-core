@@ -91,6 +91,7 @@ def seed(vk: str):
     # 1824 * 24 * 60 * 60 = 157593600 (seconds in duration)
     # 16666666.65 / 157593600 (release per second)
     
+    # Leaving this in for reference, even though stream was remove for rcnet
     setup_seed_stream(stream_id="team_vesting", sender="team_vesting", receiver="team_lock", rate=0.10575725568804825, duration_days=1824)
 
     # DAO FUNDING STREAM
@@ -289,25 +290,31 @@ def balance_stream(stream_id: str):
 def change_close_time(stream_id: str, new_close_time: str):
     new_close_time = strptime_ymdhms(new_close_time)
 
-    assert streams[stream_id, STATUS_KEY], 'Stream does not exist.'
-    assert streams[stream_id, STATUS_KEY] == STREAM_ACTIVE, 'Stream is not active.'
+    assert streams[stream_id, STATUS_KEY], "Stream does not exist."
+    assert streams[stream_id, STATUS_KEY] == STREAM_ACTIVE, "Stream is not active."
 
     sender = streams[stream_id, SENDER_KEY]
     receiver = streams[stream_id, RECEIVER_KEY]
+    begins = streams[stream_id, BEGIN_KEY]
 
+    assert ctx.caller == sender, "Only sender can change the close time of a stream."
 
-    assert ctx.caller == sender, 'Only sender can change the close time of a stream.'
-
-    if new_close_time < streams[stream_id, BEGIN_KEY] and now < streams[stream_id, BEGIN_KEY]:
-        streams[stream_id, CLOSE_KEY] = streams[stream_id, BEGIN_KEY]
-    elif new_close_time <= now:
+    # If new close time is in the past or before begin time, close immediately or at begin time
+    if new_close_time <= now:
         streams[stream_id, CLOSE_KEY] = now
+    elif new_close_time < begins:
+        streams[stream_id, CLOSE_KEY] = begins
     else:
         streams[stream_id, CLOSE_KEY] = new_close_time
-        
-    StreamCloseChangeEvent({"receiver":receiver, "sender":sender, "stream_id":stream_id, "time":str(new_close_time)})
 
-
+    StreamCloseChangeEvent(
+        {
+            "receiver": receiver,
+            "sender": sender,
+            "stream_id": stream_id,
+            "time": str(streams[stream_id, CLOSE_KEY]),
+        }
+    )
 
 # Set the stream inactive.
 # A stream must be balanced before it can be finalized.
@@ -329,7 +336,7 @@ def finalize_stream(stream_id: str):
     rate = streams[stream_id, RATE_KEY]
     claimed = streams[stream_id, CLAIMED_KEY]
 
-    assert now <= closes, 'Stream has not closed yet.'
+    assert closes <= now, 'Stream has not closed yet.'
 
     outstanding_balance = calc_outstanding_balance(begins, closes, rate, claimed)
 
