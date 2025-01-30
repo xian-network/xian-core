@@ -28,8 +28,11 @@ pip install xian-core
 # Initialize the node
 xian init
 
-# Start the node
+# Start the node (standard mode)
 xian up
+
+# Start the node with Blockchain Data Service (BDS)
+xian up --bds
 
 # View logs
 xian logs
@@ -62,8 +65,11 @@ pip install -e .
 # Initialize CometBFT
 make init
 
-# Start the node
+# Start the node (standard mode)
 make up
+
+# Start the node with Blockchain Data Service (BDS)
+make up-bds
 
 # View logs
 make logs
@@ -90,6 +96,24 @@ make ex-state  # Export state
 - **Validator Management**: Flexible validator set management
 - **Rewards System**: Built-in system for handling transaction fees and rewards
 
+## Blockchain Data Service (BDS)
+
+The Blockchain Data Service provides additional data storage and querying capabilities:
+- Store blockchain data in a PostgreSQL database
+- Enable advanced querying and indexing of blockchain state
+- Enhance performance for complex data retrieval
+
+### Starting with BDS
+
+To start the node with the Blockchain Data Service enabled, use:
+```bash
+# In PyPI installation
+xian up --bds
+
+# In development mode
+make up-bds
+```
+
 ## Architecture Components
 
 - **ABCI Server**: Handles communication with CometBFT
@@ -98,6 +122,7 @@ make ex-state  # Export state
 - **Rewards Handler**: Processes transaction fees and rewards
 - **Nonce Manager**: Handles transaction ordering
 - **Event System**: Tracks and logs blockchain events
+- **Blockchain Data Service**: Provides advanced data storage and querying
 
 ## Configuration
 
