@@ -802,5 +802,115 @@ class TestCurrencyContract(unittest.TestCase):
         # THEN the new allowance should overwrite the old one
         self.assertEqual(new_allowance, 200)
 
+    def test_finalize_stream_before_close_time(self):
+        # GIVEN a stream setup
+        sender = 'mary'
+        receiver = 'janine'
+        begins = Datetime(year=2023, month=1, day=1, hour=0, minute=0)
+        closes = Datetime(year=2024, month=1, day=1, hour=0, minute=0)
+        current_time = Datetime(year=2023, month=6, day=1, hour=0, minute=0)  # Middle of the stream period
+        seconds_in_period = (closes - begins).seconds
+        self.currency.balances[sender] = seconds_in_period
+        self.currency.balances[receiver] = 0
+        rate = 1
+
+        stream_id = self.currency.create_stream(receiver=receiver, rate=rate, begins=str(begins), closes=str(closes), signer=sender)
+
+        # Balance the stream up to current time
+        self.currency.balance_stream(stream_id=stream_id, signer=receiver, environment={"now": current_time})
+
+        # WHEN attempting to finalize before close time
+        # THEN it should fail
+        with self.assertRaises(AssertionError) as context:
+            self.currency.finalize_stream(stream_id=stream_id, signer=receiver, environment={"now": current_time})
+        self.assertIn("Stream has not closed yet", str(context.exception))
+
+    def test_finalize_stream_exactly_at_close_time(self):
+        # GIVEN a stream setup
+        sender = 'mary'
+        receiver = 'janine'
+        begins = Datetime(year=2023, month=1, day=1, hour=0, minute=0)
+        closes = Datetime(year=2024, month=1, day=1, hour=0, minute=0)
+        seconds_in_period = (closes - begins).seconds
+        self.currency.balances[sender] = seconds_in_period
+        self.currency.balances[receiver] = 0
+        rate = 1
+
+        stream_id = self.currency.create_stream(receiver=receiver, rate=rate, begins=str(begins), closes=str(closes), signer=sender)
+
+        # Balance the stream
+        self.currency.balance_stream(stream_id=stream_id, signer=receiver, environment={"now": closes})
+
+        # WHEN finalizing exactly at close time
+        finalize_res = self.currency.finalize_stream(
+            stream_id=stream_id, 
+            signer=receiver, 
+            environment={"now": closes},
+            return_full_output=True
+        )
+
+        # THEN it should succeed
+        expected_events = [{
+            'contract': 'currency',
+            'event': 'StreamFinalized',
+            'signer': 'janine',
+            'caller': 'janine',
+            'data_indexed': {
+                'receiver': 'janine',
+                'sender': 'mary',
+                'stream_id': stream_id
+            },
+            'data': {
+                'time': '2024-01-01 00:00:00'
+            }
+        }]
+        self.assertEqual(finalize_res['events'], expected_events)
+        self.assertEqual(self.currency.streams[stream_id, 'status'], 'finalized')
+        self.assertEqual(self.currency.streams[stream_id, 'claimed'], seconds_in_period)
+
+    def test_finalize_stream_after_close_time(self):
+        # GIVEN a stream setup
+        sender = 'mary'
+        receiver = 'janine'
+        begins = Datetime(year=2023, month=1, day=1, hour=0, minute=0)
+        closes = Datetime(year=2024, month=1, day=1, hour=0, minute=0)
+        current_time = Datetime(year=2024, month=2, day=1, hour=0, minute=0)  # After close time
+        seconds_in_period = (closes - begins).seconds
+        self.currency.balances[sender] = seconds_in_period
+        self.currency.balances[receiver] = 0
+        rate = 1
+
+        stream_id = self.currency.create_stream(receiver=receiver, rate=rate, begins=str(begins), closes=str(closes), signer=sender)
+
+        # Balance the stream
+        self.currency.balance_stream(stream_id=stream_id, signer=receiver, environment={"now": closes})
+
+        # WHEN finalizing after close time
+        finalize_res = self.currency.finalize_stream(
+            stream_id=stream_id, 
+            signer=receiver, 
+            environment={"now": current_time},
+            return_full_output=True
+        )
+
+        # THEN it should succeed
+        expected_events = [{
+            'contract': 'currency',
+            'event': 'StreamFinalized',
+            'signer': 'janine',
+            'caller': 'janine',
+            'data_indexed': {
+                'receiver': 'janine',
+                'sender': 'mary',
+                'stream_id': stream_id
+            },
+            'data': {
+                'time': '2024-02-01 00:00:00'
+            }
+        }]
+        self.assertEqual(finalize_res['events'], expected_events)
+        self.assertEqual(self.currency.streams[stream_id, 'status'], 'finalized')
+        self.assertEqual(self.currency.streams[stream_id, 'claimed'], seconds_in_period)
+
 if __name__ == "__main__":
     unittest.main()

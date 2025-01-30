@@ -142,8 +142,202 @@ class TestMembersContract(unittest.TestCase):
         future_time = contracting_time + Timedelta(days=7)
         
         dao_balance_before = self.currency.balances["dao"]
-        self.members.balance_stream(signer="anybody", environment={"now": future_time})
+        res = self.members.balance_stream(stream_id="dao_funding_stream", environment={"now": future_time}, signer="anyone")
         dao_balance_after = self.currency.balances["dao"]
 
         # THEN balance should be different
         self.assertNotEqual(dao_balance_before, dao_balance_after)
+
+    def test_create_stream_vote(self):
+        # GIVEN a stream creation proposal
+        stream_args = {
+            'receiver': 'test_receiver',
+            'rate': 1000,
+            'begins': str(Datetime(2024, 1, 1)),
+            'closes': str(Datetime(2024, 12, 31))
+        }
+        
+        # WHEN proposing and voting
+        propose_res =self.members.propose_vote(
+            type_of_vote="create_stream",
+            arg=stream_args,
+            signer="node1"
+        )
+                
+        self.members.vote(proposal_id=1, vote="yes", signer="node2")
+        self.members.vote(proposal_id=1, vote="yes", signer="node3")
+        
+        # THEN vote should be finalized
+        vote_result = self.members.votes[1]
+        self.assertTrue(vote_result['finalized'])
+
+    def test_change_close_time_vote(self):
+        # GIVEN an existing stream and a close time change proposal
+        
+        stream_args = {
+            'receiver': 'test_receiver',
+            'rate': 1000,
+            'begins': str(Datetime(2024, 1, 1)),
+            'closes': str(Datetime(2024, 12, 31))
+        }
+        
+        # WHEN proposing and voting
+        propose_res = self.members.propose_vote(
+            type_of_vote="create_stream",
+            arg=stream_args,
+            signer="node1"
+        )
+                
+        self.members.vote(proposal_id=1, vote="yes", signer="node2")
+        create_stream_res = self.members.vote(proposal_id=1, vote="yes", signer="node3", return_full_output=True)
+
+        stream_id = create_stream_res['events'][0]['data_indexed']['stream_id']
+
+        close_time_args = {
+            'stream_id': stream_id,
+            'new_close_time': str(Datetime(2024, 6, 30))
+        }
+        
+        # WHEN proposing and voting
+        self.members.propose_vote(
+            type_of_vote="change_close_time",
+            arg=close_time_args,
+            signer="node1",
+        )
+        
+        self.members.vote(proposal_id=2, vote="yes", signer="node2")
+        finalise_res = self.members.vote(proposal_id=2, vote="yes", signer="node3", return_full_output=True, environment={"now": Datetime(2024, 2, 1)})        
+        
+        
+        # THEN vote should be finalized
+        vote_result = self.members.votes[2]
+        self.assertTrue(vote_result['finalized'])
+        self.assertEqual(finalise_res.get('events')[0]['data']['time'], '2024-06-30 00:00:00')
+
+    def test_finalize_stream_vote(self):
+        # GIVEN an existing stream
+        stream_args = {
+            'receiver': 'test_receiver',
+            'rate': 0.0001,
+            'begins': str(Datetime(2024, 1, 1)),
+            'closes': str(Datetime(2024, 12, 31))
+        }
+        
+        # Create the stream first
+        self.members.propose_vote(
+            type_of_vote="create_stream",
+            arg=stream_args,
+            signer="node1"
+        )
+        
+        self.members.vote(proposal_id=1, vote="yes", signer="node2")
+        create_stream_res = self.members.vote(proposal_id=1, vote="yes", signer="node3", return_full_output=True)
+        stream_id = create_stream_res['events'][0]['data_indexed']['stream_id']
+        
+        # WHEN proposing to finalize the stream
+        finalize_args = {
+            'stream_id': stream_id
+        }
+        
+        self.members.propose_vote(
+            type_of_vote="finalize_stream",
+            arg=finalize_args,
+            signer="node1"
+        )
+        
+        self.members.balance_stream(stream_id=stream_id, signer="test_receiver", environment={"now": Datetime(2025, 1, 1)}, return_full_output=True)
+        self.members.vote(proposal_id=2, vote="yes", signer="node2", environment={"now": Datetime(2025, 1, 1)})
+        self.members.vote(proposal_id=2, vote="yes", signer="node3", environment={"now": Datetime(2025, 1, 1)})
+
+        # THEN vote should be finalized
+        vote_result = self.members.votes[2]
+        self.assertTrue(vote_result['finalized'])
+
+    def test_close_balance_finalize_vote(self):
+        # GIVEN an existing stream
+        stream_args = {
+            'receiver': 'test_receiver',
+            'rate': 0.001,
+            'begins': str(Datetime(2024, 1, 1)),
+            'closes': str(Datetime(2024, 12, 31))
+        }
+        
+        # Create the stream first
+        self.members.propose_vote(
+            type_of_vote="create_stream",
+            arg=stream_args,
+            signer="node1"
+        )
+        
+        self.members.vote(proposal_id=1, vote="yes", signer="node2")
+        create_stream_res = self.members.vote(proposal_id=1, vote="yes", signer="node3", return_full_output=True)
+        stream_id = create_stream_res['events'][0]['data_indexed']['stream_id']
+        
+        # WHEN proposing to close, balance and finalize
+        balance_args = {
+            'stream_id': stream_id
+        }
+        
+        self.members.propose_vote(
+            type_of_vote="close_balance_finalize",
+            arg=balance_args,
+            signer="node1",
+            environment={"now": Datetime(2025, 1, 1)}  # After stream end date
+        )
+        
+        self.members.vote(proposal_id=2, vote="yes", signer="node2", environment={"now": Datetime(2025, 1, 1)})
+        self.members.vote(proposal_id=2, vote="yes", signer="node3", environment={"now": Datetime(2025, 1, 1)})
+        
+        # THEN vote should be finalized
+        vote_result = self.members.votes[2]
+        self.assertTrue(vote_result['finalized'])
+
+    def test_stream_vote_expiry(self):
+        # GIVEN a stream creation proposal
+        stream_args = {
+            'id': 'test_stream',
+            'amount': 1000,
+            'start_time': str(Datetime(2024, 1, 1)),
+            'end_time': str(Datetime(2024, 12, 31))
+        }
+        
+        # WHEN proposing at a specific time
+        current_time = Datetime(year=2024, month=1, day=1)
+        self.members.propose_vote(
+            type_of_vote="create_stream",
+            arg=stream_args,
+            signer="node1",
+            environment={"now": current_time}
+        )
+        
+        # AND trying to vote after expiry
+        future_time = Datetime(year=2024, month=1, day=8, hour=1)
+        
+        # THEN vote should fail
+        with self.assertRaises(AssertionError):
+            self.members.vote(
+                proposal_id=1,
+                vote="yes",
+                signer="node2",
+                environment={"now": future_time}
+            )
+
+    def test_non_node_cannot_propose_stream_vote(self):
+        # GIVEN a stream creation proposal from non-node
+        stream_args = {
+            'id': 'test_stream',
+            'amount': 1000,
+            'start_time': str(Datetime(2024, 1, 1)),
+            'end_time': str(Datetime(2024, 12, 31))
+        }
+        
+        # WHEN trying to propose as non-node
+        # THEN it should fail
+        with self.assertRaises(AssertionError):
+            self.members.propose_vote(
+                type_of_vote="create_stream",
+                arg=stream_args,
+                signer="non_node"
+            )
+        
+    

@@ -561,7 +561,7 @@ class MyTestCase(unittest.TestCase):
                     "function": "propose_vote",
                     "kwargs": {
                         "type_of_vote": "dao_payout",
-                        "arg": {"amount": 100000, "to": "new_node"},
+                        "arg": {"amount": 100000, "to": "new_node", "contract_name": "currency"},
                     },
                     "stamps_supplied": 1000,
                 },
@@ -943,13 +943,18 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(
             self.masternodes.types.get(),
             [
-                "add_member",
-                "remove_member",
-                "change_registration_fee",
-                "reward_change",
-                "dao_payout",
-                "stamp_cost_change",
-                "change_types",
+            "add_member", 
+            "remove_member", 
+            "change_registration_fee", 
+            "reward_change", 
+            "dao_payout", 
+            "stamp_cost_change", 
+            "change_types", 
+            "create_stream", 
+            "change_close_time", 
+            "finalize_stream", 
+            "close_balance_finalize",
+            "topic_vote"
             ],
         )
         self.vote_types_change()
