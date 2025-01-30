@@ -16,21 +16,30 @@ def run_command(command):
 
 def node_up(with_bds=False):
     """Start the node"""
-    cwd = os.getcwd()
     logger.info("Starting Xian node...")
 
     if with_bds:
         logger.info("Starting with BDS (Blockchain Data Service)...")
-        # Ensure we're in the correct directory for the simulator
-        run_command(f'cd {cwd}/src/xian/services && pm2 start simulator.py --name simulator -f --wait-ready')
+        # Find the simulator path dynamically
+        try:
+            import xian.services
+            simulator_path = os.path.join(os.path.dirname(xian.services.__file__), 'simulator.py')
+
+            # Start the simulator
+            run_command(f'pm2 start "{sys.executable} {simulator_path}" --name simulator -f --wait-ready')
+
+        except ImportError:
+            logger.error("Could not import xian.services module")
+            return False
 
     # Start Xian ABCI
-    run_command(f'cd {cwd}/src/xian && pm2 start xian_abci.py --name xian -f')
+    run_command(f'pm2 start "{sys.executable} -m xian.xian_abci" --name xian -f')
 
     # Start CometBFT
-    run_command(f'cd {cwd} && pm2 start "cometbft node --rpc.laddr tcp://0.0.0.0:26657" --name cometbft -f')
+    run_command(f'pm2 start "cometbft node --rpc.laddr tcp://0.0.0.0:26657" --name cometbft -f')
 
     logger.info("Node started. Use 'xian logs' to view logs.")
+    return True
 
 
 def node_down():
