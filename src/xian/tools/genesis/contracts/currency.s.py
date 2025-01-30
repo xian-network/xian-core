@@ -79,6 +79,7 @@ def seed(vk: str):
     balances["team_lock"] += 49999999.95 # 45% Second batch of public tokens, to be sent out after mint
     balances[vk] += 5555555.55 # 5% Seed participation tokens
     
+    
     metadata["token_name"] = "XIAN"
     metadata["token_symbol"] = "XIAN"
     metadata["token_logo_url"] = "https://xian.org/assets/img/logo.svg"
@@ -90,11 +91,13 @@ def seed(vk: str):
     # 1824 * 24 * 60 * 60 = 157593600 (seconds in duration)
     # 16666666.65 / 157593600 (release per second)
     
+    # This stream has been removed for rcnet/mainnet but leaving it here as some tests rely on it.
+    setup_seed_stream(stream_id="team_vesting", sender="team_vesting", receiver="team_lock", rate=0.10575725568804825, duration_days=1824)
+
     # DAO FUNDING STREAM
     # 365 * 5 + 364 = 2189 (5 years + 1 leap-year)
     # 2189 * 24 * 60 * 60 = 189129600 (seconds in duration)
     # 22333333.311 / 189129600 = 0.1180848122715852 (release per second)
-    # EDIT : 15% Team Tokens to be returned to DAO, and streamed over 6 years.
     
     setup_seed_stream(stream_id="dao_funding_stream", sender="dao_funding_stream", receiver="dao", rate=0.15823364844392418, duration_days=2189)
 
@@ -287,31 +290,25 @@ def balance_stream(stream_id: str):
 def change_close_time(stream_id: str, new_close_time: str):
     new_close_time = strptime_ymdhms(new_close_time)
 
-    assert streams[stream_id, STATUS_KEY], "Stream does not exist."
-    assert streams[stream_id, STATUS_KEY] == STREAM_ACTIVE, "Stream is not active."
+    assert streams[stream_id, STATUS_KEY], 'Stream does not exist.'
+    assert streams[stream_id, STATUS_KEY] == STREAM_ACTIVE, 'Stream is not active.'
 
     sender = streams[stream_id, SENDER_KEY]
     receiver = streams[stream_id, RECEIVER_KEY]
-    begins = streams[stream_id, BEGIN_KEY]
 
-    assert ctx.caller == sender, "Only sender can change the close time of a stream."
 
-    # If new close time is in the past or before begin time, close immediately or at begin time
-    if new_close_time <= now:
+    assert ctx.caller == sender, 'Only sender can change the close time of a stream.'
+
+    if new_close_time < streams[stream_id, BEGIN_KEY] and now < streams[stream_id, BEGIN_KEY]:
+        streams[stream_id, CLOSE_KEY] = streams[stream_id, BEGIN_KEY]
+    elif new_close_time <= now:
         streams[stream_id, CLOSE_KEY] = now
-    elif new_close_time < begins:
-        streams[stream_id, CLOSE_KEY] = begins
     else:
         streams[stream_id, CLOSE_KEY] = new_close_time
+        
+    StreamCloseChangeEvent({"receiver":receiver, "sender":sender, "stream_id":stream_id, "time":str(new_close_time)})
 
-    StreamCloseChangeEvent(
-        {
-            "receiver": receiver,
-            "sender": sender,
-            "stream_id": stream_id,
-            "time": str(streams[stream_id, CLOSE_KEY]),
-        }
-    )
+
 
 # Set the stream inactive.
 # A stream must be balanced before it can be finalized.
@@ -333,7 +330,7 @@ def finalize_stream(stream_id: str):
     rate = streams[stream_id, RATE_KEY]
     claimed = streams[stream_id, CLAIMED_KEY]
 
-    assert closes <= now, 'Stream has not closed yet.'
+    assert now <= closes, 'Stream has not closed yet.'
 
     outstanding_balance = calc_outstanding_balance(begins, closes, rate, claimed)
 
