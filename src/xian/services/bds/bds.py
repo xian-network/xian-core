@@ -90,6 +90,27 @@ class BDS:
         if not has_entries:
             await self.process_genesis_block(cometbft_genesis)
 
+        # Add the new generated columns
+        await self.db.execute("""
+            ALTER TABLE state ADD COLUMN IF NOT EXISTS value_numeric NUMERIC 
+            GENERATED ALWAYS AS (
+              CASE 
+                WHEN value::text ~ '^"*[0-9]+(\.[0-9]+)?"*$' THEN (trim(both '"' from value::text))::NUMERIC
+                ELSE NULL
+              END
+            ) STORED;
+        """)
+
+        await self.db.execute("""
+            ALTER TABLE state_changes ADD COLUMN IF NOT EXISTS value_numeric NUMERIC 
+            GENERATED ALWAYS AS (
+              CASE 
+                WHEN value::text ~ '^"*[0-9]+(\.[0-9]+)?"*$' THEN (trim(both '"' from value::text))::NUMERIC
+                ELSE NULL
+              END
+            ) STORED;
+        """)
+
         logger.info('BDS service initialized')
         return self
 
