@@ -18,6 +18,24 @@ def create_transactions():
     """
 
 
+def create_state():
+    return """
+    CREATE TABLE IF NOT EXISTS state (
+        key TEXT PRIMARY KEY,
+        value JSONB,
+        value_numeric NUMERIC GENERATED ALWAYS AS (
+            CASE 
+                WHEN value::text ~ '^"*[0-9]+(\.[0-9]+)?"*$' 
+                THEN (trim(both '"' from value::text))::NUMERIC
+                ELSE NULL
+            END
+        ) STORED,
+        updated TIMESTAMP NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_state_value_numeric ON state(value_numeric);
+    """
+
+
 def create_state_changes():
     return """
     CREATE TABLE IF NOT EXISTS state_changes (
@@ -25,25 +43,17 @@ def create_state_changes():
         tx_hash TEXT REFERENCES transactions(hash),
         key TEXT NOT NULL,
         value JSONB,
+        value_numeric NUMERIC GENERATED ALWAYS AS (
+            CASE 
+                WHEN value::text ~ '^"*[0-9]+(\.[0-9]+)?"*$' 
+                THEN (trim(both '"' from value::text))::NUMERIC
+                ELSE NULL
+            END
+        ) STORED,
         created TIMESTAMP NOT NULL
     )
     """
 
-# event = [
-#     {
-#         "caller": "e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931",
-#         "contract": "con_event_token",
-#         "data": {
-#             "amount": 10
-#         },
-#         "data_indexed": {
-#             "from": "e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931",
-#             "to": "burn"
-#         },
-#         "event": "Transfer",
-#         "signer": "e9e8aad29ce8e94fd77d9c55582e5e0c57cf81c552ba61c0d4e34b0dc11fd931"
-#     }
-# ]
     
 def create_events():
     return """
@@ -77,17 +87,6 @@ def create_events():
     WHERE data_indexed ->> key = value;
     END;
     $$ LANGUAGE plpgsql STABLE;
-"""
-
-
-
-def create_state():
-    return """
-    CREATE TABLE IF NOT EXISTS state (
-        key TEXT PRIMARY KEY,
-        value JSONB,
-        updated TIMESTAMP NOT NULL
-    )
     """
 
 
@@ -125,6 +124,7 @@ def create_contracts():
     )
     """
 
+
 def create_readonly_role():
     return """
     DO $$
@@ -148,6 +148,7 @@ def create_readonly_role():
     END
     $$;
     """
+
 
 def enforce_table_limits():
     return """
@@ -183,7 +184,8 @@ def insert_transaction():
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
     ON CONFLICT (hash) DO NOTHING;
     """
-    
+
+
 def insert_events():
     return """
     INSERT INTO events(
@@ -192,6 +194,7 @@ def insert_events():
         $1, $2, $3, $4, $5, $6, $7, $8)
     ON CONFLICT (id) DO NOTHING;
     """
+
 
 def insert_or_update_state():
     return """
@@ -203,6 +206,7 @@ def insert_or_update_state():
         value = EXCLUDED.value,
         updated = EXCLUDED.updated;
     """
+
 
 def insert_state_changes():
     return """
