@@ -8,7 +8,7 @@ from contracting.stdlib.bridge.decimal import ContractingDecimal
 from contracting.stdlib.bridge.time import Datetime, Timedelta
 from xian.services.bds.database import DB, result_to_json
 from xian_py.decompiler import ContractDecompiler
-from xian_py.wallet import key_is_valid
+from xian_py.wallet import Wallet
 from timeit import default_timer as timer
 from decimal import Decimal
 
@@ -234,7 +234,7 @@ class BDS:
         for state_change in tx['tx_result']['state']:
             if state_change['key'].startswith('currency.balances:'):
                 address = state_change['key'].replace('currency.balances:', '')
-                if key_is_valid(address):
+                if Wallet.is_valid_key(address):
                     try:
                         self.db.add_query_to_batch(sql.insert_addresses(), [
                             tx['tx_result']['hash'],
