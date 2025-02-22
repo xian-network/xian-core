@@ -15,13 +15,13 @@ XIAN_DIR := ./src/xian
 
 help:
 	@echo "Available commands:"
-	@echo "  make up        - Start xian node and cometbft"
-	@echo "  make up-bds    - Start with simulator"
+	@echo "  make up        - Start xian node and CometBFT"
+	@echo "  make up-bds    - Start with Blockchain Data Service"
 	@echo "  make down      - Stop all services"
 	@echo "  make logs      - Show logs"
 	@echo "  make restart   - Restart all services"
 	@echo "  make wipe      - Clean blockchain data"
-	@echo "  make init      - Initialize cometbft"
+	@echo "  make init      - Initialize CometBFT"
 	@echo "  make node-id   - Show node ID"
 	@echo "  make dwu       - Down, wipe, init, up"
 	@echo "  make ex-state  - Export state"
@@ -51,7 +51,7 @@ down:
 	@echo "Stopping services..."
 	-pm2 stop all
 	@echo "Waiting for cleanup..."
-	sleep 5  # Give Loguru time to handle any final cleanup
+	sleep 3  # Give Loguru time to handle any final cleanup
 	-pm2 delete all
 	@echo "Services stopped."
 
