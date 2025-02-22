@@ -29,19 +29,19 @@ help:
 wipe:
 	@echo "Wiping blockchain data..."
 	rm -rf $(COMETBFT_DIR)
-	../cometbft unsafe-reset-all
+	cometbft unsafe-reset-all
 
 up:
 	@echo "Starting services..."
 	cd $(XIAN_DIR) && pm2 start xian_abci.py --name xian -f
-	pm2 start "../cometbft node --rpc.laddr tcp://0.0.0.0:26657" --name cometbft -f
+	pm2 start "cometbft node --rpc.laddr tcp://0.0.0.0:26657" --name cometbft -f
 	@echo "Services started. Use 'make logs' to view logs."
 
 up-bds:
 	@echo "Starting services with simulator..."
 	cd $(XIAN_DIR)/services/ && pm2 start simulator.py --name simulator -f --wait-ready
 	cd $(XIAN_DIR) && pm2 start xian_abci.py --name xian -f
-	pm2 start "../cometbft node --rpc.laddr tcp://0.0.0.0:26657" --name cometbft -f
+	pm2 start "cometbft node --rpc.laddr tcp://0.0.0.0:26657" --name cometbft -f
 	@echo "Services started. Use 'make logs' to view logs."
 
 logs:
@@ -59,12 +59,12 @@ restart: down up
 
 init:
 	@echo "Initializing cometbft..."
-	../cometbft init
+	cometbft init
 	@echo "Initialization complete."
 
 node-id:
 	@echo "Node ID:"
-	../cometbft show-node-id
+	cometbft show-node-id
 
 dwu: down wipe init up
 	@echo "Down, wipe, init, up sequence completed."
