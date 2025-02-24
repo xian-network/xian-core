@@ -19,7 +19,20 @@ PROPOSAL_EXPIRY_DAYS = 7
 @construct
 def seed(genesis_nodes: list, genesis_registration_fee: int):
     nodes.set(genesis_nodes)
-    types.set(["add_member", "remove_member", "change_registration_fee", "reward_change", "dao_payout", "stamp_cost_change", "change_types"])
+    types.set([
+        "add_member", 
+        "remove_member", 
+        "change_registration_fee", 
+        "reward_change", 
+        "dao_payout", 
+        "stamp_cost_change", 
+        "change_types", 
+        "create_stream", 
+        "change_close_time", 
+        "finalize_stream", 
+        "close_balance_finalize",
+        "topic_vote"
+    ])
     total_votes.set(0)
     registration_fee.set(genesis_registration_fee)
 
@@ -98,15 +111,22 @@ def finalize_vote(proposal_id: int):
         registration_fee.set(cur_vote["arg"])
     elif cur_vote["type"] == "change_types":
         types.set(cur_vote["arg"])
+    elif cur_vote["type"] == "create_stream":
+        dao.create_stream(args=cur_vote["arg"])
+    elif cur_vote["type"] == "change_close_time":
+        dao.change_close_time(args=cur_vote["arg"])
+    elif cur_vote["type"] == "finalize_stream":
+        dao.finalize_stream(args=cur_vote["arg"])
+    elif cur_vote["type"] == "close_balance_finalize":
+        dao.close_balance_finalize(args=cur_vote["arg"])
     
     cur_vote["finalized"] = True
     votes[proposal_id] = cur_vote
     return cur_vote
 
-
 @export
-def balance_dao_stream():
-    dao.balance_dao_stream()
+def balance_stream(stream_id: str):
+    return dao.balance_stream(stream_id=stream_id)
 
 def force_leave(node: str):
     pending_leave[node] = now + datetime.timedelta(days=7)
@@ -141,7 +161,3 @@ def unregister():
         currency.transfer(holdings[ctx.caller], ctx.caller)
     pending_registrations[ctx.caller] = False
     holdings[ctx.caller] = 0
-    
-@export
-def balance_stream():
-    dao.balance_dao_stream()
