@@ -19,7 +19,6 @@ Configure CometBFT node
 """
 
 
-# TODO: Set chain_id through this too
 class Configure:
     """
     Snapshot should be a tar.gz file containing
@@ -43,9 +42,9 @@ class Configure:
         )
         parser.add_argument(
             '--seed-node-address',
-             type=str,
-             help='Seed node address e.g. <node_id>@91.108.112.184 . For cold booting a test network.',
-             required=False
+            type=str,
+            help='Seed node address e.g. <node_id>@91.108.112.184 . For cold booting a test network.',
+            required=False
         )
         parser.add_argument(
             '--moniker',
@@ -126,6 +125,19 @@ class Configure:
             required=False,
             default=100000
         )
+        parser.add_argument(
+            '--single-node',
+            action=BooleanOptionalAction,
+            help='Run as a single node',
+            required=False
+        )
+        parser.add_argument(
+            '--chain-id',
+            type=str,
+            help='Chain ID for the network',
+            required=False,
+            default='xian-network'
+        )
 
         self.args = parser.parse_args()
 
@@ -151,7 +163,7 @@ class Configure:
             sleep(1)  # wait 1 second before trying again
 
         return None  # or raise an Exception indicating the request ultimately failed
-    
+
     def download_and_extract(self, url, target_path):
         # Download the file from the URL
         response = requests.get(url)
@@ -160,11 +172,11 @@ class Configure:
         tar_path = target_path / filename
         # Ensure the target directory exists
         os.makedirs(target_path, exist_ok=True)
-        
+
         # Save the downloaded file to disk
         with open(tar_path, 'wb') as file:
             file.write(response.content)
-        
+
         # Extract the tar.gz file
         if tar_path.endswith(".tar.gz"):
             with tarfile.open(tar_path, "r:gz") as tar:
@@ -174,7 +186,7 @@ class Configure:
                 tar.extractall(path=target_path)
         else:
             print("File format not recognized. Please use a .tar.gz or .tar file.")
-        
+
         os.remove(tar_path)
 
     def generate_keys(self):
@@ -215,7 +227,7 @@ class Configure:
     def main(self):
         # Make sure this is run in the tools directory
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
-        
+
         if not os.path.exists(self.CONFIG_PATH):
             print('Initialize CometBFT first')
             return
@@ -278,11 +290,12 @@ class Configure:
             sk = SigningKey(seed=seed)
             vk = sk.verify_key
 
-            validator_pubkey = vk.encode().hex()
+            single_node_arg = '--single-node' if self.args.single_node else ''
 
             os.system(f'python3 genesis_gen.py '
-                      f'--validator-pubkey {validator_pubkey} '
-                      f'--founder-privkey {self.args.founder_privkey}')
+                      f'--founder-privkey {self.args.founder_privkey} '
+                      f'--chain-id {self.args.chain_id} '
+                      f'{single_node_arg}')
 
             # Get generated genesis block JSON
             with open(Path('genesis') / 'genesis_block.json') as first_file:
