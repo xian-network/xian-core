@@ -3,9 +3,10 @@ import socket
 import pathlib
 import json
 import struct
+import requests
 
 from loguru import logger
-from datetime import datetime
+from datetime import datetime, timezone
 from contracting.execution.executor import Executor
 from contracting.stdlib.bridge.time import Datetime
 from contracting.storage.encoder import safe_repr, convert_dict
@@ -83,14 +84,27 @@ class Simulator:
                 logger.debug(f"Client disconnected")
                 connection.close()
 
-    def generate_environment(self, num=1):
+    def fetch_consensus_state_time(self):
+        response = requests.get("http://localhost:26657/consensus_state")
+        result = response.json()
+        start_time = result['result']['round_state']['start_time']
+        return start_time
+
+    def generate_environment(self, num=1, start_time=None):
         random_hex_string = secrets.token_hex(nbytes=64 // 2)
+        
+        if start_time is None:
+            now_dt = datetime.now()
+        else:
+            # truncate nanoseconds to microseconds (first 6 digits)
+            start_time_fixed = start_time[:26] + 'Z'
+            now_dt = datetime.strptime(start_time_fixed, "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=timezone.utc)
 
         env_json = {
             'block_hash': random_hex_string,
             'block_num': num,
             '__input_hash': random_hex_string,
-            'now': Datetime._from_datetime(datetime.now()),
+            'now': Datetime._from_datetime(now_dt),
             'AUXILIARY_SALT': random_hex_string
         }
 
@@ -131,7 +145,14 @@ class Simulator:
     def execute(self, payload):
         driver = Driver(storage_home=c.STORAGE_HOME)
         executor = Executor(metering=False, bypass_balance_amount=True, bypass_cache=True, driver=driver)
-        environment = self.generate_environment()
+
+        try:
+            start_time = self.fetch_consensus_state_time()
+        except Exception as e:
+            logger.error(f"Could not fetch consensus state: {e}")
+            start_time = None
+        
+        environment = self.generate_environment(start_time=start_time)
         try:
             stamp_cost = int(executor.driver.get_var(contract='stamp_cost', variable='S', arguments=['value']))
         except:
