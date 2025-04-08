@@ -1,6 +1,7 @@
 import json
 import socket
 import struct
+import os
 
 from cometbft.abci.v1beta1.types_pb2 import ResponseQuery
 from xian.utils.encoding import encode_str
@@ -104,6 +105,17 @@ async def query(self, req) -> ResponseQuery:
             # Block Hash: http://localhost:26657/abci_query?path="/state_for_block/34F1A1C923D23C5C0531490E714FC56F501EDADF05B6BF68C2ED3923234E0CC4"
             elif path_parts[0] == "state_for_block":
                 result = await self.bds.get_state_for_block(key)
+
+            # http://localhost:26657/abci_query?path="/state_patches"
+            elif path_parts[0] == "state_patches":
+                # Return the state patches JSON file content
+                patch_file_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 
+                                             "tools", "state_patches", "state_patches.json")
+                if os.path.exists(patch_file_path):
+                    with open(patch_file_path, 'r') as f:
+                        result = json.load(f)
+                else:
+                    result = {}  # Return empty dict if file doesn't exist
 
             # http://localhost:26657/abci_query?path="/contracts/limit=10/offset=20"
             elif path_parts[0] == "contracts":
