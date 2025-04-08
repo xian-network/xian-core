@@ -106,10 +106,6 @@ async def finalize_block(self, req) -> ResponseFinalizeBlock:
             result["tx_result"]["hash"] = cometbft_hash
             asyncio.create_task(self.bds.add_to_batch(tx | result, block_datetime))
 
-    # Save data to BDS - Process batch
-    if self.block_service_mode:
-        asyncio.create_task(self.bds.commit_batch())
-
     if self.static_rewards:
         try:
             reward_writes.append(self.rewards_handler.distribute_static_rewards(
@@ -124,8 +120,37 @@ async def finalize_block(self, req) -> ResponseFinalizeBlock:
     
     self.fingerprint_hashes.append(reward_hash)
     
-    # No transactions = no rewards / no change to ABCI state, use previous block hash.
-    self.merkle_root_hash = latest_block_hash if len(req.txs) == 0 else hash_list(self.fingerprint_hashes)
+    # Apply any state patches for this block and include hash in fingerprint
+    state_patch_applied = False
+    if hasattr(self, 'state_patch_manager'):
+        patch_hash, applied_patches = self.state_patch_manager.apply_patches_for_block(
+            height,
+            nanos
+        )
+        
+        # If patches were applied, include the hash in fingerprint hashes
+        if patch_hash:
+            self.fingerprint_hashes.append(patch_hash)
+            state_patch_applied = True
+            logger.info(f"Added state patch hash to block fingerprint: {patch_hash}")
+            
+            # If BDS is enabled, record state patches directly
+            if self.block_service_mode and applied_patches:
+                asyncio.create_task(self.bds.add_state_patches(
+                    applied_patches,
+                    self.current_block_meta,
+                    block_datetime
+                ))
+    
+    # Save data to BDS - Process batch
+    if self.block_service_mode:
+        # Commit all changes to BDS
+        asyncio.create_task(self.bds.commit_batch())
+
+    
+    # No transactions and no state patches = no change to ABCI state, use previous block hash.
+    # Otherwise, compute a new hash from the fingerprint hashes.
+    self.merkle_root_hash = latest_block_hash if (len(req.txs) == 0 and not state_patch_applied) else hash_list(self.fingerprint_hashes)
 
     return ResponseFinalizeBlock(
         validator_updates=validator_updates,
