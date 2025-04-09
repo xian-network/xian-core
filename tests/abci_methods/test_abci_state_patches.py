@@ -981,5 +981,107 @@ def get_allowance(owner: str, spender: str):
         
         self.assertEqual(allowance, 100, "Nested hash operation should work correctly")
 
+    async def test_contract_privatization(self):
+        """Test that non-exported functions cannot be called externally but can be used internally."""
+        # Create a temporary state patches file with a contract that has private functions
+        self.patches_dir = Path("/tmp/xian_test_state_patches")
+        self.patches_dir.mkdir(exist_ok=True)
+        
+        # Define a contract with both public and private functions
+        contract_code = """
+# Contract with privatization test
+stored_value = Variable()
+
+@export
+def public_function():
+    return "Public function called"
+
+@export
+def call_private():
+    return private_function()
+
+def private_function():
+    return "This is private"
+"""
+        
+        # Create a patch file with the privatization test contract
+        privatization_patch = {
+            "50": [
+                {
+                    "key": "con_privatization_test.__code__",
+                    "value": contract_code,
+                    "comment": "Test contract for privatization"
+                }
+            ]
+        }
+        
+        privatization_patch_file = self.patches_dir / "privatization_patches.json"
+        with open(privatization_patch_file, "w") as f:
+            json.dump(privatization_patch, f)
+        
+        # Initialize a new app with the contract patches
+        new_app = await Xian.create(constants=MockConstants)
+        new_app.state_patch_manager = StatePatchManager(new_app.client.raw_driver)
+        new_app.state_patch_manager.load_patches(privatization_patch_file)
+        
+        # Process block 50 to apply the patch
+        new_handler = ProtocolHandler(new_app)
+        new_app.current_block_meta = {"height": 50, "nanos": 0, "chain_id": "test"}
+        request_50 = self.create_finalize_block_request(50)
+        await new_handler.process("finalize_block", request_50)
+        
+        # Verify that the contract code was set
+        stored_code = new_app.client.raw_driver.get("con_privatization_test.__code__")
+        self.assertIsNotNone(stored_code)
+        
+        # Test 1: Calling a public function directly - should succeed
+        public_result = new_app.client.executor.execute(
+            sender='test_user',
+            contract_name='con_privatization_test',
+            function_name='public_function',
+            kwargs={},
+            environment=self.create_execution_environment(new_app)
+        )
+        
+        self.assertEqual(public_result['result'], "Public function called", 
+                         "Public function should be directly callable")
+        
+        # Test 2: Calling a private function through a public function - should succeed
+        indirect_result = new_app.client.executor.execute(
+            sender='test_user',
+            contract_name='con_privatization_test',
+            function_name='call_private',
+            kwargs={},
+            environment=self.create_execution_environment(new_app)
+        )
+        self.assertEqual(indirect_result['result'], "This is private", 
+                         "Private function should be callable through a public function")
+        
+        # Test 3: Calling a private function directly - should fail with specific error
+        private_result = new_app.client.executor.execute(
+            sender='test_user',
+            contract_name='con_privatization_test',
+            function_name='private_function',
+            kwargs={},
+            environment=self.create_execution_environment(new_app)
+        )
+        
+        # Verify error status code
+        self.assertEqual(private_result['status_code'], 1, "Status code should indicate error")
+        
+        # Verify exact AttributeError format in the result
+        self.assertIsInstance(private_result['result'], AttributeError, 
+                            "Error should be an AttributeError")
+        self.assertEqual(str(private_result['result']), 
+                       "module 'con_privatization_test' has no attribute 'private_function'",
+                       "Error message should indicate that the private function is not accessible")
+        
+        # Verify code transformation in reads
+        transformed_code = private_result['reads']['con_privatization_test.__code__']
+        self.assertIn('__private_function', transformed_code, 
+                     "Private function should be renamed with double underscore prefix")
+        self.assertIn("@__export('con_privatization_test')", transformed_code, 
+                     "Export decorator should be transformed correctly")
+
 if __name__ == "__main__":
     unittest.main() 

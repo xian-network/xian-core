@@ -507,12 +507,12 @@ class BDS:
     async def insert_state_patch_txn(self, patches, block_meta, patch_hash, block_time):
         """
         Create a transaction record for state patches, matching the 13 arguments
-        expected by sql.insert_transaction().
+        expected by sql.insert_transaction(). Pass arguments as a list for compatibility
+        with numbered placeholders ($1, $2, ...).
         """
-        tx_data = {
-            # Argument 1: tx_hash
+        tx_values = {
             "tx_hash": patch_hash,
-            "receiver": None,
+            "contract": "STATE_PATCHER",
             "function": "STATE_PATCH",
             "sender": "sys",
             "nonce": 0,
@@ -521,22 +521,38 @@ class BDS:
             "block_height": block_meta["height"],
             "block_time_nanos": block_meta.get('nanos'),
             "success": True,
-            "status_code": 0,
+            "status_code": "OK",
             "metadata": json.dumps({
                 "patch_count": len(patches),
                 "comment": "State Patch Pseudo-Transaction"
             }),
             "created_at": block_time
         }
-        logger.debug(f"State Patch Tx Data Prepared: {tx_data.keys()}")
-        logger.debug(f"Argument count: {len(tx_data)}")
+
+        ordered_args = [
+            tx_values["tx_hash"],
+            tx_values["contract"],
+            tx_values["function"],
+            tx_values["sender"],
+            tx_values["nonce"],
+            tx_values["stamps_used"],
+            tx_values["block_hash"],
+            tx_values["block_height"],
+            tx_values["block_time_nanos"],
+            tx_values["success"],
+            tx_values["status_code"],
+            tx_values["metadata"],
+            tx_values["created_at"]
+        ]
+
+        logger.debug(f"State Patch Tx Args Prepared (Count: {len(ordered_args)}): {ordered_args}")
 
         try:
-            await self.db.execute(sql.insert_transaction(), tx_data)
+            await self.db.execute(sql.insert_transaction(), ordered_args)
             logger.info(f"Created transaction record for state patch {patch_hash}")
             return patch_hash
         except Exception as e:
-            logger.error(f"Error executing insert_transaction. Provided keys: {list(tx_data.keys())} (Count: {len(tx_data)})")
+            logger.error(f"Error executing insert_transaction. Provided args (Count: {len(ordered_args)}): {ordered_args}")
             logger.exception(f"Failed to create transaction record for state patch: {e}")
             raise e
 
@@ -548,26 +564,29 @@ class BDS:
         if not block_time:
             block_time = datetime.datetime.now(datetime.timezone.utc)
 
-        # Insert state change record
+        # Generate a proper UUID string
+        change_id = str(uuid4())
+
+        # Insert state change record - use a list/tuple for arguments to ensure correct ordering
         await self.db.execute(
             sql.insert_state_changes(),
-            {
-                "id": str(uuid4()),
-                "tx_hash": tx_hash,
-                "key": key,
-                "value": json.dumps(value, cls=CustomEncoder),
-                "created": block_time,
-            },
+            [
+                change_id,        # Actual UUID string, not the key name "id"
+                tx_hash,
+                key,
+                json.dumps(value, cls=CustomEncoder),
+                block_time,
+            ],
         )
 
-        # Update current state
+        # Update current state - also ensure correct argument ordering
         await self.db.execute(
             sql.insert_or_update_state(),
-            {
-                "key": key,
-                "value": json.dumps(value, cls=CustomEncoder),
-                "updated": block_time,
-            },
+            [
+                key,
+                json.dumps(value, cls=CustomEncoder),
+                block_time,
+            ],
         )
         
         # Special handling for contract code
@@ -580,29 +599,29 @@ class BDS:
                 # First check if contract already exists
                 result = await self.db.fetch(sql.check_contract_exists(), [contract_name])
                 if result and len(result) > 0:
-                    # Update existing contract
+                    # Update existing contract - use list for arguments
                     await self.db.execute(
                         sql.update_contract(),
-                        {
-                            "tx_hash": tx_hash,
-                            "code": code,
-                            "xsc0001": self.is_XSC0001(code),
-                            "updated": block_time,
-                            "name": contract_name
-                        }
+                        [
+                            tx_hash,
+                            code,
+                            self.is_XSC0001(code),
+                            block_time,
+                            contract_name
+                        ]
                     )
                     logger.info(f"Updated existing contract {contract_name}")
                 else:
-                    # Insert new contract
+                    # Insert new contract - use list for arguments
                     await self.db.execute(
                         sql.insert_contracts(),
-                        {
-                            "tx_hash": tx_hash,
-                            "name": contract_name,
-                            "code": code,
-                            "xsc0001": self.is_XSC0001(code),
-                            "created": block_time
-                        }
+                        [
+                            tx_hash,
+                            contract_name,
+                            code,
+                            self.is_XSC0001(code),
+                            block_time
+                        ]
                     )
                     logger.info(f"Inserted new contract {contract_name}")
             except Exception as e:
