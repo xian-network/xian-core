@@ -224,6 +224,7 @@ class Configure:
             config = toml.load(f)
 
         config['consensus']['create_empty_blocks'] = False
+        config['consensus']['create_empty_blocks_interval'] = "10s"
 
         if self.args.seed_node_address:
             config['p2p']['seeds'] = f'{self.args.seed_node_address}:26656'
@@ -238,7 +239,7 @@ class Configure:
                 print("Failed to get node information after 10 attempts.")
 
         config['xian'] = {
-            'block_service_mode': self.args.service_node,
+            'block_service_mode': self.args.service_node if self.args.service_node else False,
             'pruning_enabled': self.args.enable_pruning,
             'blocks_to_keep': self.args.blocks_to_keep
         }
