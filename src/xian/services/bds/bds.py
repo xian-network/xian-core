@@ -506,26 +506,37 @@ class BDS:
         
     async def insert_state_patch_txn(self, patches, block_meta, patch_hash, block_time):
         """
-        Create a transaction record for state patches, similar to Genesis block handling
+        Create a transaction record for state patches, matching the 13 arguments
+        expected by sql.insert_transaction().
         """
         tx_data = {
+            # Argument 1: tx_hash
             "tx_hash": patch_hash,
-            "sender": "STATE_PATCH",
+            "receiver": None,
+            "function": "STATE_PATCH",
+            "sender": "sys",
+            "nonce": 0,
+            "stamps_used": 0,
+            "block_hash": block_meta.get('hash'),
             "block_height": block_meta["height"],
-            "block_time": block_time,
+            "block_time_nanos": block_meta.get('nanos'),
             "success": True,
-            "processed": True,
-            "tx_type": "STATE_PATCH",
+            "status_code": 0,
             "metadata": json.dumps({
-                "patch_count": len(patches)
-            })
+                "patch_count": len(patches),
+                "comment": "State Patch Pseudo-Transaction"
+            }),
+            "created_at": block_time
         }
-        
+        logger.debug(f"State Patch Tx Data Prepared: {tx_data.keys()}")
+        logger.debug(f"Argument count: {len(tx_data)}")
+
         try:
             await self.db.execute(sql.insert_transaction(), tx_data)
             logger.info(f"Created transaction record for state patch {patch_hash}")
             return patch_hash
         except Exception as e:
+            logger.error(f"Error executing insert_transaction. Provided keys: {list(tx_data.keys())} (Count: {len(tx_data)})")
             logger.exception(f"Failed to create transaction record for state patch: {e}")
             raise e
 
