@@ -109,8 +109,9 @@ async def query(self, req) -> ResponseQuery:
             # http://localhost:26657/abci_query?path="/state_patches"
             elif path_parts[0] == "state_patches":
                 # Return the state patches JSON file content
-                patch_file_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 
-                                             "tools", "state_patches", "state_patches.json")
+                src_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+                patch_file_path = os.path.join(src_dir, "xian", "tools", "state_patches", "state_patches.json")
+
                 if os.path.exists(patch_file_path):
                     with open(patch_file_path, 'r') as f:
                         result = json.load(f)
