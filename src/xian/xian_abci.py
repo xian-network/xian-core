@@ -27,6 +27,7 @@ from xian.validators import ValidatorHandler
 from xian.nonce import NonceStorage
 from xian.processor import TxProcessor
 from xian.rewards import RewardsHandler
+from xian.utils.state_patches import StatePatchManager
 
 from xian.utils.cometbft import (
     load_tendermint_config,
@@ -100,6 +101,21 @@ class Xian:
         self.static_rewards_amount_foundation = 1
         self.static_rewards_amount_validators = 1
         self.current_block_rewards = {}
+        
+        # Initialize state patch manager
+        self.state_patch_manager = StatePatchManager(self.client.raw_driver)
+        
+        # Set up the state patches file path
+        start_path = os.path.dirname(os.path.realpath(__file__))
+        patch_file_path = os.path.join(start_path, "tools", "state_patches", "state_patches.json")
+        
+        if os.path.exists(patch_file_path):
+            logger.info(f"Loading state patches from: {patch_file_path}")
+            self.state_patch_manager.load_patches(patch_file_path)
+        else:
+            logger.warning(f"No state patches file found at {patch_file_path}")
+            # Initialize with empty patches but still mark as loaded
+            self.state_patch_manager.loaded = True
 
     @classmethod
     async def create(cls, constants=Constants()):

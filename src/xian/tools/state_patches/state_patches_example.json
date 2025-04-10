@@ -1,0 +1,21 @@
+{
+  "100000000": [
+    {
+      "key": "con_token.balances:some_address",
+      "value": 1000000,
+      "comment": "Fixing incorrect account balance after transaction X"
+    },
+    {
+      "key": "con_dao.proposals:5",
+      "value": {"status": "completed", "votes": 120},
+      "comment": "Correcting proposal status that was incorrectly set"
+    }
+  ],
+  "150000000": [
+    {
+      "key": "con_exchange.trades:last_id",
+      "value": 10034,
+      "comment": "Resetting ID counter after overflow bug"
+    }
+  ]
+} 
