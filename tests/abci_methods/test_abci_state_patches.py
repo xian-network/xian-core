@@ -1032,6 +1032,7 @@ def private_function():
         
         # Verify that the contract code was set
         stored_code = new_app.client.raw_driver.get("con_privatization_test.__code__")
+
         self.assertIsNotNone(stored_code)
         
         # Test 1: Calling a public function directly - should succeed
