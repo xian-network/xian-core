@@ -2,6 +2,7 @@ import os
 import unittest
 from io import BytesIO
 import logging
+from unittest.mock import patch, mock_open
 
 from xian.constants import Constants
 from xian.xian_abci import Xian
@@ -171,6 +172,48 @@ def transfer_from(amount: float, to: str, main_account: str):
         response = await self.process_request("query", request)
         self.assertEqual(response.query.code, Constants.OkCode)
         self.assertEqual(response.query.info, "str")
+
+    async def test_state_patches_query_real_file(self):
+        # Find the state_patches.json file using similar logic to query.py
+        # We're in tests/abci_methods, need to go to src/xian/tools/state_patches
+        
+        # Get path to xian-core root directory
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        # Path to actual state_patches.json file
+        patch_file_path = os.path.join(base_dir, "src", "xian", "tools", "state_patches", "state_patches.json")
+        
+        print(f"Looking for state_patches.json at: {patch_file_path}")
+        print(f"File exists: {os.path.exists(patch_file_path)}")
+        
+        # Verify the file exists
+        self.assertTrue(os.path.exists(patch_file_path), f"State patches file not found at {patch_file_path}")
+        
+        # Read the actual file directly
+        with open(patch_file_path, 'r') as f:
+            expected_data = json.load(f)
+        
+        # Enable block service mode for this test
+        self.app.block_service_mode = True
+        
+        # Set up the request
+        request = Request(query=RequestQuery(path="/state_patches"))
+        
+        # Process the request
+        response = await self.process_request("query", request)
+        
+        # Verify the response is successful
+        self.assertEqual(response.query.code, Constants.OkCode, "Query should return OK status code")
+        self.assertEqual(response.query.info, "str", "Response type should be string")
+        
+        # Parse the response value
+        result = json.loads(response.query.value)
+        
+        # Compare with the actual file content
+        self.assertEqual(result, expected_data, "Query result should match the file content exactly")
+        
+        # Verify the structure without relying on specific content
+        self.assertIsInstance(result, dict, "Result should be a dictionary")
+        self.assertTrue(len(result) > 0, "State patches file should not be empty")
 
 if __name__ == "__main__":
     unittest.main()

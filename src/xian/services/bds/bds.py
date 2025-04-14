@@ -1,4 +1,6 @@
 import json
+from uuid import uuid4
+import datetime
 
 from loguru import logger
 from datetime import datetime
@@ -125,6 +127,7 @@ class BDS:
             await self.db.execute(sql.create_readonly_role())
             await self.db.execute(sql.create_state())
             await self.db.execute(sql.create_events())
+            await self.db.execute(sql.create_state_patches())
             await self.db.execute(sql.enforce_table_limits())
         except Exception as e:
             logger.exception(e)
@@ -346,7 +349,10 @@ class BDS:
         except Exception as e:
             logger.exception(e)
 
-    def is_XSC0001(self, code: str):
+    def is_XSC0001(self, code):
+        """
+        Check if contract code complies with XSC0001 standard
+        """
         code = code.replace(' ', '')
 
         if 'balances=Hash(' not in code:
@@ -421,3 +427,202 @@ class BDS:
             if isinstance(item, dict) and item.get('key') == f"{contract_name}.__submitted__":
                 return datetime(*item["value"].get("__time__"))
         return datetime.now()
+
+    async def add_state_patches(self, patches: list, block_meta: dict, block_time: datetime):
+        """
+        Add state patches directly to BDS without creating a synthetic transaction.
+        This method handles state patches as direct state modifications.
+        """
+        patch_hash = f"STATE_PATCH_{block_meta['height']}"
+        logger.info(f"Adding {len(patches)} state patches to BDS for block {block_meta['height']}")
+        
+        # Create a transaction record for this state patch
+        await self.insert_state_patch_txn(patches, block_meta, patch_hash, block_time)
+        
+        for patch in patches:
+            key = patch["key"]
+            value = patch["value"]
+            logger.info(f"Setting state patch for key {key}")
+            await self.set_state(key, value, block_meta, block_time, tx_hash=patch_hash)
+            
+        # Record the patch metadata
+        try:
+            self.db.add_query_to_batch(sql.insert_state_patch_record(), [
+                patch_hash,
+                block_meta["height"],
+                block_meta["hash"],
+                block_meta["nanos"],
+                json.dumps([{"key": p["key"], "value": p["value"], "comment": p.get("comment", "")} for p in patches], cls=CustomEncoder),
+                block_time
+            ])
+        except Exception as e:
+            logger.exception(f"Error recording state patch metadata: {e}")
+
+    async def get_state_patches(self, limit: int = 100, offset: int = 0):
+        """Get a list of all state patches with pagination."""
+        try:
+            result = await self.db.fetch(sql.select_state_patches(), [limit, offset])
+            
+            results = []
+            for row in result:
+                row_dict = dict(row)
+                results.append(row_dict)
+            
+            # Convert the list of dictionaries to JSON
+            results_json = json.dumps(results, default=str)
+            
+            return results_json
+        except Exception as e:
+            logger.exception(e)
+    
+    async def get_state_patches_for_block(self, block_height: int):
+        """Get all state patches applied at a specific block height."""
+        try:
+            result = await self.db.fetch(sql.select_state_patches_for_block(), [block_height])
+            
+            results = []
+            for row in result:
+                row_dict = dict(row)
+                results.append(row_dict)
+            
+            # Convert the list of dictionaries to JSON
+            results_json = json.dumps(results, default=str)
+            
+            return results_json
+        except Exception as e:
+            logger.exception(e)
+    
+    async def get_state_patch_by_hash(self, patch_hash: str):
+        """
+        Get a state patch by its hash
+        """
+        return await self.get_one(sql.select_state_patch_by_hash(), patch_hash)
+
+    async def get_state_changes_for_patch(self, patch_hash):
+        """
+        Get all state changes associated with a specific state patch
+        """
+        return await self.get_all(sql.select_state_changes_for_patch(), patch_hash)
+        
+    async def insert_state_patch_txn(self, patches, block_meta, patch_hash, block_time):
+        """
+        Create a transaction record for state patches, matching the 13 arguments
+        expected by sql.insert_transaction(). Pass arguments as a list for compatibility
+        with numbered placeholders ($1, $2, ...).
+        """
+        tx_values = {
+            "tx_hash": patch_hash,
+            "contract": "STATE_PATCHER",
+            "function": "STATE_PATCH",
+            "sender": "sys",
+            "nonce": 0,
+            "stamps_used": 0,
+            "block_hash": block_meta.get('hash'),
+            "block_height": block_meta["height"],
+            "block_time_nanos": block_meta.get('nanos'),
+            "success": True,
+            "status_code": "OK",
+            "metadata": json.dumps({
+                "patch_count": len(patches),
+                "comment": "State Patch Pseudo-Transaction"
+            }),
+            "created_at": block_time
+        }
+
+        ordered_args = [
+            tx_values["tx_hash"],
+            tx_values["contract"],
+            tx_values["function"],
+            tx_values["sender"],
+            tx_values["nonce"],
+            tx_values["stamps_used"],
+            tx_values["block_hash"],
+            tx_values["block_height"],
+            tx_values["block_time_nanos"],
+            tx_values["success"],
+            tx_values["status_code"],
+            tx_values["metadata"],
+            tx_values["created_at"]
+        ]
+
+        logger.debug(f"State Patch Tx Args Prepared (Count: {len(ordered_args)}): {ordered_args}")
+
+        try:
+            await self.db.execute(sql.insert_transaction(), ordered_args)
+            logger.info(f"Created transaction record for state patch {patch_hash}")
+            return patch_hash
+        except Exception as e:
+            logger.error(f"Error executing insert_transaction. Provided args (Count: {len(ordered_args)}): {ordered_args}")
+            logger.exception(f"Failed to create transaction record for state patch: {e}")
+            raise e
+
+    async def set_state(self, key, value, block_meta={}, block_time=None, tx_hash=None):
+        """set state updates state and state changes with the latest value"""
+        if not tx_hash:
+            tx_hash = f"BLOCK_{block_meta.get('height', '0')}"
+
+        if not block_time:
+            block_time = datetime.datetime.now(datetime.timezone.utc)
+
+        # Generate a proper UUID string
+        change_id = str(uuid4())
+
+        # Insert state change record - use a list/tuple for arguments to ensure correct ordering
+        await self.db.execute(
+            sql.insert_state_changes(),
+            [
+                change_id,        # Actual UUID string, not the key name "id"
+                tx_hash,
+                key,
+                json.dumps(value, cls=CustomEncoder),
+                block_time,
+            ],
+        )
+
+        # Update current state - also ensure correct argument ordering
+        await self.db.execute(
+            sql.insert_or_update_state(),
+            [
+                key,
+                json.dumps(value, cls=CustomEncoder),
+                block_time,
+            ],
+        )
+        
+        # Special handling for contract code
+        parts = key.split('.')
+        if len(parts) > 1 and parts[1] == '__code__':
+            contract_name = parts[0]
+            code = value
+            
+            try:
+                # First check if contract already exists
+                result = await self.db.fetch(sql.check_contract_exists(), [contract_name])
+                if result and len(result) > 0:
+                    # Update existing contract - use list for arguments
+                    await self.db.execute(
+                        sql.update_contract(),
+                        [
+                            tx_hash,
+                            code,
+                            self.is_XSC0001(code),
+                            block_time,
+                            contract_name
+                        ]
+                    )
+                    logger.info(f"Updated existing contract {contract_name}")
+                else:
+                    # Insert new contract - use list for arguments
+                    await self.db.execute(
+                        sql.insert_contracts(),
+                        [
+                            tx_hash,
+                            contract_name,
+                            code,
+                            self.is_XSC0001(code),
+                            block_time
+                        ]
+                    )
+                    logger.info(f"Inserted new contract {contract_name}")
+            except Exception as e:
+                logger.exception(f"Error handling contract code for {contract_name}: {e}")
