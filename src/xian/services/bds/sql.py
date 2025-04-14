@@ -313,25 +313,130 @@ def select_state_tx():
 
 def select_state_block_height():
     return """
-    SELECT
+    SELECT 
         sc.key, sc.value
-    FROM
+    FROM 
         state_changes sc
-    JOIN
+    LEFT JOIN 
         transactions t ON sc.tx_hash = t.hash
-    WHERE
-        t.block_height = $1;
+    WHERE 
+        t.block_height = $1
+    UNION
+    SELECT 
+        sc.key, sc.value
+    FROM 
+        state_changes sc
+    JOIN 
+        state_patches sp ON sc.tx_hash = sp.hash
+    WHERE 
+        sp.block_height = $1;
     """
 
 
 def select_state_block_hash():
     return """
-    SELECT
+    SELECT 
         sc.key, sc.value
-    FROM
+    FROM 
         state_changes sc
-    JOIN
+    LEFT JOIN 
         transactions t ON sc.tx_hash = t.hash
+    WHERE 
+        t.block_hash = $1
+    UNION
+    SELECT 
+        sc.key, sc.value
+    FROM 
+        state_changes sc
+    JOIN 
+        state_patches sp ON sc.tx_hash = sp.hash
+    WHERE 
+        sp.block_hash = $1;
+    """
+
+
+def check_contract_exists():
+    return """
+    SELECT name FROM contracts WHERE name = $1
+    """
+
+
+def update_contract():
+    return """
+    UPDATE contracts
+    SET tx_hash = $1, code = $2, XSC0001 = $3, created = $4
+    WHERE name = $5
+    """
+
+
+def create_state_patches():
+    return """
+    CREATE TABLE IF NOT EXISTS state_patches (
+        hash TEXT PRIMARY KEY,
+        block_height INTEGER NOT NULL,
+        block_hash TEXT NOT NULL,
+        block_time BIGINT NOT NULL,
+        patches JSONB NOT NULL,
+        created TIMESTAMP NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_state_patches_block_height ON state_patches(block_height);
+    """
+
+
+def insert_state_patch_record():
+    return """
+    INSERT INTO state_patches(
+        hash, block_height, block_hash, block_time, patches, created)
+    VALUES (
+        $1, $2, $3, $4, $5, $6)
+    ON CONFLICT (hash) DO NOTHING;
+    """
+
+
+def select_state_patches_for_block():
+    return """
+    SELECT
+        *
+    FROM
+        state_patches
     WHERE
-        t.block_hash = $1;
+        block_height = $1;
+    """
+
+
+def select_state_patch_by_hash():
+    return """
+    SELECT
+        *
+    FROM
+        state_patches
+    WHERE
+        hash = $1;
+    """
+
+
+def select_state_patches():
+    return """
+    SELECT
+        *
+    FROM
+        state_patches
+    ORDER BY
+        block_height DESC, created DESC
+    LIMIT $1 OFFSET $2;
+    """
+
+
+def select_state_changes_for_patch():
+    return """
+    SELECT 
+        key, 
+        value,
+        created
+    FROM 
+        state_changes
+    WHERE 
+        tx_hash = $1
+    ORDER BY 
+        created ASC;
     """
