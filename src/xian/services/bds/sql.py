@@ -25,7 +25,7 @@ def create_state():
         value JSONB,
         value_numeric NUMERIC GENERATED ALWAYS AS (
             CASE 
-                WHEN value::text ~ '^"*[0-9]+(\.[0-9]+)?"*$' 
+                WHEN value::text ~ '^"*-?[0-9]+(\\.[0-9]+)?([eE][+-]?[0-9]+)?"*$' 
                 THEN (trim(both '"' from value::text))::NUMERIC
                 ELSE NULL
             END
@@ -34,7 +34,7 @@ def create_state():
     );
     CREATE INDEX IF NOT EXISTS idx_state_value_numeric ON state(value_numeric);
     """
-
+    
 
 def create_state_changes():
     return """
