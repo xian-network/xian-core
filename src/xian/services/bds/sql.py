@@ -45,6 +45,7 @@ def create_state_changes():
         value JSONB,
         value_numeric NUMERIC GENERATED ALWAYS AS (
             CASE 
+                -- Match numeric values, including integers, decimals, and scientific notation (e.g., 1e10, -2.5E-3)
                 WHEN value::text ~ '^"*-?[0-9]+(\.[0-9]+)?([eE][+-]?[0-9]+)?"*$' 
                 THEN (trim(both '"' from value::text))::NUMERIC
                 ELSE NULL
