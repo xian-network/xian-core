@@ -1,4 +1,4 @@
-from argparse import ArgumentParser
+from argparse import ArgumentParser, BooleanOptionalAction
 from xian.utils.block import is_compiled_key
 from contracting.client import ContractingClient
 from contracting.storage.driver import Driver
@@ -50,6 +50,19 @@ class GenesisGen:
             default=None,
             help='Path to existing cometbft genesis file to update the abci_genesis on.'
         )
+        parser.add_argument(
+            '--single-node',
+            action=BooleanOptionalAction,
+            required=False,
+            help='If set, all contracts will be owned by the founder'
+        )
+        parser.add_argument(
+            '--chain-id',
+            type=str,
+            required=False,
+            default='xian-network',
+            help='Chain ID for the network'
+        )
         self.args = parser.parse_args()
 
     def hash_block_data(self, hlc_timestamp: str, block_number: str, previous_block_hash: str) -> str:
@@ -75,6 +88,9 @@ class GenesisGen:
     def build_genesis(self, founder_privkey: str):
         contracting = ContractingClient(driver=Driver())
         contracting.set_submission_contract(commit=False)
+
+        wallet = Wallet(seed=founder_privkey)
+        founder_public_key = wallet.public_key
 
         con_cfg_path = self.CONTRACT_DIR / f'contracts_{self.args.network}.json'
 
@@ -102,12 +118,15 @@ class GenesisGen:
                         for i, s in enumerate(v):
                             if type(s) is str:
                                 v[i] = self.replace_arg(s, locals())
-                                
+
             if contracting.get_contract(con_name) is None:
+                # If single-node mode is enabled, set the owner to the founder
+                owner = founder_public_key if self.args.single_node else contract['owner']
+
                 contracting.submit(
                     code,
                     name=con_name,
-                    owner=contract['owner'],
+                    owner=owner,
                     constructor_args=contract['constructor_args']
                 )
 
@@ -140,9 +159,7 @@ class GenesisGen:
                 })
 
         # Signing genesis block with founder's wallet
-        wallet = Wallet(seed=founder_privkey)
-
-        genesis_block['origin']['sender'] = wallet.public_key
+        genesis_block['origin']['sender'] = founder_public_key
         genesis_block['origin']['signature'] = wallet.sign_msg(
             self.hash_state_changes(genesis_block['genesis'])
         )
@@ -162,6 +179,7 @@ class GenesisGen:
             with open(self.args.genesis_to_update, 'r') as f:
                 existing_genesis = json.load(f)
 
+            existing_genesis['chain_id'] = self.args.chain_id
             existing_genesis['abci_genesis'] = genesis
             with open(self.args.genesis_to_update, 'w') as f:
                 f.write(encode(existing_genesis))
