@@ -151,40 +151,6 @@ async def query(self, req) -> ResponseQuery:
                         # Handle incomplete data error
                         raise ValueError("Did not receive all expected data")
 
-            # TODO: Deprecated - Remove after wallet and tools are reworked to use 'simulate_tx'
-            # http://localhost:26657/abci_query?path="/calculate_stamps/<encoded_payload>"
-            elif path_parts[0] == "calculate_stamps":
-                connection = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-                connection.connect(c.SIMULATOR_SOCKET)
-
-                raw_tx = path_parts[1]
-                byte_data = bytes.fromhex(raw_tx)
-                # extract payload from the raw_tx
-                decoded_dict = json.loads(byte_data.decode('utf-8'))
-                payload = decoded_dict.get('payload', {})
-                payload_byte_data = bytes.fromhex(json.dumps(payload).encode('utf-8').hex())
-                message_length = struct.pack('>I', len(payload_byte_data))
-                connection.sendall(message_length + payload_byte_data)
-                recv_length = connection.recv(4)
-
-                if len(recv_length) < 4:
-                    # Handle error or incomplete length prefix
-                    raise ValueError("Incomplete length prefix received")
-                else:
-                    length = struct.unpack('>I', recv_length)[0]
-                    recv = b''
-                    while len(recv) < length:
-                        packet = connection.recv(length - len(recv))
-                        if not packet:
-                            # Connection closed or error
-                            raise ConnectionError("Connection closed before receiving all data")
-                        recv += packet
-                    if len(recv) == length:
-                        result = recv.decode('utf-8')
-                    else:
-                        # Handle incomplete data error
-                        raise ValueError("Did not receive all expected data")
-
         else:
             error = f'Unknown query path: {path_parts[0]}'
             logger.error(error)
