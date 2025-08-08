@@ -22,10 +22,10 @@
     },
     "validators": [
         {
-            "address": "614EBE42CBE8354F733851F4316D0DE316B1AEF0",
+            "address": "098F6EDD410E40638747DD39BF7301C74E4691B0",
             "pub_key": {
-                "type": "tendermint/PubKeyEd25519",
-                "value": "f6SWyiQ45IfMRaiif9lbLv43MiP3tyho+6sgXWhr5I4="
+              "type": "tendermint/PubKeyEd25519",
+              "value": "E8qaYtEMvCjVVAjgqF0x9cBZ/ju0kxZTjh0DBk8/LI4="
             },
             "power": "10",
             "name": ""
@@ -48941,8 +48941,7 @@
             {
                 "key": "masternodes.nodes",
                 "value": [
-                    "7fa496ca2438e487cc45a8a27fd95b2efe373223f7b72868fbab205d686be48e",
-                    "dff5d54d9c3cdb04d279c3c0a123d6a73a94e0725d7eac955fdf87298dbe45a6"
+                    "13ca9a62d10cbc28d55408e0a85d31f5c059fe3bb49316538e1d03064f3f2c8e"
                 ]
             },
             {
