@@ -40,6 +40,7 @@ async def finalize_block(self, req) -> ResponseFinalizeBlock:
         "chain_id": self.chain_id
     }
 
+    bds_tasks = []
     for tx_bytes in req.txs:
         try:
             tx, payload_str = decode_transaction_bytes(tx_bytes)
@@ -61,7 +62,6 @@ async def finalize_block(self, req) -> ResponseFinalizeBlock:
             # Skip this transaction
             continue
 
-        self.nonce_storage.set_nonce_by_tx(tx)
         tx_hash = result["tx_result"]["hash"]
         self.fingerprint_hashes.append(tx_hash)
         parsed_tx_result = json.dumps(stringify_decimals(result["tx_result"]))
@@ -69,8 +69,9 @@ async def finalize_block(self, req) -> ResponseFinalizeBlock:
 
         tx_events = []
 
-        # Websocket Events - Only trigger state change events if tx was successful
+        # Websocket Events and nonce update - only if tx was successful
         if result["tx_result"]["status"] == 0:
+            self.nonce_storage.set_nonce_by_tx(tx)
 
             # Need to replace chars since they are reserved
             translation_table = str.maketrans({'.': '_', ':': '__'})
@@ -104,7 +105,7 @@ async def finalize_block(self, req) -> ResponseFinalizeBlock:
         if self.block_service_mode:
             cometbft_hash = hash_bytes(tx_bytes).upper()
             result["tx_result"]["hash"] = cometbft_hash
-            asyncio.create_task(self.bds.add_to_batch(tx | result, block_datetime))
+            bds_tasks.append(self.bds.add_to_batch(tx | result, block_datetime))
 
     if self.static_rewards:
         try:
@@ -136,16 +137,18 @@ async def finalize_block(self, req) -> ResponseFinalizeBlock:
             
             # If BDS is enabled, record state patches directly
             if self.block_service_mode and applied_patches:
-                asyncio.create_task(self.bds.add_state_patches(
+                await self.bds.add_state_patches(
                     applied_patches,
                     self.current_block_meta,
                     block_datetime
-                ))
+                )
     
     # Save data to BDS - Process batch
     if self.block_service_mode:
+        if bds_tasks:
+            await asyncio.gather(*bds_tasks)
         # Commit all changes to BDS
-        asyncio.create_task(self.bds.commit_batch())
+        await self.bds.commit_batch()
 
     
     # No transactions and no state patches = no change to ABCI state, use previous block hash.

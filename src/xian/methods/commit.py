@@ -9,7 +9,8 @@ async def commit(self) -> ResponseCommit:
     set_latest_block_hash(self.merkle_root_hash)
     set_latest_block_height(self.current_block_meta["height"])
 
-    self.client.raw_driver.hard_apply(str(self.current_block_meta["nanos"]))
+    # Ensure nanos is an int for deterministic ordering/metadata
+    self.client.raw_driver.hard_apply(self.current_block_meta["nanos"])
 
     # unset current_block_meta & cleanup
     self.fingerprint_hashes = []
