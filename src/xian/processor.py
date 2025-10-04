@@ -256,7 +256,7 @@ class TxProcessor:
 
     def get_now_from_nanos(self, nanos):
         return Datetime._from_datetime(
-            datetime.utcfromtimestamp((nanos + 999_999_999) // 1_000_000_000)
+            datetime.utcfromtimestamp(math.ceil(nanos / 1e9))
         )
 
     def prune_tx_result(self, tx_result: dict):
@@ -265,4 +265,3 @@ class TxProcessor:
         # remove original sent transaction
         tx_result.pop("transaction")
         return tx_result
-
