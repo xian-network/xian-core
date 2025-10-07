@@ -164,7 +164,7 @@ class CrashDetector(BaseMonitor):
     def _start_health_monitor(self):
         """Start background health monitoring"""
         def health_check():
-            while self.running:
+            while self.is_running:
                 try:
                     # Check for memory leaks
                     self._check_memory_usage()

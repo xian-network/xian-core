@@ -24,21 +24,21 @@ class PluginManager:
         
         # Plugin registry - maps plugin names to their module paths
         self.plugin_registry = {
-            # Monitors
+            # Monitors (all implemented and working)
             'state_tracker': 'src.xian.debugger.monitors.state_tracker',
             'cache_monitor': 'src.xian.debugger.monitors.cache_monitor',
             'json_validator': 'src.xian.debugger.monitors.json_validator',
             'determinism_validator': 'src.xian.debugger.monitors.determinism_validator',
             'crash_detector': 'src.xian.debugger.monitors.crash_detector',
             
-            # Analyzers
-            'divergence_analyzer': 'src.xian.debugger.analyzers.divergence_analyzer',
-            'replay_analyzer': 'src.xian.debugger.analyzers.replay_analyzer',
-            
-            # Reporters
+            # Reporters (only implemented ones)
             'log_reporter': 'src.xian.debugger.reporters.log_reporter',
-            'file_reporter': 'src.xian.debugger.reporters.file_reporter',
-            'webhook_reporter': 'src.xian.debugger.reporters.webhook_reporter'
+            
+            # Note: Additional analyzers and reporters can be added here as they are implemented
+            # 'divergence_analyzer': 'src.xian.debugger.analyzers.divergence_analyzer',
+            # 'replay_analyzer': 'src.xian.debugger.analyzers.replay_analyzer',
+            # 'file_reporter': 'src.xian.debugger.reporters.file_reporter',
+            # 'webhook_reporter': 'src.xian.debugger.reporters.webhook_reporter'
         }
     
     def load_plugin(self, plugin_name: str, config: DebuggerConfig) -> Any:
