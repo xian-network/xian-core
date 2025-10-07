@@ -127,6 +127,16 @@ class Xian:
         # Initialize state snapshot manager for fast sync
         self.snapshot_manager = None  # Will be initialized when needed
 
+    def _ensure_snapshot_manager(self) -> StateSnapshotManager:
+        """Lazily instantiate and return the snapshot manager."""
+        if self.snapshot_manager is None:
+            self.snapshot_manager = StateSnapshotManager(
+                self.cometbft_config.get("home", "/tmp/xian"),
+                self.client,
+                self.nonce_storage,
+            )
+        return self.snapshot_manager
+
     @classmethod
     async def create(cls, constants=Constants()):
         self = cls(constants=constants)
@@ -234,14 +244,9 @@ class Xian:
         Create a state snapshot asynchronously (called from finalize_block)
         """
         try:
-            if self.snapshot_manager is None:
-                self.snapshot_manager = StateSnapshotManager(
-                    self.cometbft_config.get("home", "/tmp/xian"),
-                    self.client,
-                    self.nonce_storage
-                )
-            
-            snapshot_id = self.snapshot_manager.create_snapshot(height, app_hash, block_time)
+            snapshot_manager = self._ensure_snapshot_manager()
+
+            snapshot_id = snapshot_manager.create_snapshot(height, app_hash, block_time)
             if snapshot_id:
                 logger.info(f"Created state snapshot {snapshot_id} at height {height}")
             else:

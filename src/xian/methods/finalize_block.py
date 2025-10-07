@@ -153,8 +153,9 @@ async def finalize_block(self, req) -> ResponseFinalizeBlock:
     self.merkle_root_hash = latest_block_hash if (len(req.txs) == 0 and not state_patch_applied) else hash_list(self.fingerprint_hashes)
 
     # Create state snapshot if needed (for fast sync)
-    if hasattr(self, 'snapshot_manager') and self.snapshot_manager is not None:
-        if self.snapshot_manager.should_create_snapshot(height):
+    if hasattr(self, 'snapshot_manager'):
+        snapshot_manager = self._ensure_snapshot_manager()
+        if snapshot_manager.should_create_snapshot(height):
             asyncio.create_task(self._create_snapshot_async(height, self.merkle_root_hash, nanos))
 
     return ResponseFinalizeBlock(
