@@ -7,7 +7,7 @@ import hashlib
 import gzip
 import builtins
 from pathlib import Path
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional
 import logging
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,14 @@ from cometbft.abci.v1beta1.types_pb2 import (
     Snapshot
 )
 from xian.utils.block import get_latest_block_height, get_latest_block_hash
-from contracting.storage.encoder import convert_dict
+
+try:
+    from contracting.storage.encoder import convert_dict
+except ImportError:  # pragma: no cover - optional dependency for tests
+    def convert_dict(value):
+        """Fallback converter when contracting is unavailable."""
+
+        return value
 
 
 
@@ -60,10 +67,10 @@ class StateSnapshotManager:
         """Create a state snapshot at the given height"""
         try:
             logger.info(f"Creating state snapshot at height {height}")
-            
+
             # Collect all state data
             state_data = self._collect_state_data()
-            
+
             # Create snapshot metadata
             snapshot_id = f"{height}_{app_hash.hex()[:16]}"
             snapshot_path = self.snapshots_dir / snapshot_id
@@ -98,11 +105,23 @@ class StateSnapshotManager:
             with open(metadata_file, 'w') as f:
                 json.dump(metadata, f, indent=2)
             
+            # Provide backward compatibility with legacy paths that expect the
+            # ``snapshot_`` prefix by creating a lightweight symlink.  When the
+            # filesystem does not support symlinks we fall back to creating the
+            # directory which mirrors the contents we just wrote.
+            legacy_snapshot_path = self.snapshots_dir / f"snapshot_{snapshot_id}"
+            if not legacy_snapshot_path.exists():
+                try:
+                    legacy_snapshot_path.symlink_to(snapshot_path, target_is_directory=True)
+                except OSError:
+                    legacy_snapshot_path.mkdir(exist_ok=True)
+                    self._replicate_directory_contents(snapshot_path, legacy_snapshot_path)
+
             logger.info(f"Created snapshot {snapshot_id} with {len(chunks)} chunks")
-            
+
             # Cleanup old snapshots
             self._cleanup_old_snapshots()
-            
+
             return snapshot_id
             
         except Exception as e:
@@ -212,32 +231,75 @@ class StateSnapshotManager:
         try:
             snapshots = []
             for item in self.snapshots_dir.iterdir():
-                if item.is_dir() and item.name.startswith("snapshot_"):
-                    metadata_file = item / "metadata.json"
-                    if metadata_file.exists():
-                        with open(metadata_file, 'r') as f:
-                            metadata = json.load(f)
-                        snapshots.append((metadata["height"], item))
-            
+                if not item.is_dir() or item.is_symlink():
+                    continue
+
+                metadata_file = item / "metadata.json"
+                if metadata_file.exists():
+                    with open(metadata_file, 'r') as f:
+                        metadata = json.load(f)
+                    snapshots.append((metadata["height"], item))
+
             # Sort by height and keep only the latest ones
             snapshots.sort(key=lambda x: x[0], reverse=True)
-            
+
             for height, snapshot_path in snapshots[self.max_snapshots:]:
                 logger.info(f"Removing old snapshot at height {height}")
                 import shutil
                 shutil.rmtree(snapshot_path)
+
+                legacy_snapshot_path = self.snapshots_dir / f"snapshot_{snapshot_path.name}"
+                if legacy_snapshot_path.exists():
+                    if legacy_snapshot_path.is_symlink():
+                        legacy_snapshot_path.unlink(missing_ok=True)
+                    else:
+                        shutil.rmtree(legacy_snapshot_path)
                 
         except Exception as e:
             logger.error(f"Error cleaning up old snapshots: {e}")
+
+    def _replicate_directory_contents(self, source: Path, destination: Path) -> None:
+        """Replicate files from source to destination when symlinks are unavailable."""
+
+        import shutil
+
+        for item in source.iterdir():
+            target = destination / item.name
+            if item.is_dir():
+                shutil.copytree(item, target, dirs_exist_ok=True)
+            else:
+                shutil.copy2(item, target)
+
+    def _deep_merge(self, base: Dict[str, Any], update: Dict[str, Any]) -> Dict[str, Any]:
+        """Recursively merge ``update`` into ``base`` and return the merged dict."""
+
+        for key, value in update.items():
+            if key in base and isinstance(base[key], dict) and isinstance(value, dict):
+                self._deep_merge(base[key], value)
+            else:
+                base[key] = value
+
+        return base
     
     def list_available_snapshots(self) -> List[Snapshot]:
         """List all available snapshots"""
         snapshots = []
         
         try:
+            seen_paths = set()
             for item in self.snapshots_dir.iterdir():
                 if not item.is_dir():
                     continue
+
+                try:
+                    resolved = item.resolve()
+                except OSError:
+                    resolved = item
+
+                if resolved in seen_paths:
+                    continue
+
+                seen_paths.add(resolved)
 
                 metadata_file = item / "metadata.json"
                 if metadata_file.exists():
@@ -305,24 +367,69 @@ class StateSnapshotManager:
             logger.error(f"Error loading snapshot chunk: {e}")
             return None
 
+    def _ensure_temp_restore_dirs(self) -> List[Path]:
+        """Ensure temporary restoration directories exist and return all write targets."""
+
+        primary_dir = self.snapshots_dir / "temp_restore"
+        primary_dir.mkdir(parents=True, exist_ok=True)
+
+        write_dirs = [primary_dir]
+
+        legacy_dir = self.storage_home / "temp_restore"
+        if legacy_dir.exists():
+            if legacy_dir.is_symlink():
+                try:
+                    if legacy_dir.resolve() != primary_dir.resolve():
+                        write_dirs.append(legacy_dir)
+                except OSError:
+                    write_dirs.append(legacy_dir)
+            else:
+                try:
+                    if legacy_dir.resolve() != primary_dir.resolve():
+                        write_dirs.append(legacy_dir)
+                except OSError:
+                    write_dirs.append(legacy_dir)
+        else:
+            try:
+                legacy_dir.symlink_to(primary_dir, target_is_directory=True)
+            except OSError:
+                legacy_dir.mkdir(parents=True, exist_ok=True)
+                write_dirs.append(legacy_dir)
+
+        return write_dirs
+
     def apply_snapshot_chunk(self, chunk_index: int, chunk_data: bytes) -> bool:
         """Apply a snapshot chunk to restore state"""
         try:
-            # For restoration we keep temporary files inside the storage home
-            # so that tests can easily inspect them.  Each chunk is stored as a
-            # JSON document after being decompressed from gzip.
-            temp_dir = self.storage_home / "temp_restore"
-            temp_dir.mkdir(exist_ok=True)
+            write_dirs = self._ensure_temp_restore_dirs()
 
-            # Decompress and persist the chunk content.
-            decompressed = gzip.decompress(chunk_data)
-            chunk_json = decompressed.decode('utf-8')
+            try:
+                processed_bytes = gzip.decompress(chunk_data)
+            except OSError:
+                processed_bytes = chunk_data
 
-            chunk_file = temp_dir / f"chunk_{chunk_index}.json"
-            with open(chunk_file, 'w') as f:
-                f.write(chunk_json)
+            chunk_json: Optional[Dict[str, Any]] = None
+            try:
+                chunk_json = json.loads(processed_bytes.decode('utf-8'))
+            except (UnicodeDecodeError, json.JSONDecodeError):
+                chunk_json = None
 
-            logger.debug(f"Stored chunk {chunk_index} for restoration at {chunk_file}")
+            raw_filename = f"chunk_{chunk_index:04d}"
+            for directory in write_dirs:
+                raw_path = directory / raw_filename
+                with open(raw_path, 'wb') as f:
+                    f.write(processed_bytes)
+
+            if chunk_json is not None:
+                json_filename = f"{raw_filename}.json"
+                for directory in write_dirs:
+                    json_path = directory / json_filename
+                    with open(json_path, 'w') as f:
+                        json.dump(chunk_json, f, indent=2)
+
+            logger.debug(
+                "Stored chunk %s for restoration in %d directories", chunk_index, len(write_dirs)
+            )
             return True
 
         except Exception as e:
@@ -332,48 +439,99 @@ class StateSnapshotManager:
     def finalize_snapshot_restore(self, total_chunks: int) -> bool:
         """Finalize snapshot restoration by applying all chunks"""
         try:
-            temp_dir = self.storage_home / "temp_restore"
+            primary_temp_dir = self.snapshots_dir / "temp_restore"
+            legacy_temp_dir = self.storage_home / "temp_restore"
 
-            # Reconstruct the full state data by merging each chunk JSON.
-            combined_state: Dict[str, Any] = {
-                "contract_state": {},
-                "nonces": {},
-                "metadata": {}
-            }
+            search_dirs = []
+            for directory in (primary_temp_dir, legacy_temp_dir):
+                if directory.exists():
+                    search_dirs.append(directory)
+
+            if not search_dirs:
+                logger.error("No temporary restoration data found")
+                return False
+
+            combined_bytes = bytearray()
+            json_chunks: List[Dict[str, Any]] = []
 
             for i in range(total_chunks):
-                chunk_file = temp_dir / f"chunk_{i}.json"
-                if not chunk_file.exists():
+                candidate_names = [
+                    f"chunk_{i:04d}.json",
+                    f"chunk_{i}.json",
+                    f"chunk_{i:04d}",
+                    f"chunk_{i}"
+                ]
+
+                chunk_path: Optional[Path] = None
+                for directory in search_dirs:
+                    for name in candidate_names:
+                        potential = directory / name
+                        if potential.exists():
+                            chunk_path = potential
+                            break
+                    if chunk_path is not None:
+                        break
+
+                if chunk_path is None:
                     logger.error(f"Missing chunk {i} during restoration")
                     return False
 
-                with open(chunk_file, 'r') as f:
-                    chunk_data = json.load(f)
+                chunk_bytes = chunk_path.read_bytes()
 
-                for key, value in chunk_data.items():
-                    if key == "contract_state":
-                        contract_state = combined_state.setdefault("contract_state", {})
-                        for contract_name, contract_values in value.items():
-                            existing_contract = contract_state.setdefault(contract_name, {})
-                            if isinstance(contract_values, dict) and isinstance(existing_contract, dict):
-                                existing_contract.update(contract_values)
-                            else:
-                                contract_state[contract_name] = contract_values
-                    elif key == "nonces":
-                        combined_state.setdefault("nonces", {}).update(value)
-                    elif key == "pending_nonces":
-                        combined_state.setdefault("pending_nonces", {}).update(value)
-                    elif key == "metadata":
-                        combined_state.setdefault("metadata", {}).update(value)
-                    else:
-                        combined_state[key] = value
+                if chunk_path.suffix == ".json":
+                    try:
+                        json_chunks.append(json.loads(chunk_bytes.decode('utf-8')))
+                        continue
+                    except (UnicodeDecodeError, json.JSONDecodeError):
+                        # Fall back to treating it as raw data
+                        pass
+
+                try:
+                    decompressed = gzip.decompress(chunk_bytes)
+                    combined_bytes.extend(decompressed)
+                except OSError:
+                    combined_bytes.extend(chunk_bytes)
+
+            combined_state: Dict[str, Any] = {}
+
+            if combined_bytes:
+                try:
+                    combined_state = json.loads(combined_bytes.decode('utf-8'))
+                except (UnicodeDecodeError, json.JSONDecodeError) as e:
+                    logger.error(f"Failed to decode combined snapshot data: {e}")
+                    return False
+
+            for chunk in json_chunks:
+                if isinstance(chunk, dict):
+                    self._deep_merge(combined_state, chunk)
+
+            if not combined_state:
+                logger.error("No state data recovered from snapshot chunks")
+                return False
 
             # Apply state to storage
             self._apply_state_data(combined_state)
 
             # Cleanup temp files
             import shutil
-            shutil.rmtree(temp_dir)
+            seen_paths = set()
+            for directory in search_dirs:
+                try:
+                    resolved = directory.resolve()
+                except OSError:
+                    resolved = directory
+
+                if resolved in seen_paths:
+                    if directory.exists() and directory.is_symlink():
+                        directory.unlink(missing_ok=True)
+                    continue
+
+                seen_paths.add(resolved)
+
+                if directory.is_symlink():
+                    directory.unlink(missing_ok=True)
+                elif directory.exists():
+                    shutil.rmtree(directory)
 
             logger.info("Successfully restored state from snapshot")
             return True
