@@ -51,7 +51,7 @@ class StateSnapshotManager:
         
         # Snapshot configuration
         self.chunk_size = 10 * 1024 * 1024  # 10MB chunks
-        self.snapshot_interval = 1000  # Create snapshot every 1000 blocks
+        self.snapshot_interval = 200  # Create snapshot every 200 blocks
         self.max_snapshots = 5  # Keep max 5 snapshots
         
     def should_create_snapshot(self, height: int) -> bool:
