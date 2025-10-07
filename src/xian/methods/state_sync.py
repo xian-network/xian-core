@@ -108,16 +108,13 @@ class StateSnapshotManager:
         
         # Collect contract state
         try:
-            # Get all contract files (these are .d files, which are HDF5 files)
             contract_files = self.client.raw_driver.get_contract_files()
             
             for contract_file in contract_files:
-                if contract_file.endswith('.d'):  # Contract data files
-                    contract_name = contract_file[:-2]  # Remove .d extension
-                    # Get all items for this contract using the contract name as prefix
-                    contract_data = self.client.raw_driver.items(contract_name)
-                    if contract_data:
-                        state_data["contract_state"][contract_name] = dict(contract_data)
+                # Get all items for this contract using the contract name as prefix
+                contract_data = self.client.raw_driver.items(contract_name)
+                if contract_data:
+                    state_data["contract_state"][contract_name] = dict(contract_data)
             
             # Also collect any other state that doesn't follow the contract.d pattern
             # by getting all items without a prefix
