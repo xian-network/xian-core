@@ -15,40 +15,6 @@ State sync allows new nodes to join the network quickly by downloading applicati
 
 ## Configuration
 
-### For Snapshot Providers (Validators)
-
-Add to your `config.toml`:
-
-```toml
-#######################################################
-###       State Sync Configuration Options          ###
-#######################################################
-[statesync]
-# State sync rapidly bootstraps a new node by discovering, fetching, and restoring a state machine
-# snapshot from peers instead of fetching and replaying historical blocks. Requires some peers in
-# the network to take and serve state machine snapshots. State sync is not attempted if the node
-# has any local state (LastBlockHeight > 0). The node will have a truncated block history,
-# starting from the height of the snapshot.
-enable = false
-
-# RPC servers (comma-separated) for light client verification of the synced state machine and
-# retrieval of state data for node bootstrapping. Also needs a trusted height and corresponding
-# header hash obtained from a trusted source, and a period during which validators can be trusted.
-#
-# For Cosmos SDK-based chains, trust_period should usually be about 2/3 of the unbonding period
-# (~2 weeks) during which they can be financially punished (slashed) for misbehavior.
-rpc_servers = ""
-trust_height = 0
-trust_hash = ""
-trust_period = "168h0m0s"
-
-# Time to spend discovering snapshots before initiating a restore.
-discovery_time = "15s"
-
-# Temporary directory for state sync snapshot chunks.
-temp_dir = ""
-```
-
 ### For New Nodes (State Sync Clients)
 
 1. **Enable State Sync** in `config.toml`:
@@ -66,7 +32,7 @@ trust_period = "168h0m0s"  # ~1 week
 
 ```bash
 # Query a trusted RPC endpoint
-curl -s https://rpc.xian.network:26657/commit | jq '{height: .result.signed_header.header.height, hash: .result.signed_header.commit.block_id.hash}'
+curl -s https://node.xian.org/commit | jq '{height: .result.signed_header.header.height, hash: .result.signed_header.commit.block_id.hash}'
 ```
 
 3. **Start the Node**:
