@@ -68,7 +68,7 @@ class StateSnapshotManager:
 
             # Create snapshot metadata
             snapshot_id = f"{height}_{app_hash.hex()[:16]}"
-            snapshot_path = self.snapshots_dir / f"snapshot_{snapshot_id}"
+            snapshot_path = self.snapshots_dir / snapshot_id
             snapshot_path.mkdir(exist_ok=True)
             
             # Save state data in chunks
@@ -105,7 +105,7 @@ class StateSnapshotManager:
             # filesystem does not support symlinks we fall back to creating the
             # directory which mirrors the contents we just wrote.
             legacy_snapshot_path = self.snapshots_dir / f"snapshot_{snapshot_id}"
-            if not legacy_snapshot_path.exists():
+            if legacy_snapshot_path != snapshot_path and not legacy_snapshot_path.exists():
                 try:
                     legacy_snapshot_path.symlink_to(snapshot_path, target_is_directory=True)
                 except OSError:
