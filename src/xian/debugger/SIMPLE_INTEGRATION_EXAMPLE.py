@@ -78,14 +78,13 @@ class Xian:
 # ============================================================================
 
 """
-Before running your application, set these environment variables:
-
-export XIAN_DEBUGGER_ENABLED=true
-export XIAN_DEBUG_LEVEL=standard
-export XIAN_MONITORING_SCOPE=both
-
-Then run your application normally:
+The debugger is enabled by default! Just run your application normally:
 python src/xian/xian_abci.py
+
+Optional environment variables to customize behavior:
+export XIAN_DEBUG_LEVEL=standard        # minimal, standard, comprehensive
+export XIAN_MONITORING_SCOPE=both       # transaction, block, both
+export XIAN_DEBUGGER_ENABLED=false      # Only if you want to disable it
 """
 
 
