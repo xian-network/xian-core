@@ -3,11 +3,7 @@ import marshal
 import json
 
 from xian.constants import Constants as c
-try:
-    from contracting.storage.encoder import convert_dict
-except ImportError:  # pragma: no cover - optional dependency for tests
-    def convert_dict(value):
-        return value
+from contracting.storage.encoder import convert_dict
 
 
 from loguru import logger
