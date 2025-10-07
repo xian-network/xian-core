@@ -34,13 +34,8 @@ from cometbft.abci.v1beta1.types_pb2 import (
 )
 from xian.utils.block import get_latest_block_height, get_latest_block_hash
 
-try:
-    from contracting.storage.encoder import convert_dict
-except ImportError:  # pragma: no cover - optional dependency for tests
-    def convert_dict(value):
-        """Fallback converter when contracting is unavailable."""
+from contracting.storage.encoder import convert_dict
 
-        return value
 
 
 
