@@ -12,7 +12,7 @@ from typing import List, Dict, Any, Optional, Tuple
 import logging
 logger = logging.getLogger(__name__)
 
-from cometbft.abci.v1beta3.types_pb2 import (
+from cometbft.abci.v1beta1.types_pb2 import (
     ResponseListSnapshots,
     ResponseOfferSnapshot,
     ResponseLoadSnapshotChunk,
