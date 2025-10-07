@@ -34,6 +34,19 @@ class CrashDetector(BaseMonitor):
         logger.info("Initializing Crash Detector")
         self._install_crash_handlers()
         self._start_health_monitor()
+        return True
+    
+    def check(self):
+        """Perform crash detection check"""
+        # This is called periodically by the base monitor
+        # Most crash detection is event-driven (signals, exceptions)
+        # but we can use this for periodic health checks
+        try:
+            self._check_memory_usage()
+            self._check_thread_count()
+            self._check_file_descriptors()
+        except Exception as e:
+            logger.error(f"Error during crash detection check: {e}")
         
     def _install_crash_handlers(self):
         """Install signal handlers to detect crashes"""
