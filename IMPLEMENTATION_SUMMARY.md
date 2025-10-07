@@ -61,7 +61,7 @@
 ```
 
 ### Storage Structure
-- **Files**: Uses existing `.d` files (HDF5 format)
+- **Files**: Uses existing files (HDF5 format)
 - **Nonces**: Collected using `__n:sender.` keys
 - **Compression**: gzip compression for efficient transfer
 - **Chunks**: 10MB chunks for reliable network transfer
