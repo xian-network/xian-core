@@ -9,7 +9,7 @@ from pathlib import Path
 from unittest.mock import Mock, AsyncMock
 
 from xian.methods.state_sync import StateSnapshotManager
-from cometbft.abci.v1beta3.types_pb2 import (
+from cometbft.abci.v1beta1.types_pb2 import (
     ResponseListSnapshots,
     ResponseOfferSnapshot,
     ResponseLoadSnapshotChunk,
