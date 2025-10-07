@@ -36,6 +36,9 @@ from xian.utils.cometbft import (
 
 from abci.utils import get_logger
 
+# Add debugger integration
+from xian.debugger.xian_integration import setup_xian_debugging
+
 get_logger("requests").setLevel(30)
 get_logger("urllib3").setLevel(30)
 get_logger("asyncio").setLevel(30)
@@ -116,6 +119,9 @@ class Xian:
             logger.warning(f"No state patches file found at {patch_file_path}")
             # Initialize with empty patches but still mark as loaded
             self.state_patch_manager.loaded = True
+        
+        # Initialize state divergence debugger
+        self.debug_integration = setup_xian_debugging(self)
 
     @classmethod
     async def create(cls, constants=Constants()):
@@ -150,23 +156,45 @@ class Xian:
         Guardian of the mempool: every node runs CheckTx before letting a transaction into its local mempool.
         The transaction may come from an external user or another node
         """
-        res = await check_tx.check_tx(self, raw_tx)
-        return res
+        # Add debugging context for transaction checking
+        with self.debug_integration.debug_context("check_tx"):
+            res = await check_tx.check_tx(self, raw_tx)
+            return res
 
     async def finalize_block(self, req):
         """
         Contains the fields of the newly decided block.
         This method is equivalent to the call sequence BeginBlock, [DeliverTx], and EndBlock in the previous version of ABCI.
         """
-        res = await finalize_block.finalize_block(self, req)
-        return res
+        # Add debugging context
+        with self.debug_integration.debug_context("finalize_block", 
+                                                 block_height=req.height,
+                                                 tx_count=len(req.txs)):
+            res = await finalize_block.finalize_block(self, req)
+            
+            # Emit state change event for debugging
+            self.debug_integration.emit_event("state_change", {
+                "block_height": req.height,
+                "app_hash": res.app_hash.hex() if res.app_hash else None,
+                "tx_count": len(req.txs)
+            })
+            
+            return res
 
     async def commit(self):
         """
         Signal the Application to persist the application state. Application is expected to persist its state at the end of this call, before calling ResponseCommit.
         """
-        res = await commit.commit(self)
-        return res
+        # Add debugging context for commit
+        with self.debug_integration.debug_context("commit"):
+            res = await commit.commit(self)
+            
+            # Emit commit event for debugging
+            self.debug_integration.emit_event("commit", {
+                "app_hash": res.data.hex() if res.data else None
+            })
+            
+            return res
 
     async def process_proposal(self, req):
         """
