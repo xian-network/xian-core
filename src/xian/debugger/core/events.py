@@ -54,6 +54,13 @@ class EventType(Enum):
     CRITICAL_ALERT = "critical_alert"
     WARNING_ALERT = "warning_alert"
     INFO_ALERT = "info_alert"
+    
+    # Operation events
+    OPERATION_START = "operation_start"
+    OPERATION_END = "operation_end"
+    
+    # Custom/Generic events
+    CUSTOM = "custom"
 
 
 class Severity(Enum):
