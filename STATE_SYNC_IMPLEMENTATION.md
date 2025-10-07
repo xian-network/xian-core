@@ -24,7 +24,7 @@ This implementation adds CometBFT native state sync support to Xian blockchain, 
 #### 1. StateSnapshotManager (`src/xian/methods/state_sync.py`)
 - **Snapshot Creation**: Automatically creates snapshots every 1000 blocks
 - **Chunk Management**: Splits large state into 10MB compressed chunks
-- **Storage**: Efficient storage using existing .d files (HDF5 format) with cleanup
+- **Storage**: Efficient storage using HDF5 format with cleanup
 - **Verification**: SHA256 hashes for chunk integrity
 
 #### 2. ABCI State Sync Methods
@@ -36,7 +36,7 @@ This implementation adds CometBFT native state sync support to Xian blockchain, 
 #### 3. Integration Points
 - **finalize_block.py**: Automatic snapshot creation at intervals
 - **xian_abci.py**: ABCI method implementations
-- **Existing Storage**: Leverages current .d files (HDF5 format) + state patch system
+- **Existing Storage**: Leverages current files (HDF5 format) + state patch system
 
 ### State Data Structure
 
@@ -202,7 +202,7 @@ See `examples/state_sync_example.py` for a complete demonstration of:
 ## Integration with Existing Systems
 
 ### Compatibility
-- **Existing Storage**: Works with current .d files (HDF5 format) storage
+- **Existing Storage**: Works with current files (HDF5 format) storage
 - **State Patches**: Compatible with existing state patch system
 - **Block Sync**: Automatic fallback if state sync fails
 - **Consensus**: Seamless transition to normal consensus mode
