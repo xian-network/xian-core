@@ -1,20 +1,30 @@
 """
 Tests for State Sync functionality
 """
-import unittest
 import tempfile
 import json
 import gzip
+import asyncio
 from pathlib import Path
-from unittest.mock import Mock, AsyncMock
+from unittest.mock import Mock
+
 import pytest
-from xian.methods.state_sync import StateSnapshotManager
+
+state_sync = pytest.importorskip(
+    "xian.methods.state_sync",
+    reason="state sync tests require the xian package and contracting dependency",
+)
+
+StateSnapshotManager = state_sync.StateSnapshotManager
+list_snapshots = state_sync.list_snapshots
+offer_snapshot = state_sync.offer_snapshot
+load_snapshot_chunk = state_sync.load_snapshot_chunk
+apply_snapshot_chunk = state_sync.apply_snapshot_chunk
 from cometbft.abci.v1beta1.types_pb2 import (
     ResponseListSnapshots,
     ResponseOfferSnapshot,
     ResponseLoadSnapshotChunk,
     ResponseApplySnapshotChunk,
-    Snapshot
 )
 
 
@@ -246,78 +256,62 @@ class TestStateSync:
         app.cometbft_config = {"home": "/tmp/xian"}
         app.client = Mock()
         app.nonce_storage = Mock()
-        app.snapshot_manager = None
         return app
     
-    @pytest.mark.asyncio
-    async def test_list_snapshots_empty(self, mock_xian_app):
+    def test_list_snapshots_empty(self, mock_xian_app):
         """Test listing snapshots when none exist"""
-        from xian.methods.state_sync import list_snapshots
-        
         req = Mock()
-        response = await list_snapshots(mock_xian_app, req)
+        response = asyncio.run(list_snapshots(mock_xian_app, req))
         
         assert isinstance(response, ResponseListSnapshots)
         assert len(response.snapshots) == 0
     
-    @pytest.mark.asyncio
-    async def test_offer_snapshot_accept(self, mock_xian_app):
+    def test_offer_snapshot_accept(self, mock_xian_app):
         """Test accepting a snapshot offer"""
-        from xian.methods.state_sync import offer_snapshot
-        
         req = Mock()
         req.snapshot = Mock()
         req.snapshot.height = 1000
         req.snapshot.format = 1
         req.snapshot.chunks = 5
         req.app_hash = b"test_hash"
-        
-        response = await offer_snapshot(mock_xian_app, req)
+
+        response = asyncio.run(offer_snapshot(mock_xian_app, req))
         
         assert isinstance(response, ResponseOfferSnapshot)
         assert response.result == ResponseOfferSnapshot.Result.ACCEPT
     
-    @pytest.mark.asyncio
-    async def test_offer_snapshot_reject_format(self, mock_xian_app):
+    def test_offer_snapshot_reject_format(self, mock_xian_app):
         """Test rejecting snapshot with unsupported format"""
-        from xian.methods.state_sync import offer_snapshot
-        
         req = Mock()
         req.snapshot = Mock()
         req.snapshot.format = 999  # Unsupported format
         req.app_hash = b"test_hash"
-        
-        response = await offer_snapshot(mock_xian_app, req)
+
+        response = asyncio.run(offer_snapshot(mock_xian_app, req))
         
         assert isinstance(response, ResponseOfferSnapshot)
         assert response.result == ResponseOfferSnapshot.Result.REJECT_FORMAT
     
-    @pytest.mark.asyncio
-    async def test_load_snapshot_chunk_not_found(self, mock_xian_app):
+    def test_load_snapshot_chunk_not_found(self, mock_xian_app):
         """Test loading non-existent snapshot chunk"""
-        from xian.methods.state_sync import load_snapshot_chunk
-        
         req = Mock()
         req.height = 1000
         req.format = 1
         req.chunk = 0
-        
-        response = await load_snapshot_chunk(mock_xian_app, req)
+
+        response = asyncio.run(load_snapshot_chunk(mock_xian_app, req))
         
         assert isinstance(response, ResponseLoadSnapshotChunk)
         assert response.chunk == b""
     
-    @pytest.mark.asyncio
-    async def test_apply_snapshot_chunk_success(self, mock_xian_app):
+    def test_apply_snapshot_chunk_success(self, mock_xian_app):
         """Test successful snapshot chunk application"""
-        from xian.methods.state_sync import apply_snapshot_chunk
-        
         req = Mock()
         req.index = 0
         req.chunk = b"test chunk data"
         req.sender = "peer123"
-        
-        response = await apply_snapshot_chunk(mock_xian_app, req)
+
+        response = asyncio.run(apply_snapshot_chunk(mock_xian_app, req))
         
         assert isinstance(response, ResponseApplySnapshotChunk)
         assert response.result == ResponseApplySnapshotChunk.Result.ACCEPT
