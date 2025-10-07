@@ -38,7 +38,11 @@ class XianDebuggerIntegration:
     def debug_context(self, operation_name: str, **context_data):
         """Create a debug context for an operation"""
         if self.debugger:
-            return self.debugger.debug_context(operation_name, **context_data)
+            try:
+                return self.debugger.debug_context(operation_name, **context_data)
+            except Exception as e:
+                logger.error(f"Error creating debug context for {operation_name}: {e}")
+                return NoOpContext()
         else:
             # Return a no-op context manager
             return NoOpContext()
@@ -46,7 +50,10 @@ class XianDebuggerIntegration:
     def emit_event(self, event_type: str, data: Dict[str, Any]):
         """Emit a debugging event"""
         if self.debugger:
-            self.debugger.emit_event(event_type, data)
+            try:
+                self.debugger.emit_event(event_type, data)
+            except Exception as e:
+                logger.error(f"Error emitting debug event {event_type}: {e}")
     
     def instrument_abci_method(self, method_name: str):
         """Decorator to instrument ABCI methods"""

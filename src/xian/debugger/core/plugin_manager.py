@@ -29,6 +29,7 @@ class PluginManager:
             'cache_monitor': 'xian.debugger.monitors.cache_monitor',
             'json_validator': 'xian.debugger.monitors.json_validator',
             'determinism_validator': 'xian.debugger.monitors.determinism_validator',
+            'crash_detector': 'xian.debugger.monitors.crash_detector',
             
             # Analyzers
             'divergence_analyzer': 'xian.debugger.analyzers.divergence_analyzer',

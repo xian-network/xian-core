@@ -94,7 +94,8 @@ class DebuggerConfig:
         "state_tracker",
         "cache_monitor", 
         "json_validator",
-        "determinism_validator"
+        "determinism_validator",
+        "crash_detector"
     ])
     
     # Custom settings

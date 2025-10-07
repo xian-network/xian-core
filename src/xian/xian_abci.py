@@ -156,45 +156,74 @@ class Xian:
         Guardian of the mempool: every node runs CheckTx before letting a transaction into its local mempool.
         The transaction may come from an external user or another node
         """
-        # Add debugging context for transaction checking
-        with self.debug_integration.debug_context("check_tx"):
-            res = await check_tx.check_tx(self, raw_tx)
-            return res
+        try:
+            # Add debugging context for transaction checking
+            with self.debug_integration.debug_context("check_tx"):
+                res = await check_tx.check_tx(self, raw_tx)
+                return res
+        except Exception as e:
+            # Log the crash for debugging
+            logger.error(f"CRASH in check_tx: {e}")
+            self.debug_integration.emit_event("crash_detected", {
+                "method": "check_tx",
+                "error": str(e)
+            })
+            raise
 
     async def finalize_block(self, req):
         """
         Contains the fields of the newly decided block.
         This method is equivalent to the call sequence BeginBlock, [DeliverTx], and EndBlock in the previous version of ABCI.
         """
-        # Add debugging context
-        with self.debug_integration.debug_context("finalize_block", 
-                                                 block_height=req.height,
-                                                 tx_count=len(req.txs)):
-            res = await finalize_block.finalize_block(self, req)
-            
-            # Emit state change event for debugging
-            self.debug_integration.emit_event("state_change", {
+        try:
+            # Add debugging context
+            with self.debug_integration.debug_context("finalize_block", 
+                                                     block_height=req.height,
+                                                     tx_count=len(req.txs)):
+                res = await finalize_block.finalize_block(self, req)
+                
+                # Emit state change event for debugging
+                self.debug_integration.emit_event("state_change", {
+                    "block_height": req.height,
+                    "app_hash": res.app_hash.hex() if res.app_hash else None,
+                    "tx_count": len(req.txs)
+                })
+                
+                return res
+        except Exception as e:
+            # Log the crash for debugging
+            logger.error(f"CRASH in finalize_block at height {req.height}: {e}")
+            self.debug_integration.emit_event("crash_detected", {
+                "method": "finalize_block",
                 "block_height": req.height,
-                "app_hash": res.app_hash.hex() if res.app_hash else None,
+                "error": str(e),
                 "tx_count": len(req.txs)
             })
-            
-            return res
+            raise
 
     async def commit(self):
         """
         Signal the Application to persist the application state. Application is expected to persist its state at the end of this call, before calling ResponseCommit.
         """
-        # Add debugging context for commit
-        with self.debug_integration.debug_context("commit"):
-            res = await commit.commit(self)
-            
-            # Emit commit event for debugging
-            self.debug_integration.emit_event("commit", {
-                "app_hash": res.data.hex() if res.data else None
+        try:
+            # Add debugging context for commit
+            with self.debug_integration.debug_context("commit"):
+                res = await commit.commit(self)
+                
+                # Emit commit event for debugging
+                self.debug_integration.emit_event("commit", {
+                    "app_hash": res.data.hex() if res.data else None
+                })
+                
+                return res
+        except Exception as e:
+            # Log the crash for debugging
+            logger.error(f"CRASH in commit: {e}")
+            self.debug_integration.emit_event("crash_detected", {
+                "method": "commit",
+                "error": str(e)
             })
-            
-            return res
+            raise
 
     async def process_proposal(self, req):
         """
