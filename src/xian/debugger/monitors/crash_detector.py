@@ -21,8 +21,8 @@ from .base import BaseMonitor
 class CrashDetector(BaseMonitor):
     """Monitor for detecting and analyzing application crashes"""
     
-    def __init__(self, config):
-        super().__init__(config)
+    def __init__(self, config, event_bus):
+        super().__init__(config, event_bus)
         self.crash_log_file = self.config.log_directory / "crash_log.json"
         self.exception_count = 0
         self.last_operations: List[Dict[str, Any]] = []

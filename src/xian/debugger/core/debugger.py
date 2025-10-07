@@ -21,6 +21,46 @@ from ..analyzers.base import BaseAnalyzer
 from ..reporters.base import BaseReporter
 
 
+class DebugContext:
+    """Context manager for debugging operations"""
+    
+    def __init__(self, debugger, operation_name: str, **context_data):
+        self.debugger = debugger
+        self.operation_name = operation_name
+        self.context_data = context_data
+        self.start_time = None
+    
+    def __enter__(self):
+        self.start_time = time.time()
+        # Emit operation start event
+        self.debugger.emit_event('operation_start', {
+            'operation': self.operation_name,
+            'start_time': self.start_time,
+            **self.context_data
+        })
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        end_time = time.time()
+        duration = end_time - self.start_time if self.start_time else 0
+        
+        # Emit operation end event
+        event_data = {
+            'operation': self.operation_name,
+            'duration_ms': duration * 1000,
+            'success': exc_type is None,
+            **self.context_data
+        }
+        
+        if exc_type:
+            event_data.update({
+                'exception_type': exc_type.__name__,
+                'exception_message': str(exc_val)
+            })
+        
+        self.debugger.emit_event('operation_end', event_data)
+
+
 class StateDebugger:
     """
     Main state divergence debugger class.
@@ -399,6 +439,29 @@ class StateDebugger:
     def register_reporter(self, name: str, reporter: BaseReporter):
         """Register a reporter plugin"""
         self.reporters[name] = reporter
+    
+    def emit_event(self, event_type: str, data: Dict[str, Any]):
+        """Emit a debugging event"""
+        try:
+            # Convert string event type to EventType enum if needed
+            if isinstance(event_type, str):
+                event_type_enum = getattr(EventType, event_type.upper(), EventType.CUSTOM)
+            else:
+                event_type_enum = event_type
+            
+            event = DebugEvent(
+                event_type=event_type_enum,
+                severity=Severity.INFO,
+                message=f"Debug event: {event_type}",
+                data=data
+            )
+            self.event_bus.emit(event)
+        except Exception as e:
+            logger.error(f"Error emitting event {event_type}: {e}")
+    
+    def debug_context(self, operation_name: str, **context_data):
+        """Create a debug context for an operation"""
+        return DebugContext(self, operation_name, **context_data)
     
     def __enter__(self):
         """Context manager entry"""

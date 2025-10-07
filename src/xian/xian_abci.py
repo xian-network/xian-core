@@ -211,8 +211,14 @@ class Xian:
                 res = await commit.commit(self)
                 
                 # Emit commit event for debugging
+                app_hash = None
+                if hasattr(res, 'data') and res.data:
+                    app_hash = res.data.hex()
+                elif hasattr(res, 'app_hash') and res.app_hash:
+                    app_hash = res.app_hash.hex()
+                
                 self.debug_integration.emit_event("commit", {
-                    "app_hash": res.data.hex() if res.data else None
+                    "app_hash": app_hash
                 })
                 
                 return res
