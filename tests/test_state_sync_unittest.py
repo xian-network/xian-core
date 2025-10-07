@@ -22,7 +22,7 @@ class TestStateSnapshotManager(unittest.TestCase):
         # Mock contracting client
         self.mock_client = Mock()
         self.mock_client.raw_driver = Mock()
-        self.mock_client.raw_driver.get_contract_files.return_value = ['currency.d', 'masternodes.d']
+        self.mock_client.raw_driver.get_contract_files.return_value = ['currency', 'masternodes']
         self.mock_client.raw_driver.items.return_value = {
             'currency.balances:alice': 1000,
             'currency.balances:bob': 500,
@@ -127,7 +127,7 @@ class TestStateSnapshotManager(unittest.TestCase):
         for chunk in chunks:
             self.assertIsInstance(chunk, bytes)
             # Should be able to decompress
-            decompressed = gzip.decompress(chunk)
+            decompressed = gzipecompress(chunk)
             self.assertIsInstance(decompressed, bytes)
     
     @patch('xian.methods.state_sync.get_latest_block_height')
