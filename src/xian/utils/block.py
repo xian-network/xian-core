@@ -3,11 +3,8 @@ import marshal
 import json
 
 from xian.constants import Constants as c
-try:
-    from contracting.storage.encoder import convert_dict
-except ModuleNotFoundError:  # pragma: no cover - optional dependency
-    def convert_dict(value):
-        return value
+from contracting.storage.encoder import convert_dict
+
 from loguru import logger
 
 from google.protobuf.timestamp_pb2 import Timestamp
