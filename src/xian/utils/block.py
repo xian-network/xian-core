@@ -5,6 +5,7 @@ import json
 from xian.constants import Constants as c
 from contracting.storage.encoder import convert_dict
 
+
 from loguru import logger
 
 from google.protobuf.timestamp_pb2 import Timestamp
