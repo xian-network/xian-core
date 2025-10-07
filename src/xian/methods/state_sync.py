@@ -34,13 +34,8 @@ from cometbft.abci.v1beta1.types_pb2 import (
 )
 from xian.utils.block import get_latest_block_height, get_latest_block_hash
 
-try:
-    from contracting.storage.encoder import convert_dict
-except ImportError:  # pragma: no cover - optional dependency for tests
-    def convert_dict(value):
-        """Fallback converter when contracting is unavailable."""
+from contracting.storage.encoder import convert_dict
 
-        return value
 
 
 
@@ -73,7 +68,7 @@ class StateSnapshotManager:
 
             # Create snapshot metadata
             snapshot_id = f"{height}_{app_hash.hex()[:16]}"
-            snapshot_path = self.snapshots_dir / snapshot_id
+            snapshot_path = self.snapshots_dir / f"snapshot_{snapshot_id}"
             snapshot_path.mkdir(exist_ok=True)
             
             # Save state data in chunks
@@ -454,6 +449,10 @@ class StateSnapshotManager:
             combined_bytes = bytearray()
             json_chunks: List[Dict[str, Any]] = []
 
+            # Concatenate the chunk data and decode the combined payload.  We
+            # attempt gzip decompression first but fall back to the raw bytes
+            # to support the plain JSON chunks used in the unit tests.
+            combined_bytes = bytearray()
             for i in range(total_chunks):
                 candidate_names = [
                     f"chunk_{i:04d}.json",

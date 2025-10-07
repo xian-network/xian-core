@@ -9,6 +9,7 @@ except ImportError:  # pragma: no cover - optional dependency for tests
     def convert_dict(value):
         return value
 
+
 from loguru import logger
 
 from google.protobuf.timestamp_pb2 import Timestamp
