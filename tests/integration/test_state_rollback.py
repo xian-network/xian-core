@@ -1,6 +1,7 @@
 import unittest
 import datetime
 import os
+from pathlib import Path
 import utils
 from contracting.client import ContractingClient
 from contracting.storage.driver import Driver
@@ -22,6 +23,26 @@ def create_block_meta(dt: datetime.datetime = datetime.datetime.now()):
 
 
 
+def _resolve_contracts_dir() -> Path:
+    # Primary: alongside this test file
+    here = Path(__file__).resolve().parent
+    p = here / "contracts" / "rollback"
+    if p.is_dir():
+        return p
+    # Fallback: repository-style path from CWD (e.g. in CI)
+    cwd = Path.cwd()
+    q = cwd / "tests" / "integration" / "contracts" / "rollback"
+    if q.is_dir():
+        return q
+    # Walk up from test file to find a tests root
+    for parent in here.parents:
+        candidate = parent / "tests" / "integration" / "contracts" / "rollback"
+        if candidate.is_dir():
+            return candidate
+    # As a last resort, return the first constructed path (will raise later)
+    return p
+
+
 class TestStateRollback(unittest.TestCase):
     def setUp(self):
         utils.setup_fixtures()
@@ -29,7 +50,7 @@ class TestStateRollback(unittest.TestCase):
         self.client = ContractingClient(driver=self.driver)
         self.client.flush()
         self.txp = TxProcessor(client=self.client)
-        base_dir = os.path.join(os.path.dirname(__file__), "contracts", "rollback")
+        base_dir = str(_resolve_contracts_dir())
         with open(f"{base_dir}/con_mutable_map.py") as f:
             code = f.read()
         self.client.submit(code, name="con_mutable_map")
