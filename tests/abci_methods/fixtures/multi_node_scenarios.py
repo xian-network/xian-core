@@ -34,16 +34,16 @@ SCENARIO_ACCOUNT_BALANCES: Dict[str, int] = {
 # fingerprint derived from that module into application state.
 MODULE_PROBES = [
     {
-        "import": "from contracting.stdlib.bridge.hashing import sha3",
-        "statement": "module_results['hashing'] = sha3('determinism')",
+        "imports": (),
+        "statement": "module_results['hashing'] = hashlib.sha3('determinism')",
     },
     {
-        "import": "from contracting.stdlib.bridge.decimal import ContractingDecimal",
-        "statement": "module_results['decimal'] = str(ContractingDecimal('123.456789'))",
+        "imports": (),
+        "statement": "module_results['decimal'] = str(decimal('123.456789'))",
     },
     {
-        "import": "from contracting.stdlib.bridge.time import Datetime",
-        "statement": "from datetime import datetime as _dt\n    module_results['time'] = str(Datetime._from_datetime(_dt(2024, 1, 1)))",
+        "imports": (),
+        "statement": "module_results['time'] = str(datetime.datetime(2024, 1, 1))",
     },
 ]
 
@@ -98,9 +98,14 @@ def _make_request(height: int, txs: Sequence[Dict[str, object]], *, base_seconds
 
 
 def _module_probe_contract() -> str:
-    imports = sorted({probe["import"] for probe in MODULE_PROBES})
+    import_lines: List[str] = []
+    for probe in MODULE_PROBES:
+        for import_line in probe.get("imports", ()):  # type: ignore[arg-type]
+            if import_line not in import_lines:
+                import_lines.append(import_line)
+
     statements = [probe["statement"] for probe in MODULE_PROBES]
-    imports_block = "\n".join(imports)
+    imports_block = "\n".join(import_lines)
     statements_block = "\n    ".join(statements)
 
     return f"""{imports_block}

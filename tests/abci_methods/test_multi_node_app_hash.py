@@ -71,6 +71,8 @@ class TestMultiNodeAppHash(unittest.IsolatedAsyncioTestCase):
         with use_node_constants(node_dir) as node_constants:
             app = await Xian.create(constants=node_constants)
             app.current_block_meta = {"height": 0, "nanos": 0}
+            app.enable_tx_fee = False
+            app.rewards_handler = None
             self._seed_account_balances(app)
 
             cleanup: Optional[Callable[[], None]] = None
@@ -120,14 +122,17 @@ class TestMultiNodeAppHash(unittest.IsolatedAsyncioTestCase):
             from contracting.stdlib.bridge import hashing
 
             original_sha3 = hashing.sha3
+            original_module_sha3 = hashing.hashlib_module.sha3
 
             def patched_sha3(value: str) -> str:
                 return "mutated-" + original_sha3(value)[::-1]
 
             hashing.sha3 = patched_sha3
+            hashing.hashlib_module.sha3 = patched_sha3
 
             def restore() -> None:
                 hashing.sha3 = original_sha3
+                hashing.hashlib_module.sha3 = original_module_sha3
 
             return restore
 
