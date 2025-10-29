@@ -15,6 +15,8 @@ ships to production.
 * `tests/abci_methods/fixtures/multi_node_scenarios.py` defines reusable
   sequences of `RequestFinalizeBlock` messages.  These requests are grouped into
   **scenarios** which the tests load via `load_multi_node_scenarios()`.
+  Scenarios can also mark certain block heights as "last-transaction only" so
+  alternate nodes replay just the tail of a block when hunting for cache leaks.
 * `tests/abci_methods/fixtures/multi_node_instrumentation.py` wraps the
   transaction processor and records a deterministic fingerprint of every write
   each block produces.  The recorder never mutates the application, so the
@@ -59,10 +61,16 @@ piggybacking on the module probe.  To add a brand-new scenario:
    with `_base_transaction()`.
 2. Convert the blocks into ABCI requests with `_build_requests(...)` and store
    the result in the `scenarios` dictionary returned by
-   `load_multi_node_scenarios()`.
+   `load_multi_node_scenarios()`.  Use the `ScenarioDefinition` dataclass to
+   describe whether nodes should trim a block to its last transaction (see the
+   `cache_leak_probe` scenario for an example) or whether the scenario is
+   symmetric across all nodes.
 3. Add an assertion in `tests/abci_methods/test_multi_node_app_hash.py` if the
    new scenario needs bespoke validation beyond hash comparison (for example,
    checking event payloads or specific account balances).
 
 The tests automatically discover every scenario exposed by
-`load_multi_node_scenarios()`, so no additional registration is required.
+`load_multi_node_scenarios()`.  Symmetric scenarios participate in the general
+"app hash consistency" assertion, while specialized ones (like the cache-leak
+probe) are exercised by targeted test cases that orchestrate the appropriate
+node topology.

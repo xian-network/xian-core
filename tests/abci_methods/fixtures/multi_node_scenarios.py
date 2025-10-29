@@ -4,13 +4,17 @@ This module centralizes the block flows that are executed across multiple
 application instances.  Keeping the transaction definitions in a single place
 makes it trivial to expand coverage whenever a new contracting module is
 introduced: simply add an additional probe definition in ``MODULE_PROBES`` or
-record a new block in ``build_currency_blocks``.
+record a new block in ``build_currency_blocks``.  Some scenarios also surface
+metadata describing how alternative node topologies should replay the block
+stream (for example replaying only the last transaction in a block).
 """
 
 from __future__ import annotations
+
 import binascii
 import json
-from typing import Dict, Iterable, List, Sequence
+from dataclasses import dataclass, field
+from typing import Dict, FrozenSet, Iterable, List, Sequence
 
 from cometbft.abci.v1beta3.types_pb2 import Request, RequestFinalizeBlock
 from google.protobuf.timestamp_pb2 import Timestamp
@@ -26,6 +30,31 @@ SCENARIO_ACCOUNT_BALANCES: Dict[str, int] = {
     "multi_node_operator": 5_000_000,
     "module_probe_receiver": 0,
 }
+
+
+@dataclass(frozen=True)
+class ScenarioDefinition:
+    """Definition of a multi-node scenario.
+
+    Parameters
+    ----------
+    requests:
+        The ``finalize_block`` requests that make up the scenario.
+    last_tx_only_heights:
+        Optional set of block heights that should be trimmed to only their
+        final transaction when executing the scenario on alternate nodes.  This
+        supports cache-leak detection flows where a control node replays the
+        block with a clean slate.
+    symmetric:
+        Whether every node in the default multi-node tests should execute the
+        exact same block stream.  Non-symmetric scenarios are skipped by
+        high-level "consistency" tests but can still be used by targeted test
+        cases that orchestrate specialized topologies.
+    """
+
+    requests: List[Request]
+    last_tx_only_heights: FrozenSet[int] = field(default_factory=frozenset)
+    symmetric: bool = True
 
 
 # Contracts executed inside the probe contract below.  Extend this mapping with
@@ -226,6 +255,97 @@ def _build_currency_blocks(starting_nonce: int = 100) -> List[List[Dict[str, obj
     return blocks
 
 
+def _cache_leak_contract() -> str:
+    return """
+storage = Hash()
+final_snapshots = Variable()
+
+
+@construct
+def seed():
+    storage['dict'] = {'count': 0, 'history': []}
+    final_snapshots.set([])
+
+
+@export
+def mutate_then_fail(height: int):
+    record = storage['dict']
+    record['count'] = record.get('count', 0) + 1
+    record['history'] = record.get('history', []) + [height]
+    storage['dict'] = record
+    assert False, 'intentional failure to surface cache leaks'
+
+
+@export
+def snapshot(label: str):
+    snapshots = final_snapshots.get()
+    if snapshots is None:
+        snapshots = []
+    snapshots = snapshots + [(label, storage['dict'])]
+    final_snapshots.set(snapshots)
+    return snapshots
+"""
+
+
+def _build_cache_leak_blocks() -> List[List[Dict[str, object]]]:
+    contract_code = _cache_leak_contract()
+    blocks: List[List[Dict[str, object]]] = []
+
+    blocks.append(
+        [
+            _base_transaction(
+                sender="sys",
+                contract="submission",
+                function="submit_contract",
+                nonce=25,
+                kwargs={
+                    "name": "con_cache_leak_probe",
+                    "code": contract_code,
+                    "constructor_args": {},
+                    "owner": "sys",
+                },
+                stamps_supplied=2_500,
+            )
+        ]
+    )
+
+    blocks.append(
+        [
+            _base_transaction(
+                sender="sys",
+                contract="con_cache_leak_probe",
+                function="snapshot",
+                nonce=26,
+                kwargs={"label": "baseline"},
+                stamps_supplied=1_500,
+            )
+        ]
+    )
+
+    blocks.append(
+        [
+            _base_transaction(
+                sender="sys",
+                contract="con_cache_leak_probe",
+                function="mutate_then_fail",
+                nonce=27,
+                kwargs={"height": 3},
+                stamps_supplied=1_500,
+            ),
+            _base_transaction(
+                sender="sys",
+                contract="con_cache_leak_probe",
+                function="snapshot",
+                nonce=28,
+                kwargs={"label": "post-failure"},
+                stamps_supplied=1_500,
+            ),
+        ]
+    )
+
+    return blocks
+
+
 def _build_requests(blocks: Iterable[List[Dict[str, object]]], *, start_height: int, base_seconds: int) -> List[Request]:
     requests: List[Request] = []
     for index, txs in enumerate(blocks):
@@ -234,19 +354,38 @@ def _build_requests(blocks: Iterable[List[Dict[str, object]]], *, start_height: 
     return requests
 
 
-def load_multi_node_scenarios() -> Dict[str, List[Request]]:
+def load_multi_node_scenarios() -> Dict[str, ScenarioDefinition]:
     """Return the scenarios executed by the multi-node tests."""
 
     module_blocks = _build_module_probe_blocks()
     currency_blocks = _build_currency_blocks()
+    cache_leak_blocks = _build_cache_leak_blocks()
 
-    scenarios: Dict[str, List[Request]] = {
-        "module_probe": _build_requests(module_blocks, start_height=1, base_seconds=1_720_000_000),
-        "currency_flow": _build_requests(currency_blocks, start_height=10, base_seconds=1_720_000_100),
+    scenarios: Dict[str, ScenarioDefinition] = {
+        "module_probe": ScenarioDefinition(
+            requests=_build_requests(module_blocks, start_height=1, base_seconds=1_720_000_000)
+        ),
+        "currency_flow": ScenarioDefinition(
+            requests=_build_requests(currency_blocks, start_height=10, base_seconds=1_720_000_100)
+        ),
     }
 
     combined_blocks = module_blocks + currency_blocks
-    scenarios["combined"] = _build_requests(combined_blocks, start_height=1, base_seconds=1_720_000_200)
+    scenarios["combined"] = ScenarioDefinition(
+        requests=_build_requests(combined_blocks, start_height=1, base_seconds=1_720_000_200)
+    )
+
+    cache_leak_requests = _build_requests(
+        cache_leak_blocks,
+        start_height=100,
+        base_seconds=1_720_000_300,
+    )
+    last_block_height = cache_leak_requests[-1].finalize_block.height
+    scenarios["cache_leak_probe"] = ScenarioDefinition(
+        requests=cache_leak_requests,
+        last_tx_only_heights=frozenset({last_block_height}),
+        symmetric=False,
+    )
 
     return scenarios
 
@@ -256,5 +395,6 @@ __all__ = [
     "DEFAULT_SIGNATURE",
     "MODULE_PROBES",
     "SCENARIO_ACCOUNT_BALANCES",
+    "ScenarioDefinition",
     "load_multi_node_scenarios",
 ]
