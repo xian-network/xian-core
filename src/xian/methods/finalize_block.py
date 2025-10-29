@@ -64,14 +64,8 @@ async def finalize_block(self, req) -> ResponseFinalizeBlock:
         self.nonce_storage.set_nonce_by_tx(tx)
         tx_hash = result["tx_result"]["hash"]
         self.fingerprint_hashes.append(tx_hash)
-        parsed_tx_result = json.dumps(
-            stringify_decimals(result["tx_result"]),
-            sort_keys=True,
-        )
+        parsed_tx_result = json.dumps(stringify_decimals(result["tx_result"]))
         logger.debug(f"Parsed tx result: {parsed_tx_result}")
-
-        state_fingerprint = hash_list([parsed_tx_result]).decode("utf-8")
-        self.fingerprint_hashes.append(state_fingerprint)
 
         tx_events = []
 
