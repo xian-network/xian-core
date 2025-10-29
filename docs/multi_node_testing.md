@@ -25,7 +25,10 @@ ships to production.
 * `tests/abci_methods/test_multi_node_app_hash.py` consumes those scenarios,
   seeds deterministic balances, and compares the final `app_hash` emitted by
   each node.  The module-probe scenario optionally mutates a bridge module to
-  prove that divergent state fingerprints are surfaced.
+  prove that divergent state fingerprints are surfaced.  The cache-leak probe
+  expects both nodes to stay identical and **currently fails** because the
+  contracting runtime leaks mutated dictionaries when a transaction aborts.
+  Keep the test red until that bug is fixed so the regression stays visible.
 
 ## Adding coverage for a new bridge module
 

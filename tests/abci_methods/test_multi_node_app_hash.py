@@ -207,15 +207,23 @@ class TestMultiNodeAppHash(unittest.IsolatedAsyncioTestCase):
             trim_block_heights=scenario.last_tx_only_heights,
         )
 
-        self.assertNotEqual(
+        self.assertEqual(
             baseline_result.block_fingerprints,
             trimmed_result.block_fingerprints,
-            "failing transactions that leak cache state should produce divergent fingerprints",
+            (
+                "cache-leak probe is expected to keep state fingerprints identical "
+                "across nodes. Divergence indicates the known dict cache leak bug "
+                "is still present."
+            ),
         )
-        self.assertNotEqual(
+        self.assertEqual(
             baseline_result.app_hash,
             trimmed_result.app_hash,
-            "failing transactions leaking cache state should produce divergent app hashes",
+            (
+                "cache-leak probe should not change the resulting app hash when a "
+                "failed transaction is replayed without prior cache mutations. "
+                "A mismatch proves the leak bug still exists."
+            ),
         )
 
 
