@@ -34,16 +34,18 @@ SCENARIO_ACCOUNT_BALANCES: Dict[str, int] = {
 # fingerprint derived from that module into application state.
 MODULE_PROBES = [
     {
-        "imports": (),
-        "statement": "module_results['hashing'] = hashlib.sha3('determinism')",
+        "imports": ("from contracting.stdlib.bridge.hashing import sha3",),
+        "statement": "module_results['hashing'] = sha3('determinism')",
     },
     {
-        "imports": (),
-        "statement": "module_results['decimal'] = str(decimal('123.456789'))",
+        "imports": (
+            "from contracting.stdlib.bridge.decimal import ContractingDecimal",
+        ),
+        "statement": "module_results['decimal'] = str(ContractingDecimal('123.456789'))",
     },
     {
-        "imports": (),
-        "statement": "module_results['time'] = str(datetime.datetime(2024, 1, 1))",
+        "imports": ("from contracting.stdlib.bridge.time import Datetime",),
+        "statement": "module_results['time'] = str(Datetime(2024, 1, 1))",
     },
 ]
 
