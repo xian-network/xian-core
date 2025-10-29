@@ -20,6 +20,9 @@ from fixtures.multi_node import (
     teardown_multi_node_fixtures,
     use_node_constants,
 )
+from fixtures.multi_node_instrumentation import (
+    attach_state_fingerprint_to_tx_hashes,
+)
 from fixtures.multi_node_scenarios import (
     SCENARIO_ACCOUNT_BALANCES,
     load_multi_node_scenarios,
@@ -75,13 +78,16 @@ class TestMultiNodeAppHash(unittest.IsolatedAsyncioTestCase):
             app.rewards_handler = None
             self._seed_account_balances(app)
 
-            cleanup: Optional[Callable[[], None]] = None
+            cleanup_callbacks: List[Callable[[], None]] = []
+
+            cleanup_callbacks.append(attach_state_fingerprint_to_tx_hashes(app))
+
             if mutate is not None:
                 maybe_cleanup = mutate(app)
                 if asyncio.iscoroutine(maybe_cleanup):
                     maybe_cleanup = await maybe_cleanup
                 if callable(maybe_cleanup):
-                    cleanup = maybe_cleanup
+                    cleanup_callbacks.append(maybe_cleanup)
 
             try:
                 last_app_hash: Optional[bytes] = None
@@ -94,7 +100,7 @@ class TestMultiNodeAppHash(unittest.IsolatedAsyncioTestCase):
                     raise AssertionError("scenario produced no finalize_block responses")
                 return last_app_hash
             finally:
-                if cleanup is not None:
+                for cleanup in reversed(cleanup_callbacks):
                     cleanup()
 
     def _seed_account_balances(self, app: Xian) -> None:

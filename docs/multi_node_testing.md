@@ -15,6 +15,11 @@ ships to production.
 * `tests/abci_methods/fixtures/multi_node_scenarios.py` defines reusable
   sequences of `RequestFinalizeBlock` messages.  These requests are grouped into
   **scenarios** which the tests load via `load_multi_node_scenarios()`.
+* `tests/abci_methods/fixtures/multi_node_instrumentation.py` patches the
+  application at runtime so that every transaction hash folded into the
+  `app_hash` also includes a fingerprint of the writes it produced.  This keeps
+  the production `finalize_block` implementation untouched while still allowing
+  the tests to observe state divergence.
 * `tests/abci_methods/test_multi_node_app_hash.py` consumes those scenarios,
   seeds deterministic balances, and compares the final `app_hash` emitted by
   each node.  The module-probe scenario optionally mutates a bridge module to
