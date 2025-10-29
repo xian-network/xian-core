@@ -15,11 +15,11 @@ ships to production.
 * `tests/abci_methods/fixtures/multi_node_scenarios.py` defines reusable
   sequences of `RequestFinalizeBlock` messages.  These requests are grouped into
   **scenarios** which the tests load via `load_multi_node_scenarios()`.
-* `tests/abci_methods/fixtures/multi_node_instrumentation.py` patches the
-  application at runtime so that every transaction hash folded into the
-  `app_hash` also includes a fingerprint of the writes it produced.  This keeps
-  the production `finalize_block` implementation untouched while still allowing
-  the tests to observe state divergence.
+* `tests/abci_methods/fixtures/multi_node_instrumentation.py` wraps the
+  transaction processor and records a deterministic fingerprint of every write
+  each block produces.  The recorder never mutates the application, so the
+  production `finalize_block` implementation stays untouched while tests gain
+  the extra state visibility they need to spot divergence.
 * `tests/abci_methods/test_multi_node_app_hash.py` consumes those scenarios,
   seeds deterministic balances, and compares the final `app_hash` emitted by
   each node.  The module-probe scenario optionally mutates a bridge module to
@@ -45,7 +45,9 @@ Follow these steps to exercise a new module:
    every node.
 4. Run `PYTHONPATH=src pytest tests/abci_methods/test_multi_node_app_hash.py -q`
    to ensure the scenario executes deterministically.  When optional dependencies
-   such as `contracting` are missing the suite will skip instead of running.
+   such as `contracting` are missing the suite will skip instead of running.  The
+   recorder will surface any non-deterministic state writes even if the
+   production `app_hash` value does not yet reflect them.
 
 ## Creating additional block flows
 

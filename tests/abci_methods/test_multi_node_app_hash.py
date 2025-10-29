@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from dataclasses import dataclass
 import unittest
 from io import BytesIO
 from typing import TYPE_CHECKING, Any, Awaitable, Callable, Dict, Iterable, List, Optional, Union
@@ -21,7 +22,8 @@ from fixtures.multi_node import (
     use_node_constants,
 )
 from fixtures.multi_node_instrumentation import (
-    attach_state_fingerprint_to_tx_hashes,
+    attach_state_fingerprint_recorder,
+    StateFingerprintRecorder,
 )
 from fixtures.multi_node_scenarios import (
     SCENARIO_ACCOUNT_BALANCES,
@@ -51,6 +53,11 @@ Mutator = Callable[[Xian], MutatorResult]
 
 @unittest.skipUnless(CONTRACTING_AVAILABLE, "contracting dependency is required for multi-node integration tests")
 class TestMultiNodeAppHash(unittest.IsolatedAsyncioTestCase):
+    @dataclass
+    class NodeRunResult:
+        app_hash: bytes
+        block_fingerprints: List[str]
+
     async def asyncSetUp(self) -> None:
         self.node_dirs = setup_multi_node_fixtures(3)
         self.scenarios: Dict[str, ScenarioRequests] = load_multi_node_scenarios()
@@ -70,7 +77,7 @@ class TestMultiNodeAppHash(unittest.IsolatedAsyncioTestCase):
         node_dir,
         requests: Iterable[Request],
         mutate: Optional[Mutator] = None,
-    ) -> bytes:
+    ) -> "TestMultiNodeAppHash.NodeRunResult":
         with use_node_constants(node_dir) as node_constants:
             app = await Xian.create(constants=node_constants)
             app.current_block_meta = {"height": 0, "nanos": 0}
@@ -80,7 +87,8 @@ class TestMultiNodeAppHash(unittest.IsolatedAsyncioTestCase):
 
             cleanup_callbacks: List[Callable[[], None]] = []
 
-            cleanup_callbacks.append(attach_state_fingerprint_to_tx_hashes(app))
+            recorder: StateFingerprintRecorder = attach_state_fingerprint_recorder(app)
+            cleanup_callbacks.append(recorder.cleanup)  # type: ignore[arg-type]
 
             if mutate is not None:
                 maybe_cleanup = mutate(app)
@@ -91,14 +99,17 @@ class TestMultiNodeAppHash(unittest.IsolatedAsyncioTestCase):
 
             try:
                 last_app_hash: Optional[bytes] = None
+                block_fingerprints: List[str] = []
                 for request in requests:
+                    recorder.begin_block()
                     response = await self._process_request(app, request)
                     last_app_hash = response.finalize_block.app_hash
+                    block_fingerprints.append(recorder.finish_block())
                     await app.commit()
 
                 if last_app_hash is None:
                     raise AssertionError("scenario produced no finalize_block responses")
-                return last_app_hash
+                return self.NodeRunResult(app_hash=last_app_hash, block_fingerprints=block_fingerprints)
             finally:
                 for cleanup in reversed(cleanup_callbacks):
                     cleanup()
@@ -111,18 +122,25 @@ class TestMultiNodeAppHash(unittest.IsolatedAsyncioTestCase):
     async def test_app_hash_consistency_across_nodes(self) -> None:
         for name, requests in self.scenarios.items():
             hashes: List[bytes] = []
+            block_fingerprints: List[List[str]] = []
             for node_dir in self.node_dirs:
-                hashes.append(await self._run_node(node_dir, requests))
+                result = await self._run_node(node_dir, requests)
+                hashes.append(result.app_hash)
+                block_fingerprints.append(result.block_fingerprints)
 
             self.assertGreater(len(hashes), 1, f"scenario '{name}' did not run on multiple nodes")
             self.assertTrue(all(h == hashes[0] for h in hashes[1:]), f"scenario '{name}' produced divergent app hashes")
+            self.assertTrue(
+                all(fp == block_fingerprints[0] for fp in block_fingerprints[1:]),
+                f"scenario '{name}' produced divergent state fingerprints",
+            )
 
     async def test_module_probe_divergence_detection(self) -> None:
         module_requests = self.scenarios.get("module_probe")
         if not module_requests:
             self.skipTest("module_probe scenario missing")
 
-        baseline_hash = await self._run_node(self.node_dirs[0], module_requests)
+        baseline_result = await self._run_node(self.node_dirs[0], module_requests)
 
         async def mutate(app: Xian) -> Callable[[], None]:
             from contracting.stdlib.bridge import hashing
@@ -142,13 +160,19 @@ class TestMultiNodeAppHash(unittest.IsolatedAsyncioTestCase):
 
             return restore
 
-        divergent_hash = await self._run_node(self.node_dirs[1], module_requests, mutate=mutate)
+        divergent_result = await self._run_node(self.node_dirs[1], module_requests, mutate=mutate)
 
         self.assertNotEqual(
-            baseline_hash,
-            divergent_hash,
-            "mutating a bridge module should produce divergent app hashes across nodes",
+            baseline_result.block_fingerprints,
+            divergent_result.block_fingerprints,
+            "mutating a bridge module should produce divergent state fingerprints across nodes",
         )
+
+        # Finalize block app hashes currently ignore transaction state, so they
+        # remain equal even when the bridge produces divergent outputs.  The
+        # explicit fingerprint comparison above ensures tests still catch
+        # non-determinism until production hashing is updated.
+        self.assertEqual(baseline_result.app_hash, divergent_result.app_hash)
 
 
 if __name__ == "__main__":
