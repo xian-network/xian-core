@@ -22,6 +22,7 @@ from fixtures.multi_node import (
     use_node_constants,
 )
 from fixtures.multi_node_instrumentation import (
+    attach_failed_tx_fingerprint_filter,
     attach_state_fingerprint_recorder,
     StateFingerprintRecorder,
 )
@@ -83,7 +84,7 @@ class TestMultiNodeAppHash(unittest.IsolatedAsyncioTestCase):
         with use_node_constants(node_dir) as node_constants:
             app = await Xian.create(constants=node_constants)
             app.current_block_meta = {"height": 0, "nanos": 0}
-            app.enable_tx_fee = False
+            app.enable_tx_fee = True
             app.rewards_handler = None
             self._seed_account_balances(app)
 
@@ -91,6 +92,8 @@ class TestMultiNodeAppHash(unittest.IsolatedAsyncioTestCase):
 
             recorder: StateFingerprintRecorder = attach_state_fingerprint_recorder(app)
             cleanup_callbacks.append(recorder.cleanup)  # type: ignore[arg-type]
+
+            cleanup_callbacks.append(attach_failed_tx_fingerprint_filter(app))
 
             if mutate is not None:
                 maybe_cleanup = mutate(app)
