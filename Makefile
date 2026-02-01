@@ -3,13 +3,18 @@ wipe:
 	../cometbft unsafe-reset-all
 
 up:
-	cd ./src/xian && pm2 start xian_abci.py --name xian -f
-	pm2 start "../cometbft node --rpc.laddr tcp://0.0.0.0:26657" --name cometbft -f
+	@pm2 delete xian 2>/dev/null || true
+	@pm2 delete cometbft 2>/dev/null || true
+	cd ./src/xian && pm2 start xian_abci.py --name xian
+	pm2 start "../cometbft node --rpc.laddr tcp://0.0.0.0:26657" --name cometbft
 
 up-bds:
-	cd ./src/xian/services/ && pm2 start simulator.py --name simulator -f --wait-ready
-	cd ./src/xian && pm2 start xian_abci.py --name xian -f
-	pm2 start "../cometbft node --rpc.laddr tcp://0.0.0.0:26657" --name cometbft -f
+	@pm2 delete simulator 2>/dev/null || true
+	@pm2 delete xian 2>/dev/null || true
+	@pm2 delete cometbft 2>/dev/null || true
+	cd ./src/xian/services/ && pm2 start simulator.py --name simulator --wait-ready
+	cd ./src/xian && pm2 start xian_abci.py --name xian
+	pm2 start "../cometbft node --rpc.laddr tcp://0.0.0.0:26657" --name cometbft
 
 logs:
 	pm2 logs --lines 1000
