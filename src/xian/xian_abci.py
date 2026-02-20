@@ -23,6 +23,13 @@ from xian.methods import (
     prepare_proposal,
     query,
 )
+from xian.methods.state_sync import (
+    list_snapshots,
+    offer_snapshot,
+    load_snapshot_chunk,
+    apply_snapshot_chunk,
+    StateSnapshotManager
+)
 from xian.validators import ValidatorHandler
 from xian.nonce import NonceStorage
 from xian.processor import TxProcessor
@@ -116,6 +123,19 @@ class Xian:
             logger.warning(f"No state patches file found at {patch_file_path}")
             # Initialize with empty patches but still mark as loaded
             self.state_patch_manager.loaded = True
+        
+        # Initialize state snapshot manager for fast sync
+        self.snapshot_manager = None  # Will be initialized when needed
+
+    def _ensure_snapshot_manager(self) -> StateSnapshotManager:
+        """Lazily instantiate and return the snapshot manager."""
+        if self.snapshot_manager is None:
+            self.snapshot_manager = StateSnapshotManager(
+                self.cometbft_config.get("home", "/tmp/xian"),
+                self.client,
+                self.nonce_storage,
+            )
+        return self.snapshot_manager
 
     @classmethod
     async def create(cls, constants=Constants()):
@@ -189,6 +209,51 @@ class Xian:
         """
         res = await query.query(self, req)
         return res
+
+    # State Sync Methods for Fast Sync
+    async def list_snapshots(self, req):
+        """
+        List available snapshots for state sync
+        """
+        res = await list_snapshots(self, req)
+        return res
+
+    async def offer_snapshot(self, req):
+        """
+        Handle snapshot offer during state sync
+        """
+        res = await offer_snapshot(self, req)
+        return res
+
+    async def load_snapshot_chunk(self, req):
+        """
+        Load a snapshot chunk for state sync
+        """
+        res = await load_snapshot_chunk(self, req)
+        return res
+
+    async def apply_snapshot_chunk(self, req):
+        """
+        Apply a snapshot chunk during state sync
+        """
+        res = await apply_snapshot_chunk(self, req)
+        return res
+
+    async def _create_snapshot_async(self, height: int, app_hash: bytes, block_time: int):
+        """
+        Create a state snapshot asynchronously (called from finalize_block)
+        """
+        try:
+            snapshot_manager = self._ensure_snapshot_manager()
+
+            snapshot_id = snapshot_manager.create_snapshot(height, app_hash, block_time)
+            if snapshot_id:
+                logger.info(f"Created state snapshot {snapshot_id} at height {height}")
+            else:
+                logger.warning(f"Failed to create snapshot at height {height}")
+                
+        except Exception as e:
+            logger.error(f"Error creating snapshot at height {height}: {e}")
 
 
 def cleanup_old_logs(logs_dir: str, days: int = 3):
